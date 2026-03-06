@@ -1,3 +1,4 @@
+import { ParticleBackground } from "@/features/onboarding/components/ParticleBackground";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
 import { Stack } from "expo-router";
@@ -21,7 +22,10 @@ export default function OnboardingLayout({
   isNextDisabled = true,
   nextButtonText = "Siguiente",
 }: OnboardingLayoutProps) {
-  const { theme } = useAppTheme();
+  const { theme, isDark } = useAppTheme();
+
+  // Color del glow basado en el tema
+  const glowAlpha = isDark ? "rgba(46,207,190,0.15)" : "rgba(46,207,190,0.08)";
 
   return (
     <>
@@ -42,6 +46,8 @@ export default function OnboardingLayout({
         style={[styles.container, { backgroundColor: theme.colors.background }]}
         edges={[]}
       >
+        <ParticleBackground isDark={isDark} glowAlpha={glowAlpha} />
+
         <View style={styles.content}>
           <View style={styles.childrenContainer}>{children}</View>
 
@@ -59,11 +65,15 @@ export default function OnboardingLayout({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: {
+    flex: 1,
+    position: "relative",
+  },
   content: {
     flex: 1,
     paddingHorizontal: token.spacing.lg,
     paddingTop: token.spacing.lg,
+    zIndex: 2,
   },
   childrenContainer: { flex: 1 },
   buttonContainer: {
