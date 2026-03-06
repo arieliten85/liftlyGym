@@ -1,4 +1,4 @@
-import { equipmentOptions } from "@/data/mock.data";
+import { equipmentOptions } from "@/features/onboarding/constants/onboarding.constants";
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
 import { useOnboardingStore } from "@/store/onboardingStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -18,7 +18,6 @@ export default function EquipmentScreen() {
     if (selected) router.push("/experience");
   };
 
-  // Theme-aware colors matching GoalsScreen language
   const TEAL = theme.colors.primary;
   const cardBg = isDark ? "#0C1119" : theme.colors.card;
   const cardBgSel = isDark ? "#091714" : "#EBF9F7";
@@ -29,7 +28,7 @@ export default function EquipmentScreen() {
   const titleSel = TEAL;
   const descSel = isDark ? "#B8D4D0" : theme.colors.text;
 
-  const styles = createStyles(isDark, theme);
+  const styles = createStyles();
 
   return (
     <OnboardingLayout
@@ -38,25 +37,6 @@ export default function EquipmentScreen() {
       isNextDisabled={!selected}
     >
       <View style={styles.container}>
-        {/* Particles (dark only) */}
-        {isDark &&
-          [...Array(12)].map((_, i) => (
-            <View
-              key={i}
-              style={[
-                styles.particle,
-                {
-                  top: `${(i * 19 + 7) % 90}%` as any,
-                  left: `${(i * 33 + 5) % 85}%` as any,
-                  opacity: 0.06 + (i % 4) * 0.04,
-                  width: i % 3 === 0 ? 3 : 2,
-                  height: i % 3 === 0 ? 3 : 2,
-                },
-              ]}
-            />
-          ))}
-
-        {/* Header */}
         <View style={styles.headerContainer}>
           <Text style={[styles.sectionTitle, { color: textColor }]}>
             ¿Dónde vas a entrenar?
@@ -156,7 +136,7 @@ export default function EquipmentScreen() {
   );
 }
 
-const createStyles = (isDark: boolean, theme: any) =>
+const createStyles = () =>
   StyleSheet.create({
     container: { flex: 1 },
 

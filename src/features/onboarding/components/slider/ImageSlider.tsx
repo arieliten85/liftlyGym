@@ -1,9 +1,10 @@
-import { SLIDES } from "@/data/mock.data";
+import { SLIDES } from "@/features/onboarding/constants/onboarding.constants";
 import { typography } from "@/theme/token";
 import { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   FlatList,
+  ImageSourcePropType,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -11,6 +12,19 @@ import {
   ViewToken,
 } from "react-native";
 import { PhoneFrame } from "./Phoneframe";
+
+export interface SlideImage {
+  uri: string;
+  // o si usas require:
+  // image: any;
+}
+
+export interface Slide {
+  id: string;
+  title: string;
+  subtitle: string;
+  images: ImageSourcePropType[];
+}
 
 const { width } = Dimensions.get("window");
 
@@ -109,7 +123,7 @@ export function ImageSlider({ isDark, TEAL }: ImageSliderProps) {
         renderItem={({ item }) => (
           <View style={[styles.slide, { width }]}>
             <View style={styles.phonesRow}>
-              {item.images.map((img, idx) => (
+              {item.images.map((img: ImageSourcePropType, idx: number) => (
                 <PhoneFrame
                   key={idx}
                   image={img}

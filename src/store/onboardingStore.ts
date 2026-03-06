@@ -1,4 +1,4 @@
-import { TrainingCategory } from "@/utils/trainingCategoryRules";
+import { RoutineSelectionType } from "@/features/onboarding/type/onboarding.type";
 import { create } from "zustand";
 
 export type RoutineSource = "AI" | "custom";
@@ -9,7 +9,7 @@ interface OnboardingState {
   experience: string | null;
   muscleGroups: string[];
 
-  routine: TrainingCategory | null;
+  routine: RoutineSelectionType | null;
 
   selectedEquipmentItems: string[];
   source: RoutineSource;
@@ -20,7 +20,7 @@ interface OnboardingState {
   setMuscleGroups: (muscles: string[]) => void;
   toggleMuscleGroup: (muscleId: string) => void;
 
-  setRoutine: (catId: TrainingCategory) => void;
+  setRoutine: (catId: RoutineSelectionType) => void;
 
   setSelectedEquipmentItems: (items: string[]) => void;
   toggleEquipmentItem: (itemId: string) => void;

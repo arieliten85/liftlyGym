@@ -1,49 +1,8 @@
-export type RoutineType =
-  | "solo_pecho"
-  | "solo_espalda"
-  | "solo_biceps"
-  | "solo_triceps"
-  | "solo_hombro"
-  | "solo_piernas"
-  | "pecho_triceps"
-  | "espalda_biceps"
-  | "pecho_hombro"
-  | "hombro_triceps"
-  | "espalda_hombro"
-  | "pecho_espalda"
-  | "biceps_triceps"
-  | "piernas_hombro"
-  | "push_clasico"
-  | "pull_clasico"
-  | "torso_completo"
-  | "push_pull"
-  | "upper_lower"
-  | "push_pull_legs"
-  | "fullbody"
-  | "piernas_plus"
-  | "upper_sin_piernas"
-  | "custom";
-
-export type ExperienceLevel = "principiante" | "intermedio" | "avanzado";
-
-export interface RoutineClassification {
-  routineType: RoutineType;
-  routineLabel: string;
-  routineDescription: string;
-  durationMin: number;
-  durationMax: number;
-  daysPerWeek: [number, number];
-  daysLabel: string;
-  muscleGroups: string[];
-  splitTags: string[];
-  tips: string[];
-  daySplitSuggestion?: string;
-  exercisesPerMuscle: number;
-  setsRange: string;
-  levelSummary: string;
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+import {
+  ExperienceLevel,
+  RoutineClassification,
+  RoutineClassificationType,
+} from "../type/onboarding.type";
 
 const has = (m: string[], id: string) => m.includes(id);
 const hasAll = (m: string[], ...ids: string[]) =>
@@ -65,25 +24,14 @@ const pushMuscles = (m: string[]) =>
 const pullMuscles = (m: string[]) =>
   m.filter((x) => (PULL as readonly string[]).includes(x));
 
-// ─── Duración ajustada por nivel ─────────────────────────────────────────────
+//  Duración ajustada por nivel
 
 function dur(base: [number, number], lvl: ExperienceLevel): [number, number] {
   const d = lvl === "principiante" ? -10 : lvl === "avanzado" ? +10 : 0;
   return [base[0] + d, base[1] + d];
 }
 
-// function daysRange(
-//   base: [number, number],
-//   lvl: ExperienceLevel,
-//   advancedBoost = 1,
-// ): [number, number] {
-//   if (lvl === "avanzado")
-//     return [base[0], Math.min(base[1] + advancedBoost, 6)];
-//   if (lvl === "principiante") return [base[0], base[1]];
-//   return base;
-// }
-
-// ─── Campos de nivel — centralizados ─────────────────────────────────────────
+// Campos de nivel — centralizados
 
 function levelFields(lvl: ExperienceLevel): {
   exercisesPerMuscle: number;
@@ -115,10 +63,10 @@ function levelFields(lvl: ExperienceLevel): {
   }
 }
 
-// ─── Builder ──────────────────────────────────────────────────────────────────
+// Builder
 
 function build(
-  type: RoutineType,
+  type: RoutineClassificationType,
   label: string,
   description: string,
   baseDur: [number, number],
@@ -151,7 +99,7 @@ function build(
   };
 }
 
-// ─── Clasificador principal ───────────────────────────────────────────────────
+// Clasificador principal
 
 export function classifyRoutine(
   muscleGroups: string[],
@@ -160,10 +108,6 @@ export function classifyRoutine(
   const m = muscleGroups;
   const n = m.length;
   const lvl = experience;
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // N = 1
-  // ══════════════════════════════════════════════════════════════════════════
 
   if (n === 1) {
     switch (m[0]) {
@@ -299,10 +243,6 @@ export function classifyRoutine(
         );
     }
   }
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // N = 2
-  // ══════════════════════════════════════════════════════════════════════════
 
   if (n === 2) {
     if (hasAll(m, "pecho", "triceps"))
@@ -501,10 +441,6 @@ export function classifyRoutine(
     }
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // N = 3
-  // ══════════════════════════════════════════════════════════════════════════
-
   if (n === 3) {
     if (hasAll(m, "pecho", "hombro", "triceps"))
       return build(
@@ -700,10 +636,6 @@ export function classifyRoutine(
     }
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // N = 4
-  // ══════════════════════════════════════════════════════════════════════════
-
   if (n === 4) {
     if (hasPush(m) && hasPull(m) && !hasLegs(m))
       return build(
@@ -792,10 +724,6 @@ export function classifyRoutine(
       );
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // N = 5
-  // ══════════════════════════════════════════════════════════════════════════
-
   if (n === 5) {
     if (hasPush(m) && hasPull(m) && hasLegs(m))
       return build(
@@ -875,10 +803,6 @@ export function classifyRoutine(
           ? "PPL 5 días: Push / Pull / Legs / Push / Pull"
           : "PPL 6 días: Push / Pull / Legs / Push / Pull / Legs",
     );
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // FALLBACK
-  // ══════════════════════════════════════════════════════════════════════════
 
   const autoTags: string[] = [];
   if (hasPush(m)) autoTags.push("Empuje");

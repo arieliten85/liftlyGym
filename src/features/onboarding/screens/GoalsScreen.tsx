@@ -1,4 +1,4 @@
-import { goals } from "@/data/mock.data";
+import { goals } from "@/features/onboarding/constants/onboarding.constants";
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
 import { useOnboardingStore } from "@/store/onboardingStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -18,7 +18,6 @@ export default function GoalsScreen() {
     if (selectedGoal) router.push("/equipment");
   };
 
-  // Theme-aware colors matching OnboardingScreen language
   const TEAL = theme.colors.primary;
   const cardBg = isDark ? "#0C1119" : theme.colors.card;
   const cardBgSel = isDark ? "#091714" : "#EBF9F7";
@@ -38,24 +37,6 @@ export default function GoalsScreen() {
       isNextDisabled={!selectedGoal}
     >
       <View style={styles.container}>
-        {/* Particles (dark only) */}
-        {isDark &&
-          [...Array(12)].map((_, i) => (
-            <View
-              key={i}
-              style={[
-                styles.particle,
-                {
-                  top: `${(i * 23 + 5) % 90}%` as any,
-                  left: `${(i * 31 + 9) % 85}%` as any,
-                  opacity: 0.06 + (i % 4) * 0.04,
-                  width: i % 3 === 0 ? 3 : 2,
-                  height: i % 3 === 0 ? 3 : 2,
-                },
-              ]}
-            />
-          ))}
-
         {/* Section header */}
         <View style={styles.headerContainer}>
           <Text style={[styles.sectionTitle, { color: textColor }]}>

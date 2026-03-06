@@ -1,4 +1,7 @@
-import { LEVEL_META, levelOptions } from "@/data/mock.data";
+import {
+  LEVEL_META,
+  levelOptions,
+} from "@/features/onboarding/constants/onboarding.constants";
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
 import { useOnboardingStore } from "@/store/onboardingStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -38,25 +41,6 @@ export default function ExperienceScreen() {
       isNextDisabled={!selectedLevel}
     >
       <View style={styles.container}>
-        {/* Particles (dark only) */}
-        {isDark &&
-          [...Array(12)].map((_, i) => (
-            <View
-              key={i}
-              style={[
-                styles.particle,
-                {
-                  top: `${(i * 21 + 9) % 90}%` as any,
-                  left: `${(i * 27 + 11) % 85}%` as any,
-                  opacity: 0.06 + (i % 4) * 0.04,
-                  width: i % 3 === 0 ? 3 : 2,
-                  height: i % 3 === 0 ? 3 : 2,
-                },
-              ]}
-            />
-          ))}
-
-        {/* Section header */}
         <View style={styles.headerContainer}>
           <Text style={[styles.sectionTitle, { color: textColor }]}>
             ¿Cuál es tu nivel de experiencia?
@@ -66,7 +50,7 @@ export default function ExperienceScreen() {
           </Text>
         </View>
 
-        {/* Goal cards */}
+        {/* cards */}
         <View style={styles.optionsWrapper}>
           <View style={styles.optionsContainer}>
             {levelOptions.map((option) => {
@@ -93,7 +77,6 @@ export default function ExperienceScreen() {
                   onPress={() => setExperience(option.id)}
                   activeOpacity={0.8}
                 >
-                  {/* Selected top accent line */}
                   {isSel && (
                     <View
                       style={[styles.cardTopLine, { backgroundColor: TEAL }]}
@@ -101,7 +84,6 @@ export default function ExperienceScreen() {
                   )}
 
                   <View style={styles.cardContent}>
-                    {/* Icon badge */}
                     <View
                       style={[
                         styles.cardIconWrap,

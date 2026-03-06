@@ -1,4 +1,3 @@
-import { useOnboardingAnimation } from "@/hook/onboarding/Useonboardinganimation";
 import { PrimaryButton } from "@/shared/components/PrimaryButton";
 import { useThemeStore } from "@/store/themeStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -6,6 +5,7 @@ import { token } from "@/theme/token";
 import { useRouter } from "expo-router";
 
 import { LiftlyIcon } from "@/shared/components/BrandIcon";
+import { Feather } from "@expo/vector-icons";
 import {
   Animated,
   Dimensions,
@@ -17,8 +17,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ImageSlider } from "../components/ImageSlider";
+
 import { ParticleBackground } from "../components/ParticleBackground";
+import { ImageSlider } from "../components/slider/ImageSlider";
 
 const { width, height } = Dimensions.get("window");
 
@@ -42,7 +43,6 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const { theme, isDark } = useAppTheme();
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
-  const { fadeAnim, bottomAnim } = useOnboardingAnimation();
 
   const bg = isDark ? "#070B12" : theme.colors.background;
   const glowAlpha = isDark ? "rgba(46,207,190,0.055)" : "rgba(46,207,190,0.08)";
@@ -53,19 +53,14 @@ export default function OnboardingScreen() {
       style={[styles.container, { backgroundColor: bg }]}
       edges={["top", "bottom"]}
     >
+      {/* FUNCION GENERA FONDO DINAMICO  */}
       <ParticleBackground isDark={isDark} glowAlpha={glowAlpha} />
-      <Animated.View
-        style={[
-          styles.header,
-          isTablet && styles.headerTablet,
-          { opacity: fadeAnim },
-        ]}
-      >
+      <Animated.View style={[styles.header, isTablet && styles.headerTablet]}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 0 }}>
           <LiftlyIcon size={32} />
           <Text style={[styles.brandText]}>Liftly</Text>
         </View>
-        {/* <TouchableOpacity
+        <TouchableOpacity
           onPress={toggleTheme}
           style={styles.themeBtn}
           activeOpacity={0.7}
@@ -75,7 +70,7 @@ export default function OnboardingScreen() {
             size={scale(22)}
             color={TEAL}
           />
-        </TouchableOpacity> */}
+        </TouchableOpacity>
 
         <TouchableOpacity
           onPress={() => router.push("/login")}
@@ -100,8 +95,6 @@ export default function OnboardingScreen() {
       >
         <Animated.View
           style={{
-            opacity: fadeAnim,
-            transform: [{ translateY: bottomAnim }],
             marginBottom: vSpacing(16),
           }}
         >
@@ -109,24 +102,7 @@ export default function OnboardingScreen() {
         </Animated.View>
       </ScrollView>
       {/* ── BUTTOM ── */}
-      <Animated.View
-        style={[
-          styles.ctaWrapper,
-          {
-            opacity: fadeAnim,
-            paddingHorizontal: isTablet ? 40 : 20,
-            paddingBottom:
-              Platform.OS === "ios"
-                ? isSmallDevice
-                  ? 14
-                  : 20
-                : isSmallDevice
-                  ? 10
-                  : 16,
-            paddingTop: isSmallDevice ? 8 : 12,
-          },
-        ]}
-      >
+      <Animated.View style={[styles.ctaWrapper]}>
         <PrimaryButton
           label="Empezar"
           onPress={() => router.push("../goals")}
@@ -183,5 +159,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     fontSize: 25,
   },
-  ctaWrapper: {},
+  ctaWrapper: {
+    paddingHorizontal: isTablet ? 40 : 20,
+    paddingBottom:
+      Platform.OS === "ios"
+        ? isSmallDevice
+          ? 14
+          : 20
+        : isSmallDevice
+          ? 10
+          : 16,
+    paddingTop: isSmallDevice ? 8 : 12,
+  },
 });
