@@ -3,6 +3,7 @@ import {
   muscleOptions,
 } from "@/features/onboarding/constants/onboarding.constants";
 
+import { generateRoutineOnboarding } from "@/services/routineService";
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
 import { useOnboardingStore } from "@/store/onboardingStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -48,12 +49,13 @@ export default function ConfirmRoutineScreen() {
   );
 
   // Arma y cosolea la rutina generada
-  const handleConfirm = useCallback(() => {
+  const handleConfirm = useCallback(async () => {
     const resolvedEquipment = resolveEquipmentIds(
       equipment,
       muscleGroups,
       experience,
     );
+
     const maxExercisesPerSession =
       EQUIPMENT_CAP[experience ?? "principiante"] ?? 4;
 
@@ -74,10 +76,17 @@ export default function ConfirmRoutineScreen() {
       },
     };
 
-    console.log(
-      "=== ONBOARDING PAYLOAD ===\n",
-      JSON.stringify(payload, null, 2),
-    );
+    try {
+      const response = await generateRoutineOnboarding(payload);
+      const exercises = response.routine?.routine?.exercises ?? [];
+
+      console.log(
+        "Routine generated ----------------------------->:",
+        exercises,
+      );
+    } catch (error) {
+      console.log(error, "Error calling backend");
+    }
   }, [
     goal,
     equipment,
