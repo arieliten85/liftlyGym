@@ -44,7 +44,6 @@ export default function GeneratingRoutineScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: bg }]}>
-      {/* PARTICLES BACKGROUND */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
         <ParticleBackground isDark={isDark} glowAlpha={glowAlpha} />
       </View>
