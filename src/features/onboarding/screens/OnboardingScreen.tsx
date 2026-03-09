@@ -47,6 +47,8 @@ export default function OnboardingScreen() {
   const bg = isDark ? "#070B12" : theme.colors.background;
   const glowAlpha = isDark ? "rgba(46,207,190,0.055)" : "rgba(46,207,190,0.08)";
   const TEAL = theme.colors.primary;
+  const brandColor = theme.colors.text;
+  const loginColor = theme.colors.text;
 
   return (
     <SafeAreaView
@@ -58,7 +60,7 @@ export default function OnboardingScreen() {
       <Animated.View style={[styles.header, isTablet && styles.headerTablet]}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 0 }}>
           <LiftlyIcon size={32} />
-          <Text style={[styles.brandText]}>Liftly</Text>
+          <Text style={[styles.brandText, { color: brandColor }]}>Liftly</Text>
         </View>
         <TouchableOpacity
           onPress={toggleTheme}
@@ -78,7 +80,13 @@ export default function OnboardingScreen() {
           activeOpacity={0.7}
         >
           <Text
-            style={[styles.loginText, { color: "white", fontSize: scale(15) }]}
+            style={[
+              styles.loginText,
+              {
+                color: loginColor,
+                fontSize: scale(15),
+              },
+            ]}
           >
             Iniciar Sesión
           </Text>

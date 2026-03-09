@@ -6,9 +6,11 @@ import {
 import { generateRoutineOnboarding } from "@/services/routineService";
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
 import { useOnboardingStore } from "@/store/onboardingStore";
+import { useRoutineStore } from "@/store/useRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useCallback, useMemo } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { GoalBadge } from "../components/confirm-routine/badges/GoalBadge";
@@ -19,83 +21,22 @@ import {
   ExperienceLevel,
   RoutineClassification,
 } from "../type/onboarding.type";
-import { resolveEquipmentIds } from "../utils/equipmentCalculator";
+import { getExercisesForMuscles } from "../utils/equipmentCalculator";
 import { classifyRoutine } from "../utils/routineClassifier";
 
 export default function ConfirmRoutineScreen() {
+  const router = useRouter();
+
   const { theme, isDark } = useAppTheme();
   const goal = useOnboardingStore((s) => s.goal);
   const equipment = useOnboardingStore((s) => s.equipment);
   const experience = useOnboardingStore((s) => s.experience);
   const muscleGroups = useOnboardingStore((s) => s.muscleGroups);
   const source = useOnboardingStore((s) => s.source);
-  const trainingCategories = useOnboardingStore((s) => s.routine);
 
-  const classification = useMemo<RoutineClassification>(
-    () =>
-      classifyRoutine(
-        muscleGroups,
-        (experience ?? "principiante") as ExperienceLevel,
-      ),
-    [muscleGroups, experience],
-  );
-
-  const muscleLabels = useMemo(
-    () =>
-      muscleGroups
-        .map((id) => muscleOptions.find((m) => m.id === id)?.title ?? id)
-        .join("  ·  "),
-    [muscleGroups],
-  );
-
-  // Arma y cosolea la rutina generada
-  const handleConfirm = useCallback(async () => {
-    const resolvedEquipment = resolveEquipmentIds(
-      equipment,
-      muscleGroups,
-      experience,
-    );
-
-    const maxExercisesPerSession =
-      EQUIPMENT_CAP[experience ?? "principiante"] ?? 4;
-
-    const payload = {
-      goal,
-      equipment,
-      experience,
-      muscleGroups,
-      source,
-      trainingCategories,
-      workoutExercises: resolvedEquipment,
-      exerciseVolumeMax: maxExercisesPerSession,
-      routineClassification: {
-        splitTags: classification.splitTags[0],
-        duration: `${classification.durationMin} a ${classification.durationMax} minutos`,
-        daysPerWeek: classification.daysLabel,
-        exercisesPerMuscle: classification.exercisesPerMuscle,
-      },
-    };
-
-    try {
-      const response = await generateRoutineOnboarding(payload);
-      const exercises = response.routine?.routine?.exercises ?? [];
-
-      console.log(
-        "Routine generated ----------------------------->:",
-        exercises,
-      );
-    } catch (error) {
-      console.log(error, "Error calling backend");
-    }
-  }, [
-    goal,
-    equipment,
-    experience,
-    muscleGroups,
-    source,
-    trainingCategories,
-    classification,
-  ]);
+  const setRoutine = useRoutineStore((s) => s.setRoutine);
+  const setLoading = useRoutineStore((s) => s.setLoading);
+  const setError = useRoutineStore((s) => s.setError);
 
   const TEAL = theme.colors.primary;
   const textColor = isDark ? "#DFF0EE" : theme.colors.text;
@@ -108,6 +49,65 @@ export default function ConfirmRoutineScreen() {
     : "rgba(46,207,190,0.25)";
 
   const styles = createStyles();
+
+  const classification = useMemo<RoutineClassification>(
+    () =>
+      classifyRoutine(
+        muscleGroups,
+        (experience ?? "principiante") as ExperienceLevel,
+      ),
+    [muscleGroups, experience],
+  );
+  const muscleLabels = useMemo(
+    () =>
+      muscleGroups
+        .map((id) => muscleOptions.find((m) => m.id === id)?.title ?? id)
+        .join("  ·  "),
+    [muscleGroups],
+  );
+
+  const handleConfirm = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      router.push("/generatingRoutine");
+
+      const exercisesForMuscles = getExercisesForMuscles(
+        equipment,
+        muscleGroups,
+        experience,
+      );
+
+      const maxExercisesPerSession =
+        EQUIPMENT_CAP[experience ?? "principiante"] ?? 4;
+
+      const payload = {
+        source,
+        goal,
+        experience,
+        muscleGroups,
+        workoutExercises: exercisesForMuscles,
+        exerciseVolumeMax: maxExercisesPerSession,
+      };
+
+      const delay = (ms: number) =>
+        new Promise((resolve) => setTimeout(resolve, ms));
+
+      const exercises = await generateRoutineOnboarding(payload);
+      await delay(1000);
+      setRoutine({
+        exercises,
+        goal,
+        experience,
+        routineName: classification.routineLabel,
+      });
+    } catch (error) {
+      console.error(error, "No se pudo generar la rutina");
+      setError("No se pudo generar la rutina");
+    } finally {
+      setLoading(false);
+    }
+  }, [goal, equipment, experience, muscleGroups, source]);
 
   return (
     <OnboardingLayout

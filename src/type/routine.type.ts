@@ -14,6 +14,16 @@ export interface RoutineExercise {
   sets: number;
 }
 
+export interface Routine {
+  name: string;
+  goal: string;
+  experience: string;
+  exercises: RoutineExercise[];
+  createdAt: string;
+  totalExercises: number;
+  totalSets: number;
+}
+
 export interface RoutineApiResponse {
   routine: {
     routine: {

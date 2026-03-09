@@ -1,15 +1,5 @@
-import { RoutineExercise } from "@/type/routine.type";
+import { Routine, RoutineExercise } from "@/type/routine.type";
 import { create } from "zustand";
-
-export interface Routine {
-  name: string;
-  goal: string;
-  experience: string;
-  exercises: RoutineExercise[];
-  createdAt: string;
-  totalExercises: number;
-  totalSets: number;
-}
 
 interface RoutineStore {
   routine: Routine | null;
