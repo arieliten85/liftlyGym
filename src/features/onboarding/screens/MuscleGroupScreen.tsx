@@ -1,4 +1,3 @@
-// features/onboarding/screens/RoutineScreen.tsx
 import {
   getMusclesByRoutine,
   ROUTINE_OPTIONS,
@@ -180,7 +179,7 @@ function RoutineCard({
   );
 }
 
-export default function RoutineScreen() {
+export default function MuscleGroupScreen() {
   const { theme, isDark } = useAppTheme();
   const router = useRouter();
 

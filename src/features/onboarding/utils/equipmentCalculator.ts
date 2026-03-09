@@ -36,7 +36,7 @@ function calcSlotsPerMuscle(
   return slots;
 }
 
-export function resolveEquipmentIds(
+export function getExercisesForMuscles(
   equipment: string | null,
   muscleGroups: string[],
   experience: string | null,
