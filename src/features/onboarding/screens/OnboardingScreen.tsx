@@ -16,7 +16,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ParticleBackground } from "../components/ParticleBackground";
 import { ImageSlider } from "../components/slider/ImageSlider";
@@ -51,11 +50,7 @@ export default function OnboardingScreen() {
   const loginColor = theme.colors.text;
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: bg }]}
-      edges={["top", "bottom"]}
-    >
-      {/* FUNCION GENERA FONDO DINAMICO  */}
+    <View style={[styles.container, { backgroundColor: bg }]}>
       <ParticleBackground isDark={isDark} glowAlpha={glowAlpha} />
       <Animated.View style={[styles.header, isTablet && styles.headerTablet]}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 0 }}>
@@ -93,7 +88,6 @@ export default function OnboardingScreen() {
         </TouchableOpacity>
       </Animated.View>
 
-      {/* ── SLIDER ── */}
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -101,22 +95,18 @@ export default function OnboardingScreen() {
         bounces={false}
         overScrollMode="never"
       >
-        <Animated.View
-          style={{
-            marginBottom: vSpacing(16),
-          }}
-        >
+        <Animated.View style={{ marginBottom: vSpacing(16) }}>
           <ImageSlider isDark={isDark} TEAL={TEAL} />
         </Animated.View>
       </ScrollView>
-      {/* ── BUTTOM ── */}
+
       <Animated.View style={[styles.ctaWrapper]}>
         <PrimaryButton
           label="Empezar"
           onPress={() => router.push("../goals")}
         />
       </Animated.View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -160,7 +150,6 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     flexGrow: 1,
   },
-
   brandText: {
     fontWeight: "600",
     color: "white",

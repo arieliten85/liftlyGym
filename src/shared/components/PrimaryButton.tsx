@@ -1,5 +1,6 @@
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
+import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
 
 interface PrimaryButtonProps {
@@ -7,6 +8,8 @@ interface PrimaryButtonProps {
   onPress: () => void;
   disabled?: boolean;
   fullWidth?: boolean;
+  iconLeft?: keyof typeof Ionicons.glyphMap;
+  iconRight?: keyof typeof Ionicons.glyphMap;
 }
 
 export function PrimaryButton({
@@ -14,8 +17,14 @@ export function PrimaryButton({
   onPress,
   disabled = false,
   fullWidth = true,
+  iconLeft,
+  iconRight,
 }: PrimaryButtonProps) {
   const { theme } = useAppTheme();
+
+  const iconColor = disabled
+    ? theme.colors.textSecondary
+    : theme.colors.onPrimary;
 
   return (
     <TouchableOpacity
@@ -32,6 +41,7 @@ export function PrimaryButton({
         disabled && { backgroundColor: theme.colors.border, shadowOpacity: 0 },
       ]}
     >
+      {iconLeft && <Ionicons name={iconLeft} size={20} color={iconColor} />}
       <Text
         style={[
           styles.label,
@@ -41,20 +51,20 @@ export function PrimaryButton({
       >
         {label}
       </Text>
+      {iconRight && <Ionicons name={iconRight} size={20} color={iconColor} />}
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   btn: {
-    paddingVertical: token.spacing.md,
-    borderRadius: token.radius.round,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    // shadowOffset: { width: 0, height: 4 },
-    // shadowOpacity: 0.35,
+    gap: 10,
+    paddingVertical: token.spacing.md,
+    borderRadius: token.radius.round,
     shadowRadius: 16,
-    // elevation: 10,
   },
   fullWidth: {
     width: "100%",

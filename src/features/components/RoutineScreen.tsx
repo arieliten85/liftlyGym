@@ -1,404 +1,478 @@
-import { useAppTheme } from "@/theme/ThemeProvider";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
-
-import { PrimaryButton } from "@/shared/components/PrimaryButton";
-import { useRoutineStore } from "@/store/useRoutineStore";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useMemo } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+
+import { useRoutineStore } from "@/store/useRoutineStore";
+import { useAppTheme } from "@/theme/ThemeProvider";
+import { CompletedRoutinePayload, ExerciseProgress } from "@/type/routine.type";
 import { formatRestTime } from "../onboarding/utils/formatRestTime";
 import { formatTextTitle } from "../onboarding/utils/formatTextTitle";
+
+import { Badge } from "@/shared/components/Badge";
+import { PrimaryButton } from "@/shared/components/PrimaryButton";
+import { StatBar } from "@/shared/components/StatBar";
+import { calculateWorkoutTime } from "@/utils/workout.utils";
+import { EditExerciseModal } from "./EditExerciseModal";
+import { ExerciseCard } from "./ExerciseCard";
+import { SeriesModal } from "./SeriesModal";
+import {
+  WorkoutSummaryModal,
+  WorkoutSurveyPayload,
+} from "./WorkoutSummaryModal";
+
+async function submitRoutinePayload(
+  routine: CompletedRoutinePayload,
+  survey: WorkoutSurveyPayload,
+): Promise<void> {
+  console.log("════════════════════════════════");
+  console.log("  RUTINA FINALIZADA");
+  console.log("════════════════════════════════");
+  console.log("── Datos de rutina ─────────────");
+  console.log(JSON.stringify(routine, null, 2));
+  console.log("── Encuesta del usuario ────────");
+  console.log(JSON.stringify(survey, null, 2));
+  console.log("════════════════════════════════");
+}
 
 export function RoutineScreen() {
   const router = useRouter();
   const { theme, isDark } = useAppTheme();
-  const { routine } = useRoutineStore();
+  const {
+    routine,
+    session,
+    startSession,
+    updateExerciseProgress,
+    nextSet,
+    getExerciseProgress,
+    getCompletedRoutinePayload,
+    resetSession,
+  } = useRoutineStore();
 
-  const colors = {
-    bg: theme.colors.background,
-    surface: theme.colors.surface || (isDark ? "#1E1E1E" : "#FFFFFF"),
-    textPrimary: theme.colors.text,
-    textSecondary: isDark ? "#A0A0A0" : "#5E5E5E",
-    primary: theme.colors.primary,
-    border: isDark ? "#2C2C2C" : "#F0F0F0",
-    cardBg: isDark ? "#1A1A1A" : "#FFFFFF",
-  };
+  const sessionStartRef = useRef<number>(Date.now());
+  const [elapsedMin, setElapsedMin] = useState(0);
+
+  const [selectedExerciseIndex, setSelectedExerciseIndex] = useState<
+    number | null
+  >(null);
+
+  // Series modal (play)
+  const [seriesIndex, setSeriesIndex] = useState<number | null>(null);
+  const [seriesVisible, setSeriesVisible] = useState(false);
+  // Edit modal (dots)
+  const [editIndex, setEditIndex] = useState<number | null>(null);
+  const [editVisible, setEditVisible] = useState(false);
+  // Summary
+  const [summaryVisible, setSummaryVisible] = useState(false);
+  const [wasAbandoned, setWasAbandoned] = useState(false);
+
+  const colors = useMemo(
+    () => ({
+      bg: theme.colors.background,
+      surface: theme.colors.surface || (isDark ? "#1E1E1E" : "#FFFFFF"),
+      textPrimary: theme.colors.text,
+      textSecondary: isDark ? "#A0A0A0" : "#5E5E5E",
+      primary: theme.colors.primary,
+      border: isDark ? "#2C2C2C" : "#F0F0F0",
+      cardBg: isDark ? "#1A1A1A" : "#FFFFFF",
+    }),
+    [theme, isDark],
+  );
+
+  const handleSelectExercise = useCallback((index: number) => {
+    setSelectedExerciseIndex(index);
+  }, []);
+
+  useEffect(() => {
+    if (routine && !session) {
+      sessionStartRef.current = Date.now();
+      startSession();
+    }
+  }, [routine, session, startSession]);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setElapsedMin(Math.round((Date.now() - sessionStartRef.current) / 60000));
+    }, 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  const completedCount = useMemo(() => {
+    if (!session) return 0;
+    return session.exercises.filter((e) => e.completed).length;
+  }, [session]);
+
+  const allCompleted = useMemo(() => {
+    if (!session || !routine) return false;
+    return completedCount === routine.exercises.length;
+  }, [session, routine, completedCount]);
 
   const totalStats = useMemo(() => {
-    if (!routine) return { totalSets: 0, totalExercises: 0, totalTimeMin: 0 };
-    const totalSets = routine.exercises.reduce((acc, ex) => acc + ex.sets, 0);
-    const totalExercises = routine.exercises.length;
-    const totalTimeMin = calculateWorkoutTime(routine.exercises);
-    return { totalSets, totalExercises, totalTimeMin };
+    if (!routine) return { sets: 0, estimatedMin: 0 };
+    return {
+      sets: routine.exercises.reduce((a, e) => a + e.sets, 0),
+      estimatedMin: calculateWorkoutTime(routine.exercises),
+    };
   }, [routine]);
+
+  const seriesProgress = useMemo(
+    () =>
+      session?.exercises.find((e) => e.exerciseIndex === seriesIndex) ?? null,
+    [seriesIndex, session],
+  );
+  const seriesExercise = useMemo(
+    () =>
+      seriesIndex !== null && routine ? routine.exercises[seriesIndex] : null,
+    [seriesIndex, routine],
+  );
+
+  const editProgress = useMemo(
+    () => session?.exercises.find((e) => e.exerciseIndex === editIndex) ?? null,
+    [editIndex, session],
+  );
+  const editExercise = useMemo(
+    () => (editIndex !== null && routine ? routine.exercises[editIndex] : null),
+    [editIndex, routine],
+  );
+
+  const handleStartExercise = useCallback((index: number) => {
+    setSelectedExerciseIndex(index);
+    setSeriesIndex(index);
+    setSeriesVisible(true);
+  }, []);
+
+  const handleEditExercise = useCallback((index: number) => {
+    setSelectedExerciseIndex(index);
+    setEditIndex(index);
+    setEditVisible(true);
+  }, []);
+
+  const handleCloseSeriesModal = useCallback(() => {
+    setSeriesVisible(false);
+    setSeriesIndex(null);
+  }, []);
+
+  const handleCloseEditModal = useCallback(() => {
+    setEditVisible(false);
+    setEditIndex(null);
+  }, []);
+
+  const handleFinishSet = useCallback(() => {
+    if (seriesIndex === null) return;
+    const progress = getExerciseProgress(seriesIndex);
+    if (!progress) return;
+    nextSet(seriesIndex);
+    if (progress.currentSet >= progress.totalSets) {
+      setSeriesVisible(false);
+      setSeriesIndex(null);
+    }
+  }, [seriesIndex, getExerciseProgress, nextSet]);
+
+  const handleUpdateProgress = useCallback(
+    (updates: Partial<ExerciseProgress>) => {
+      if (editIndex !== null) updateExerciseProgress(editIndex, updates);
+    },
+    [editIndex, updateExerciseProgress],
+  );
+
+  const handleFinishRoutine = useCallback(() => {
+    if (allCompleted) {
+      setElapsedMin(Math.round((Date.now() - sessionStartRef.current) / 60000));
+      setWasAbandoned(false);
+      setSummaryVisible(true);
+      return;
+    }
+    Alert.alert(
+      "Finalizar rutina",
+      completedCount > 0
+        ? `Completaste ${completedCount} de ${routine?.exercises.length} ejercicios. ¿Querés finalizar igual?`
+        : "No completaste ningún ejercicio. ¿Querés finalizar la rutina?",
+      [
+        { text: "Seguir entrenando", style: "cancel" },
+        {
+          text: "Finalizar",
+          style: "destructive",
+          onPress: () => {
+            setElapsedMin(
+              Math.round((Date.now() - sessionStartRef.current) / 60000),
+            );
+            setWasAbandoned(completedCount < (routine?.exercises.length ?? 1));
+            setSummaryVisible(true);
+          },
+        },
+      ],
+    );
+  }, [allCompleted, completedCount, routine]);
+
+  const handleSurveySubmit = useCallback(
+    (survey: WorkoutSurveyPayload) => {
+      const routinePayload = getCompletedRoutinePayload();
+      if (routinePayload) submitRoutinePayload(routinePayload, survey);
+      setSummaryVisible(false);
+      resetSession();
+      router.push("../goals");
+    },
+    [getCompletedRoutinePayload, resetSession, router],
+  );
 
   if (!routine) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.bg }]}>
-        <Text style={{ color: colors.textSecondary }}>
-          Cargando tu rutina...
-        </Text>
+      <View style={[s.centered, { backgroundColor: colors.bg }]}>
+        <Text style={{ color: colors.textSecondary }}>Cargando rutina...</Text>
       </View>
     );
   }
 
+  const progressPct =
+    routine.exercises.length > 0
+      ? (completedCount / routine.exercises.length) * 100
+      : 0;
+
   return (
-    <View style={[styles.mainContainer, { backgroundColor: colors.bg }]}>
+    <View style={[s.root, { backgroundColor: colors.bg }]}>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={s.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {/* HEADER */}
-        <View style={styles.headerRow}>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>
+        {/* ── HEADER ── */}
+        <View style={s.header}>
+          <Text
+            style={[s.routineName, { color: colors.textPrimary }]}
+            numberOfLines={1}
+          >
             {routine.name || "Rutina de hoy"}
           </Text>
+          <View style={s.badges}>
+            <Badge label={routine.goal} color={colors.primary} />
 
-          <View style={styles.headerBadges}>
-            <View
-              style={[
-                styles.badge,
-                {
-                  backgroundColor: colors.primary + "15",
-                  borderColor: colors.primary + "30",
-                },
-              ]}
-            >
-              <Text style={[styles.badgeText, { color: colors.primary }]}>
-                {routine.goal}
-              </Text>
-            </View>
-
-            <View
-              style={[
-                styles.badge,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                  marginLeft: 6,
-                },
-              ]}
-            >
-              <Text style={[styles.badgeText, { color: colors.textSecondary }]}>
-                {routine.experience}
-              </Text>
-            </View>
+            <Badge
+              label={routine.experience}
+              color={colors.textSecondary}
+              subtle
+            />
           </View>
         </View>
 
-        {/* STATS ROW */}
-        <View style={styles.statsRow}>
-          <StatCard
-            value={totalStats.totalExercises}
-            label="EJERCICIOS"
-            {...colors}
-          />
-          <StatCard value={totalStats.totalSets} label="SERIES" {...colors} />
-          <StatCard
-            value={totalStats.totalTimeMin}
-            label="MINUTOS"
-            {...colors}
-          />
-        </View>
-
-        {/* TIPS CARD */}
+        {/* ── PROGRESS CARD ── */}
         <View
           style={[
-            styles.tipsCard,
+            s.progressCard,
             {
-              backgroundColor: colors.primary + "08",
-              borderColor: colors.primary + "20",
-              borderWidth: 1,
+              backgroundColor: colors.primary + "0E",
+              borderColor: colors.primary + "25",
             },
           ]}
         >
-          <Text style={[styles.tipsTitle, { color: colors.primary }]}>
-            Tips rápidos
-          </Text>
-          <View style={styles.tipsList}>
-            {[
-              "Calienta 5-10 minutos antes de empezar",
-              "Prioriza la técnica sobre el peso",
-              "Hidrátate entre series",
-            ].map((tip, i) => (
-              <View key={i} style={styles.tipItem}>
-                <Text style={[styles.tipBullet, { color: colors.primary }]}>
-                  •
-                </Text>
-                <Text style={[styles.tipText, { color: colors.textSecondary }]}>
-                  {tip}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* EJERCICIOS SECTION */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            Ejercicios
-          </Text>
-        </View>
-
-        {/* EJERCICIOS */}
-        {routine.exercises.map((ex, index) => (
-          <View
-            key={index}
-            style={[
-              styles.exerciseCard,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
-            <View style={styles.exerciseHeader}>
-              <Text
-                style={[styles.exerciseName, { color: colors.textPrimary }]}
-              >
-                {formatTextTitle(ex.name)}
+          <View style={s.progressTop}>
+            <View style={s.progressLeft}>
+              <Ionicons
+                name="fitness-outline"
+                size={16}
+                color={colors.primary}
+              />
+              <Text style={[s.progressLabel, { color: colors.primary }]}>
+                Progreso
               </Text>
             </View>
+            <Text style={[s.progressFraction, { color: colors.primary }]}>
+              {completedCount}/{routine.exercises.length} ejercicios
+            </Text>
+          </View>
 
+          <View style={[s.progressTrack, { backgroundColor: colors.border }]}>
             <View
               style={[
-                styles.exerciseDetails,
-                { backgroundColor: isDark ? "#111" : "#F8F8F8" },
+                s.progressFill,
+                { backgroundColor: colors.primary, width: `${progressPct}%` },
               ]}
-            >
-              <DetailItem label="Series" value={ex.sets} colors={colors} />
-              <View
-                style={[
-                  styles.detailDivider,
-                  { backgroundColor: colors.border },
-                ]}
-              />
-              <DetailItem label="Rep" value={ex.reps} colors={colors} />
-              <View
-                style={[
-                  styles.detailDivider,
-                  { backgroundColor: colors.border },
-                ]}
-              />
-              <DetailItem
-                label="Desc"
-                value={formatRestTime(ex.restSeconds)}
-                colors={colors}
-              />
-            </View>
+            />
           </View>
-        ))}
 
-        <View style={styles.footer} />
+          <View style={s.miniStats}>
+            <StatBar
+              icon="layers-outline"
+              value={`${totalStats.sets}`}
+              label="series"
+              color={colors.textSecondary}
+            />
+            <StatBar
+              icon="time-outline"
+              value={
+                elapsedMin > 0
+                  ? `${elapsedMin}m`
+                  : `~${totalStats.estimatedMin}m`
+              }
+              label={elapsedMin > 0 ? "transcurrido" : "estimado"}
+              color={colors.textSecondary}
+            />
+            <StatBar
+              icon="checkmark-circle-outline"
+              value={`${Math.round(progressPct)}%`}
+              label="completado"
+              color={allCompleted ? colors.primary : colors.textSecondary}
+            />
+          </View>
+        </View>
+
+        {/* ── EXERCISE LIST ── */}
+        <Text style={[s.listTitle, { color: colors.textPrimary }]}>
+          Ejercicios
+        </Text>
+
+        {routine.exercises.map((ex, idx) => {
+          const progress = session?.exercises.find(
+            (e) => e.exerciseIndex === idx,
+          );
+          return (
+            <ExerciseCard
+              key={idx}
+              exercise={{ ...ex, index: idx } as any}
+              index={idx}
+              colors={colors}
+              isDark={isDark}
+              isCompleted={progress?.completed ?? false}
+              progress={progress}
+              isSelected={selectedExerciseIndex === idx}
+              onSelect={() => handleSelectExercise(idx)}
+              onStart={() => handleStartExercise(idx)}
+              onEdit={() => handleEditExercise(idx)}
+              formatRestTime={formatRestTime}
+              formatTextTitle={formatTextTitle}
+            />
+          );
+        })}
+
+        <View style={{ height: 20 }} />
       </ScrollView>
 
-      {/* BOTÓN FIJO EN LA PARTE INFERIOR */}
-      <View style={styles.fixedButtonContainer}>
+      {/* ── FINISH BAR ── */}
+      <View
+        style={[
+          s.finishBar,
+          { backgroundColor: colors.bg, borderTopColor: colors.border },
+        ]}
+      >
         <PrimaryButton
-          label="Finalizar rutina"
-          onPress={() => router.push("../goals")}
+          label={allCompleted ? "¡Finalizar rutina!" : "Finalizar rutina"}
+          iconLeft={allCompleted ? "trophy" : "flag-outline"}
+          onPress={handleFinishRoutine}
         />
       </View>
+
+      {/* ── Series Modal ── */}
+      <SeriesModal
+        visible={seriesVisible}
+        exercise={seriesExercise}
+        progress={seriesProgress}
+        colors={colors}
+        isDark={isDark}
+        onClose={handleCloseSeriesModal}
+        onFinishSet={handleFinishSet}
+        formatTextTitle={formatTextTitle}
+      />
+
+      {/* ── Edit Modal ── */}
+      <EditExerciseModal
+        visible={editVisible}
+        exercise={editExercise}
+        progress={editProgress}
+        colors={colors}
+        isDark={isDark}
+        onClose={handleCloseEditModal}
+        onUpdateProgress={handleUpdateProgress}
+        formatTextTitle={formatTextTitle}
+      />
+
+      {/* ── Summary Modal ── */}
+      <WorkoutSummaryModal
+        visible={summaryVisible}
+        colors={colors}
+        isDark={isDark}
+        durationMinutes={elapsedMin}
+        exercisesCompleted={completedCount}
+        exercisesTotal={routine.exercises.length}
+        wasAbandoned={wasAbandoned}
+        onSubmit={handleSurveySubmit}
+        onClose={() => setSummaryVisible(false)}
+      />
     </View>
   );
 }
 
-function DetailItem({ label, value, colors }: any) {
-  return (
-    <View style={styles.detailItem}>
-      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
-        {label}
-      </Text>
-      <Text style={[styles.detailValue, { color: colors.textPrimary }]}>
-        {value}
-      </Text>
-    </View>
-  );
-}
-
-function StatCard({
+function MiniStat({
+  icon,
   value,
   label,
-  primary,
-  surface,
-  border,
-  textSecondary,
-}: any) {
+  color,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  value: string;
+  label: string;
+  color: string;
+}) {
   return (
-    <View
-      style={[
-        styles.statCard,
-        { backgroundColor: surface, borderColor: border },
-      ]}
-    >
-      <Text style={[styles.statValue, { color: primary }]}>{value}</Text>
-      <Text style={[styles.statLabel, { color: textSecondary }]}>{label}</Text>
+    <View style={ms.wrap}>
+      <Ionicons name={icon} size={13} color={color} />
+      <Text style={[ms.value, { color }]}>{value}</Text>
+      <Text style={[ms.label, { color }]}>{label}</Text>
     </View>
   );
 }
 
-function calculateWorkoutTime(exercises: any[]): number {
-  const restBetweenExercises = 90;
-  let totalSeconds = 0;
+const ms = StyleSheet.create({
+  wrap: { flexDirection: "row", alignItems: "center", gap: 4 },
+  value: { fontSize: 13, fontWeight: "700" },
+  label: { fontSize: 12, fontWeight: "500" },
+});
 
-  exercises.forEach((ex) => {
-    totalSeconds += ex.sets * 40;
-    totalSeconds += (ex.sets - 1) * ex.restSeconds;
-  });
+const s = StyleSheet.create({
+  root: { flex: 1 },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+  scroll: { padding: 20, gap: 14, paddingBottom: 24 },
 
-  totalSeconds += (exercises.length - 1) * restBetweenExercises;
-  return Math.round(totalSeconds / 60);
-}
-
-const styles = StyleSheet.create({
-  mainContainer: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 90,
-    gap: 16,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  fixedButtonContainer: {
-    position: "absolute",
-    bottom: 20,
-    left: 20,
-    right: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 0,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  header: {
-    gap: 12,
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "700",
+  header: { gap: 8 },
+  routineName: {
+    fontSize: 26,
+    fontWeight: "800",
     letterSpacing: -0.5,
+    lineHeight: 32,
   },
-  headerBadges: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  badge: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  badgeText: {
-    fontSize: 13,
-    fontWeight: "600",
-    textTransform: "capitalize",
-  },
-  statsRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginVertical: 5,
-  },
-  statCard: {
-    flex: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: "700",
-  },
-  statLabel: {
-    fontSize: 12,
-    textAlign: "center",
-    fontWeight: "500",
-  },
-  sectionHeader: {
-    marginTop: 5,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  exerciseCard: {
+  badges: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+
+  progressCard: {
     padding: 16,
-    borderRadius: 20,
+    borderRadius: 18,
     borderWidth: 1,
-    gap: 16,
-    marginBottom: 4,
+    gap: 12,
   },
-  exerciseHeader: {
-    marginBottom: 4,
-  },
-  exerciseName: {
-    fontSize: 17,
-    fontWeight: "600",
-  },
-  exerciseDetails: {
+  progressTop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 16,
-    borderRadius: 16,
   },
-  detailItem: {
-    flex: 1,
-    alignItems: "center",
-    gap: 4,
-  },
-  detailDivider: {
-    width: 1,
-    height: 30,
-  },
-  detailLabel: {
-    fontSize: 11,
-    textTransform: "uppercase",
-    fontWeight: "600",
-    letterSpacing: 0.5,
-  },
-  detailValue: {
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  tipsCard: {
-    padding: 20,
-    borderRadius: 20,
-    marginVertical: 8,
-  },
-  tipsTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 12,
-  },
-  tipsList: {
-    gap: 10,
-  },
-  tipItem: {
+  progressLeft: { flexDirection: "row", alignItems: "center", gap: 6 },
+  progressLabel: { fontSize: 14, fontWeight: "700" },
+  progressFraction: { fontSize: 13, fontWeight: "600" },
+  progressTrack: { height: 7, borderRadius: 4, overflow: "hidden" },
+  progressFill: { height: "100%", borderRadius: 4 },
+  miniStats: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+    justifyContent: "space-between",
+    paddingTop: 2,
   },
-  tipBullet: {
-    fontSize: 18,
-    lineHeight: 20,
-  },
-  tipText: {
-    fontSize: 14,
-    flex: 1,
-  },
-  footer: {
-    height: 20, // Reducido ya que ahora tenemos paddingBottom en scrollContent
+
+  listTitle: { fontSize: 19, fontWeight: "700", paddingTop: 4 },
+
+  finishBar: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 28,
+    borderTopWidth: 1,
   },
 });

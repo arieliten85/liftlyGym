@@ -1,14 +1,13 @@
 import { ThemeProvider, useAppTheme } from "@/theme/ThemeProvider";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { View } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 function NavigationStack() {
   const { theme, isDark } = useAppTheme();
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <StatusBar
         style={isDark ? "light" : "dark"}
         backgroundColor={theme.colors.background}
@@ -59,7 +58,7 @@ function NavigationStack() {
           }}
         />
       </Stack>
-    </View>
+    </SafeAreaView>
   );
 }
 

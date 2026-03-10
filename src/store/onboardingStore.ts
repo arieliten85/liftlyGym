@@ -3,10 +3,14 @@ import { create } from "zustand";
 
 export type RoutineSource = "AI" | "custom";
 
+export type GoalType = "fuerza" | "hipertrofia" | "resistencia";
+
+export type ExperienceType = "principiante" | "intermedio" | "avanzado";
+
 interface OnboardingState {
-  goal: string | null;
+  goal: GoalType | null;
   equipment: string | null;
-  experience: string | null;
+  experience: ExperienceType | null;
   muscleGroups: string[];
 
   routine: RoutineSelectionType | null;
@@ -14,9 +18,9 @@ interface OnboardingState {
   selectedEquipmentItems: string[];
   source: RoutineSource;
 
-  setGoal: (goal: string) => void;
+  setGoal: (goal: GoalType) => void;
   setEquipment: (equipment: string) => void;
-  setExperience: (experience: string) => void;
+  setExperience: (experience: ExperienceType) => void;
   setMuscleGroups: (muscles: string[]) => void;
   toggleMuscleGroup: (muscleId: string) => void;
 
@@ -29,18 +33,25 @@ interface OnboardingState {
   reset: () => void;
 }
 
-export const useOnboardingStore = create<OnboardingState>((set) => ({
+const initialState = {
   goal: null,
   equipment: null,
   experience: null,
   muscleGroups: [],
   routine: null,
   selectedEquipmentItems: [],
-  source: "AI",
+  source: "AI" as RoutineSource,
+};
+
+export const useOnboardingStore = create<OnboardingState>((set) => ({
+  ...initialState,
 
   setGoal: (goal) => set({ goal }),
+
   setEquipment: (equipment) => set({ equipment }),
+
   setExperience: (experience) => set({ experience }),
+
   setMuscleGroups: (muscles) => set({ muscleGroups: muscles }),
 
   toggleMuscleGroup: (muscleId) =>
@@ -66,14 +77,5 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
 
   setSource: (source) => set({ source }),
 
-  reset: () =>
-    set({
-      goal: null,
-      equipment: null,
-      experience: null,
-      muscleGroups: [],
-      routine: null,
-      selectedEquipmentItems: [],
-      source: "AI",
-    }),
+  reset: () => set(initialState),
 }));

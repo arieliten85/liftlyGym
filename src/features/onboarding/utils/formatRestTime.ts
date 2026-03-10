@@ -14,3 +14,9 @@ export function formatRestTime(seconds: number) {
 
   return `${minutes}m ${remainingSeconds}s`;
 }
+export function formatRest(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return s > 0 ? `${m}:${String(s).padStart(2, "0")}` : `${m}:00`;
+}

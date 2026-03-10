@@ -4,7 +4,9 @@ import {
 } from "@/features/onboarding/constants/onboarding.constants";
 
 import { generateRoutineOnboarding } from "@/services/routineService";
+import { Badge } from "@/shared/components/Badge";
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
+import { StatBar } from "@/shared/components/StatBar";
 import { useOnboardingStore } from "@/store/onboardingStore";
 import { useRoutineStore } from "@/store/useRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -13,10 +15,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useCallback, useMemo } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { GoalBadge } from "../components/confirm-routine/badges/GoalBadge";
-import { LevelBadge } from "../components/confirm-routine/badges/LevelBadge";
-import { SplitTag } from "../components/confirm-routine/badges/SplitTag";
-import { StatCard } from "../components/confirm-routine/StatCard";
 import {
   ExperienceLevel,
   RoutineClassification,
@@ -95,6 +93,8 @@ export default function ConfirmRoutineScreen() {
 
       const exercises = await generateRoutineOnboarding(payload);
       await delay(1000);
+
+      console.log("------>response api", exercises);
       setRoutine({
         exercises,
         goal,
@@ -132,12 +132,8 @@ export default function ConfirmRoutineScreen() {
 
             <View style={styles.heroContent}>
               <View style={styles.badgesRow}>
-                <LevelBadge
-                  level={experience ?? "principiante"}
-                  isDark={isDark}
-                  teal={TEAL}
-                />
-                <GoalBadge goal={goal} isDark={isDark} />
+                <Badge label={experience ?? "principiante"} color={TEAL} />
+                <Badge label={goal ?? "objetivo"} color="#FF7A59" />
               </View>
 
               <Text style={[styles.routineLabel, { color: TEAL }]}>
@@ -147,13 +143,7 @@ export default function ConfirmRoutineScreen() {
               {classification.splitTags.length > 0 && (
                 <View style={styles.tagsRow}>
                   {classification.splitTags.map((tag) => (
-                    <SplitTag
-                      key={tag}
-                      tag={tag}
-                      isDark={isDark}
-                      teal={TEAL}
-                      accentBorder={accentBorder}
-                    />
+                    <Badge key={tag} label={tag} color={TEAL} subtle />
                   ))}
                 </View>
               )}
@@ -170,35 +160,39 @@ export default function ConfirmRoutineScreen() {
           </View>
 
           <View style={styles.statsRow}>
-            <StatCard
+            <StatBar
               icon="time-outline"
-              value={`${classification.durationMin}–${classification.durationMax} min`}
+              value="40–60 min"
               label="por sesión"
+              variant="card"
               cardBg={cardBg}
               borderColor={borderColor}
               textColor={textColor}
               subColor={subColor}
-              teal={TEAL}
+              accentColor={TEAL}
             />
-            <StatCard
+            <StatBar
               icon="calendar-outline"
               value={`${classification.daysPerWeek[0]}–${classification.daysPerWeek[1]} días`}
               label="por semana"
+              variant="card"
               cardBg={cardBg}
               borderColor={borderColor}
               textColor={textColor}
               subColor={subColor}
-              teal={TEAL}
+              accentColor={TEAL}
             />
-            <StatCard
+
+            <StatBar
               icon="barbell-outline"
               value={`${classification.exercisesPerMuscle} ejerc.`}
               label="por músculo"
+              variant="card"
               cardBg={cardBg}
               borderColor={borderColor}
               textColor={textColor}
               subColor={subColor}
-              teal={TEAL}
+              accentColor={TEAL}
             />
           </View>
 
