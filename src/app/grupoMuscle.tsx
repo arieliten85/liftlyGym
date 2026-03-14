@@ -1,3 +1,3 @@
-import MuscleGroupScreen from "@/features/onboarding/screens/MuscleGroupScreen";
+import MuscleGroupScreen from "@/features/build-routine/screens/MuscleGroupScreen";
 
 export default MuscleGroupScreen;

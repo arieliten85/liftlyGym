@@ -1,2 +1,2 @@
-import ExperienceScreen from "@/features/onboarding/screens/ExperienceScreen";
+import ExperienceScreen from "@/features/build-routine/screens/ExperienceScreen";
 export default ExperienceScreen;

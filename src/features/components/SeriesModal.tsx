@@ -14,7 +14,7 @@ import {
   Vibration,
   View,
 } from "react-native";
-import { formatRest } from "../onboarding/utils/formatRestTime";
+import { formatRest } from "../build-routine/utils/formatRestTime";
 
 interface ThemeColors {
   surface: string;

@@ -1,3 +1,3 @@
-import GoalsScreen from "@/features/onboarding/screens/GoalsScreen";
+import GoalsScreen from "@/features/build-routine/screens/GoalsScreen";
 
 export default GoalsScreen;

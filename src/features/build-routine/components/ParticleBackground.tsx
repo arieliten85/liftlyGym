@@ -51,11 +51,6 @@ export function ParticleBackground({
     outputRange: [0.8, 1.2],
   });
 
-  const opacity = pulseAnim.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0.1, 0.2, 0.1],
-  });
-
   return (
     <View style={StyleSheet.absoluteFill}>
       {/* Discos de peso giratorios */}

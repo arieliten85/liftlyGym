@@ -1,4 +1,4 @@
-import { ParticleBackground } from "@/features/onboarding/components/ParticleBackground";
+import { ParticleBackground } from "@/features/build-routine/components/ParticleBackground";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
 import { Stack } from "expo-router";

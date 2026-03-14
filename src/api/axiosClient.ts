@@ -1,8 +1,9 @@
 import axios from "axios";
+import { API_BASE_URL, API_TIMEOUT } from "./config";
 
 const axiosClient = axios.create({
-  baseURL: "http://192.168.100.146:3000/api",
-  timeout: 10000,
+  baseURL: API_BASE_URL,
+  timeout: API_TIMEOUT,
   headers: {
     "Content-Type": "application/json",
   },

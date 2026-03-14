@@ -1,5 +1,5 @@
 import { PrimaryButton } from "@/shared/components/PrimaryButton";
-import { useThemeStore } from "@/store/themeStore";
+import { useThemeStore } from "@/store/themes/themeStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
 import { useRouter } from "expo-router";

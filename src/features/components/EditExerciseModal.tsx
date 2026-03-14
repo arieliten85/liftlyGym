@@ -19,7 +19,10 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import { formatRest, formatRestTime } from "../onboarding/utils/formatRestTime";
+import {
+  formatRest,
+  formatRestTime,
+} from "../build-routine/utils/formatRestTime";
 
 interface ThemeColors {
   surface: string;

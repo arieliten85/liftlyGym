@@ -1,42 +1,27 @@
-import {
-  getMusclesByRoutine,
-  ROUTINE_OPTIONS,
-} from "@/features/onboarding/utils/routineMappings";
+import { QUICK_OPTION_DATA } from "@/features/build-routine/constants/routine-builder.constants";
+import { ROUTINE_IMAGES } from "@/features/build-routine/constants/routine-images.constants";
+import { RoutineSelectionOption } from "@/features/build-routine/type/routine-builder.types";
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
-import { useOnboardingStore } from "@/store/onboardingStore";
+import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
-
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useMemo } from "react";
 import {
   Dimensions,
   Image,
-  ImageSourcePropType,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { RoutineOption } from "../type/onboarding.type";
 
-// Ancho de columna calculado con Dimensions
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const H_PADDING = token.spacing.lg * 2;
 const COLUMN_GAP = token.spacing.md;
 const CARD_WIDTH = (SCREEN_WIDTH - H_PADDING - COLUMN_GAP) / 2;
-
-// Imágenes de rutina
-const ROUTINE_IMAGES: Record<string, ImageSourcePropType> = {
-  fullbody: require("../../../../assets/category-routine/fullbody.png"),
-  legs: require("../../../../assets/category-routine/leg.png"),
-  lower: require("../../../../assets/category-routine/lower.png"),
-  pull: require("../../../../assets/category-routine/pull.png"),
-  push: require("../../../../assets/category-routine/push.png"),
-  upper: require("../../../../assets/category-routine/upper.png"),
-};
 
 function RoutineCard({
   option,
@@ -47,7 +32,7 @@ function RoutineCard({
   borderDef,
   theme,
 }: {
-  option: RoutineOption;
+  option: RoutineSelectionOption;
   isSelected: boolean;
   onPress: () => void;
   isDark: boolean;
@@ -55,9 +40,10 @@ function RoutineCard({
   borderDef: string;
   theme: any;
 }) {
-  const image = ROUTINE_IMAGES[option.id];
+  const image = option.image ?? ROUTINE_IMAGES[option.type];
+  const title = "label" in option ? option.label : option.title;
   const borderSel = isDark ? "rgba(46,207,190,0.6)" : teal;
-  const cardBgFallback = isDark ? "#0C1119" : theme.colors.card;
+  const cardBg = isDark ? "#0C1119" : theme.colors.card;
 
   return (
     <TouchableOpacity
@@ -69,7 +55,7 @@ function RoutineCard({
           width: CARD_WIDTH,
           borderColor: isSelected ? borderSel : borderDef,
           shadowColor: isSelected ? teal : "transparent",
-          backgroundColor: cardBgFallback,
+          backgroundColor: cardBg,
         },
       ]}
     >
@@ -91,17 +77,19 @@ function RoutineCard({
               },
             ]}
           >
-            <Ionicons
-              name={option.icon as any}
-              size={32}
-              color={
-                isSelected
-                  ? teal
-                  : isDark
-                    ? "#4A6A66"
-                    : theme.colors.textSecondary
-              }
-            />
+            {option.icon && (
+              <Ionicons
+                name={option.icon as any}
+                size={32}
+                color={
+                  isSelected
+                    ? teal
+                    : isDark
+                      ? "#4A6A66"
+                      : theme.colors.textSecondary
+                }
+              />
+            )}
           </View>
         )}
 
@@ -157,23 +145,25 @@ function RoutineCard({
             },
           ]}
         >
-          {option.label}
+          {title}
         </Text>
-        <Text
-          numberOfLines={2}
-          style={[
-            cardStyles.subtitle,
-            {
-              color: isDark
-                ? isSelected
-                  ? "#B8D4D0"
-                  : "#4A6A66"
-                : theme.colors.textSecondary,
-            },
-          ]}
-        >
-          {option.subtitle}
-        </Text>
+        {"subtitle" in option && option.subtitle && (
+          <Text
+            numberOfLines={2}
+            style={[
+              cardStyles.subtitle,
+              {
+                color: isDark
+                  ? isSelected
+                    ? "#B8D4D0"
+                    : "#4A6A66"
+                  : theme.colors.textSecondary,
+              },
+            ]}
+          >
+            {option.subtitle}
+          </Text>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -183,18 +173,12 @@ export default function MuscleGroupScreen() {
   const { theme, isDark } = useAppTheme();
   const router = useRouter();
 
-  const selectedRoutine = useOnboardingStore((s) => s.routine);
-  const setRoutine = useOnboardingStore((s) => s.setRoutine);
-  const setMuscleGroups = useOnboardingStore((s) => s.setMuscleGroups);
-
+  const selectedRoutine = useBuildRoutineStore((s) => s.routine);
+  const setRoutine = useBuildRoutineStore((s) => s.setRoutine);
   const hasSelection = selectedRoutine !== null;
 
   const handleNext = () => {
-    if (!hasSelection || !selectedRoutine) return;
-
-    const muscles = getMusclesByRoutine(selectedRoutine);
-    setMuscleGroups(muscles);
-
+    if (!hasSelection) return;
     router.push("/confirmRoutine");
   };
 
@@ -204,9 +188,9 @@ export default function MuscleGroupScreen() {
   const borderDef = isDark ? "rgba(46,207,190,0.15)" : theme.colors.border;
 
   const rows = useMemo(() => {
-    const result: (typeof ROUTINE_OPTIONS)[] = [];
-    for (let i = 0; i < ROUTINE_OPTIONS.length; i += 2) {
-      result.push(ROUTINE_OPTIONS.slice(i, i + 2));
+    const result: (typeof QUICK_OPTION_DATA)[] = [];
+    for (let i = 0; i < QUICK_OPTION_DATA.length; i += 2) {
+      result.push(QUICK_OPTION_DATA.slice(i, i + 2));
     }
     return result;
   }, []);
@@ -233,16 +217,15 @@ export default function MuscleGroupScreen() {
           contentContainerStyle={{ paddingBottom: token.spacing.xl }}
           showsVerticalScrollIndicator={false}
         >
-          {/* Grid de tarjetas de rutina */}
           <View style={styles.grid}>
             {rows.map((row, rowIdx) => (
               <View key={rowIdx} style={styles.row}>
                 {row.map((option) => (
                   <RoutineCard
-                    key={option.id}
+                    key={option.type}
                     option={option}
-                    isSelected={selectedRoutine === option.id}
-                    onPress={() => setRoutine(option.id)}
+                    isSelected={selectedRoutine === option.type}
+                    onPress={() => setRoutine(option.type)}
                     isDark={isDark}
                     teal={TEAL}
                     borderDef={borderDef}
@@ -254,7 +237,6 @@ export default function MuscleGroupScreen() {
           </View>
         </ScrollView>
 
-        {/* Contador de selección */}
         <View
           style={[
             styles.counter,
@@ -297,13 +279,8 @@ const styles = StyleSheet.create({
     textAlign: "left",
     lineHeight: 20,
   },
-  grid: {
-    gap: token.spacing.md,
-  },
-  row: {
-    flexDirection: "row",
-    gap: COLUMN_GAP,
-  },
+  grid: { gap: token.spacing.md },
+  row: { flexDirection: "row", gap: COLUMN_GAP },
   counter: {
     paddingVertical: token.spacing.sm,
     alignItems: "center",
@@ -335,19 +312,14 @@ const cardStyles = StyleSheet.create({
     position: "relative",
     backgroundColor: "#111",
   },
-  image: {
-    width: "100%",
-    height: "100%",
-  },
+  image: { width: "100%", height: "100%" },
   imageFallback: {
     width: "100%",
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
   },
-  imageOverlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
+  imageOverlay: { ...StyleSheet.absoluteFillObject },
   checkBadge: {
     position: "absolute",
     top: 8,
@@ -364,13 +336,6 @@ const cardStyles = StyleSheet.create({
     borderTopWidth: 1,
     gap: 2,
   },
-  title: {
-    fontSize: 14,
-    fontWeight: "700",
-    letterSpacing: 0.3,
-  },
-  subtitle: {
-    fontSize: 11,
-    lineHeight: 15,
-  },
+  title: { fontSize: 14, fontWeight: "700", letterSpacing: 0.3 },
+  subtitle: { fontSize: 11, lineHeight: 15 },
 });

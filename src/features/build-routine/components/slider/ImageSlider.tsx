@@ -1,4 +1,3 @@
-import { SLIDES } from "@/features/onboarding/constants/onboarding.constants";
 import { typography } from "@/theme/token";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -11,6 +10,7 @@ import {
   View,
   ViewToken,
 } from "react-native";
+import { SLIDES_OPTION_DATA } from "../../constants/routine-builder.constants";
 import { PhoneFrame } from "./Phoneframe";
 
 export interface SlideImage {
@@ -51,7 +51,7 @@ export function ImageSlider({ isDark, TEAL }: ImageSliderProps) {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      const next = (activeIndex + 1) % SLIDES.length;
+      const next = (activeIndex + 1) % SLIDES_OPTION_DATA.length;
       flatListRef.current?.scrollToIndex({ index: next, animated: true });
       setActiveIndex(next);
     }, 3500);
@@ -79,7 +79,7 @@ export function ImageSlider({ isDark, TEAL }: ImageSliderProps) {
   const PHONE_W = width * 0.41;
   const PHONE_H = PHONE_W * 2.08;
 
-  const currentSlide = SLIDES[activeIndex];
+  const currentSlide = SLIDES_OPTION_DATA[activeIndex];
 
   return (
     <View style={styles.sliderContainer}>
@@ -107,7 +107,7 @@ export function ImageSlider({ isDark, TEAL }: ImageSliderProps) {
       {/* Full-width FlatList so pagingEnabled works correctly */}
       <FlatList
         ref={flatListRef}
-        data={SLIDES}
+        data={SLIDES_OPTION_DATA}
         keyExtractor={(item) => item.id}
         horizontal
         pagingEnabled
@@ -143,7 +143,7 @@ export function ImageSlider({ isDark, TEAL }: ImageSliderProps) {
 
       {/* Pagination dots */}
       <View style={styles.dotsRow}>
-        {SLIDES.map((_, i) => (
+        {SLIDES_OPTION_DATA.map((_, i) => (
           <TouchableOpacity
             key={i}
             onPress={() => {

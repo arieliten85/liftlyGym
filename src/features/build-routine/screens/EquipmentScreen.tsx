@@ -1,27 +1,23 @@
-import {
-  LEVEL_META,
-  levelOptions,
-} from "@/features/onboarding/constants/onboarding.constants";
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
-import { useOnboardingStore } from "@/store/onboardingStore";
+import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
-import { Feather, FontAwesome } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { EQUIPAMENTE_OPTION_DATA } from "../constants/routine-builder.constants";
 
-export default function ExperienceScreen() {
+export default function EquipmentScreen() {
   const { theme, isDark } = useAppTheme();
   const router = useRouter();
 
-  const selectedLevel = useOnboardingStore((s) => s.experience);
-  const setExperience = useOnboardingStore((s) => s.setExperience);
+  const selected = useBuildRoutineStore((s) => s.equipment);
+  const setEquipment = useBuildRoutineStore((s) => s.setEquipment);
 
   const handleNext = () => {
-    if (selectedLevel) router.push("/grupoMuscle");
+    if (selected) router.push("/experience");
   };
 
-  // Theme-aware colors matching GoalsScreen language
   const TEAL = theme.colors.primary;
   const cardBg = isDark ? "#0C1119" : theme.colors.card;
   const cardBgSel = isDark ? "#091714" : "#EBF9F7";
@@ -32,92 +28,79 @@ export default function ExperienceScreen() {
   const titleSel = TEAL;
   const descSel = isDark ? "#B8D4D0" : theme.colors.text;
 
-  const styles = createStyles(isDark, theme);
+  const styles = createStyles();
 
   return (
     <OnboardingLayout
-      title="Experiencia"
+      title="Equipamiento"
       onNext={handleNext}
-      isNextDisabled={!selectedLevel}
+      isNextDisabled={!selected}
     >
       <View style={styles.container}>
         <View style={styles.headerContainer}>
           <Text style={[styles.sectionTitle, { color: textColor }]}>
-            ¿Cuál es tu nivel de experiencia?
+            ¿Dónde vas a entrenar?
           </Text>
           <Text style={[styles.sectionSubtitle, { color: subColor }]}>
-            Selecciona tu nivel para ajustar la intensidad de tu plan
+            Selecciona el equipamiento disponible para personalizar tu plan
           </Text>
         </View>
 
-        {/* cards */}
+        {/* Cards */}
         <View style={styles.optionsWrapper}>
           <View style={styles.optionsContainer}>
-            {levelOptions.map((option) => {
-              const isSel = selectedLevel === option.id;
-              const meta = LEVEL_META[option.id] ?? {
-                icon: "star",
-                iconFamily: "FontAwesome",
-                label: "LVL",
-                color: TEAL,
-              };
-
+            {EQUIPAMENTE_OPTION_DATA.map((option) => {
+              const isSelected = selected === option.type;
               return (
                 <TouchableOpacity
-                  key={option.id}
+                  key={option.type}
                   style={[
                     styles.goalCard,
                     { backgroundColor: cardBg, borderColor: borderDef },
-                    isSel && {
+                    isSelected && {
                       backgroundColor: cardBgSel,
                       borderColor: borderSel,
                       shadowColor: TEAL,
                     },
                   ]}
-                  onPress={() => setExperience(option.id)}
+                  onPress={() => setEquipment(option.type)}
                   activeOpacity={0.8}
                 >
-                  {isSel && (
+                  {/* Selected top accent line */}
+                  {isSelected && (
                     <View
                       style={[styles.cardTopLine, { backgroundColor: TEAL }]}
                     />
                   )}
 
                   <View style={styles.cardContent}>
+                    {/* Icon badge */}
                     <View
                       style={[
                         styles.cardIconWrap,
                         {
-                          backgroundColor: isSel
+                          backgroundColor: isSelected
                             ? isDark
-                              ? `${meta.color}18`
-                              : `${meta.color}18`
+                              ? "rgba(46,207,190,0.12)"
+                              : "rgba(46,207,190,0.12)"
                             : isDark
                               ? "rgba(255,255,255,0.04)"
                               : "rgba(0,0,0,0.04)",
-                          borderColor: isSel
+                          borderColor: isSelected
                             ? isDark
-                              ? `${meta.color}55`
-                              : `${meta.color}55`
+                              ? "rgba(46,207,190,0.35)"
+                              : "rgba(46,207,190,0.4)"
                             : isDark
                               ? "rgba(255,255,255,0.06)"
                               : theme.colors.border,
                         },
                       ]}
                     >
-                      {meta.iconFamily === "FontAwesome" ? (
-                        <FontAwesome
-                          name={meta.icon as any}
-                          size={20}
-                          color={isSel ? meta.color : subColor}
-                        />
-                      ) : (
-                        <Feather
-                          name={meta.icon as any}
-                          size={20}
-                          color={isSel ? meta.color : subColor}
-                        />
-                      )}
+                      <Ionicons
+                        name={option.icon}
+                        size={20}
+                        color={isSelected ? TEAL : subColor}
+                      />
                     </View>
 
                     <View style={styles.cardText}>
@@ -125,7 +108,7 @@ export default function ExperienceScreen() {
                         numberOfLines={1}
                         style={[
                           styles.goalTitle,
-                          { color: isSel ? titleSel : textColor },
+                          { color: isSelected ? titleSel : textColor },
                         ]}
                       >
                         {option.title}
@@ -134,7 +117,7 @@ export default function ExperienceScreen() {
                         numberOfLines={2}
                         style={[
                           styles.goalDescription,
-                          { color: isSel ? descSel : subColor },
+                          { color: isSelected ? descSel : subColor },
                         ]}
                       >
                         {option.description}
@@ -153,7 +136,7 @@ export default function ExperienceScreen() {
   );
 }
 
-const createStyles = (isDark: boolean, theme: any) =>
+const createStyles = () =>
   StyleSheet.create({
     container: { flex: 1 },
 

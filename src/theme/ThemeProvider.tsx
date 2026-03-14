@@ -1,4 +1,4 @@
-import { useThemeStore } from "@/store/themeStore";
+import { useThemeStore } from "@/store/themes/themeStore";
 import React, { createContext, useContext } from "react";
 import { useColorScheme } from "react-native";
 

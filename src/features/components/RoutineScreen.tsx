@@ -9,16 +9,16 @@ import React, {
 } from "react";
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { useRoutineStore } from "@/store/useRoutineStore";
+import { useRoutineStore } from "@/store/routine/useRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { CompletedRoutinePayload, ExerciseProgress } from "@/type/routine.type";
-import { formatRestTime } from "../onboarding/utils/formatRestTime";
-import { formatTextTitle } from "../onboarding/utils/formatTextTitle";
 
 import { Badge } from "@/shared/components/Badge";
 import { PrimaryButton } from "@/shared/components/PrimaryButton";
 import { StatBar } from "@/shared/components/StatBar";
 import { calculateWorkoutTime } from "@/utils/workout.utils";
+import { formatRestTime } from "../build-routine/utils/formatRestTime";
+import { formatTextTitle } from "../build-routine/utils/formatTextTitle";
 import { EditExerciseModal } from "./EditExerciseModal";
 import { ExerciseCard } from "./ExerciseCard";
 import { SeriesModal } from "./SeriesModal";
@@ -405,31 +405,31 @@ export function RoutineScreen() {
   );
 }
 
-function MiniStat({
-  icon,
-  value,
-  label,
-  color,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  value: string;
-  label: string;
-  color: string;
-}) {
-  return (
-    <View style={ms.wrap}>
-      <Ionicons name={icon} size={13} color={color} />
-      <Text style={[ms.value, { color }]}>{value}</Text>
-      <Text style={[ms.label, { color }]}>{label}</Text>
-    </View>
-  );
-}
+// function MiniStat({
+//   icon,
+//   value,
+//   label,
+//   color,
+// }: {
+//   icon: keyof typeof Ionicons.glyphMap;
+//   value: string;
+//   label: string;
+//   color: string;
+// }) {
+//   return (
+//     <View style={ms.wrap}>
+//       <Ionicons name={icon} size={13} color={color} />
+//       <Text style={[ms.value, { color }]}>{value}</Text>
+//       <Text style={[ms.label, { color }]}>{label}</Text>
+//     </View>
+//   );
+// }
 
-const ms = StyleSheet.create({
-  wrap: { flexDirection: "row", alignItems: "center", gap: 4 },
-  value: { fontSize: 13, fontWeight: "700" },
-  label: { fontSize: 12, fontWeight: "500" },
-});
+// const ms = StyleSheet.create({
+//   wrap: { flexDirection: "row", alignItems: "center", gap: 4 },
+//   value: { fontSize: 13, fontWeight: "700" },
+//   label: { fontSize: 12, fontWeight: "500" },
+// });
 
 const s = StyleSheet.create({
   root: { flex: 1 },

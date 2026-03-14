@@ -1,18 +1,18 @@
-import { goals } from "@/features/onboarding/constants/onboarding.constants";
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
-import { useOnboardingStore } from "@/store/onboardingStore";
+import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { GOAL_OPTION_DATA } from "../constants/routine-builder.constants";
 
 export default function GoalsScreen() {
   const { theme, isDark } = useAppTheme();
   const router = useRouter();
 
-  const selectedGoal = useOnboardingStore((s) => s.goal);
-  const setGoal = useOnboardingStore((s) => s.setGoal);
+  const selectedGoal = useBuildRoutineStore((s) => s.goal);
+  const setGoal = useBuildRoutineStore((s) => s.setGoal);
 
   const handleNext = () => {
     if (selectedGoal) router.push("/equipment");
@@ -40,7 +40,7 @@ export default function GoalsScreen() {
         {/* Section header */}
         <View style={styles.headerContainer}>
           <Text style={[styles.sectionTitle, { color: textColor }]}>
-            ¿Cuál es tu objetivo principal?
+            ¿Cuál es tu objetivo?
           </Text>
           <Text style={[styles.sectionSubtitle, { color: subColor }]}>
             Selecciona una opción para personalizar tu experiencia
@@ -50,11 +50,11 @@ export default function GoalsScreen() {
         {/* Goal cards */}
         <View style={styles.optionsWrapper}>
           <View style={styles.optionsContainer}>
-            {goals.map((goal) => {
-              const isSelected = selectedGoal === goal.id;
+            {GOAL_OPTION_DATA.map((goal) => {
+              const isSelected = selectedGoal === goal.type;
               return (
                 <TouchableOpacity
-                  key={goal.id}
+                  key={goal.type}
                   style={[
                     styles.goalCard,
                     { backgroundColor: cardBg, borderColor: borderDef },
@@ -64,7 +64,7 @@ export default function GoalsScreen() {
                       shadowColor: TEAL,
                     },
                   ]}
-                  onPress={() => setGoal(goal.id)}
+                  onPress={() => setGoal(goal.type)}
                   activeOpacity={0.8}
                 >
                   {/* Selected top accent line */}

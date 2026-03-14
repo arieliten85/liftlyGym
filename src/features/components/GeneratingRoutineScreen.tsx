@@ -1,5 +1,4 @@
-import { ParticleBackground } from "@/features/onboarding/components/ParticleBackground";
-import { useRoutineStore } from "@/store/useRoutineStore";
+import { useRoutineStore } from "@/store/routine/useRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
@@ -12,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { ParticleBackground } from "../build-routine/components/ParticleBackground";
 
 export default function GeneratingRoutineScreen() {
   const router = useRouter();
@@ -38,6 +38,17 @@ export default function GeneratingRoutineScreen() {
       <View style={[styles.container, { backgroundColor: bg }]}>
         <Text style={styles.errorTitle}>Ups!</Text>
         <Text style={[styles.errorText, { color: text }]}>{error}</Text>
+        <TouchableOpacity
+          onPress={() => {
+            useRoutineStore.getState().clearRoutine();
+            router.back();
+          }}
+          style={{ marginTop: 24 }}
+        >
+          <Text style={[styles.cancel, { color: primary }]}>
+            Volver a intentar
+          </Text>
+        </TouchableOpacity>
       </View>
     );
   }

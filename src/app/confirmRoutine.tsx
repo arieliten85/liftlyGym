@@ -1,3 +1,3 @@
-import ConfirmRoutineScreen from "@/features/onboarding/screens/ConfirmRoutineScreen";
+import ConfirmRoutineScreen from "@/features/build-routine/screens/ConfirmRoutineScreen";
 
 export default ConfirmRoutineScreen;
