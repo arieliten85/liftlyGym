@@ -40,9 +40,9 @@ export function ExerciseCard({
   formatTextTitle,
   onSelect,
 }: ExerciseCardProps) {
-  const displayReps = progress?.editedReps ?? exercise.reps;
-  const displayRest = progress?.editedRestSeconds ?? exercise.restSeconds;
-  const displaySets = progress?.totalSets ?? exercise.sets;
+   const displayReps = progress?.editedReps ?? exercise.reps;
+   const displayRest = progress?.editedRestSeconds ?? exercise.restSeconds;
+   const displaySets = progress?.editedSets ?? exercise.sets;
 
   const isInProgress = !!progress && !isCompleted;
 

@@ -84,17 +84,18 @@ export const useRoutineStore = create<RoutineStore>((set, get) => ({
     const { routine } = get();
     if (!routine) return;
 
-    const exercises: ExerciseProgress[] = routine.exercises.map(
-      (ex, index) => ({
-        exerciseIndex: index,
-        completed: false,
-        currentSet: 1,
-        totalSets: ex.sets,
-        editedReps: ex.reps,
-        editedWeight: ex.weight ?? 0,
-        editedRestSeconds: ex.restSeconds,
-      }),
-    );
+     const exercises: ExerciseProgress[] = routine.exercises.map(
+       (ex, index) => ({
+         exerciseIndex: index,
+         completed: false,
+         currentSet: 1,
+         totalSets: ex.sets,
+         editedReps: ex.reps,
+         editedWeight: ex.weight ?? 0,
+         editedRestSeconds: ex.restSeconds,
+         editedSets: ex.sets,
+       }),
+     );
 
     set({
       session: {
@@ -178,20 +179,20 @@ export const useRoutineStore = create<RoutineStore>((set, get) => ({
     const { routine, session } = get();
     if (!routine || !session) return null;
 
-    const exercises = routine.exercises.map((ex, index) => {
-      const progress = session.exercises.find((p) => p.exerciseIndex === index);
-      return {
-        name: ex.name,
-        originalSets: ex.sets,
-        originalReps: ex.reps,
-        originalRestSeconds: ex.restSeconds,
-        originalWeight: ex.weight ?? 0,
-        editedSets: progress?.totalSets ?? ex.sets,
-        editedReps: progress?.editedReps ?? ex.reps,
-        editedRestSeconds: progress?.editedRestSeconds ?? ex.restSeconds,
-        editedWeight: progress?.editedWeight ?? ex.weight ?? 0,
-      };
-    });
+     const exercises = routine.exercises.map((ex, index) => {
+       const progress = session.exercises.find((p) => p.exerciseIndex === index);
+       return {
+         name: ex.name,
+         originalSets: ex.sets,
+         originalReps: ex.reps,
+         originalRestSeconds: ex.restSeconds,
+         originalWeight: ex.weight ?? 0,
+         editedSets: progress?.editedSets ?? ex.sets,
+         editedReps: progress?.editedReps ?? ex.reps,
+         editedRestSeconds: progress?.editedRestSeconds ?? ex.restSeconds,
+         editedWeight: progress?.editedWeight ?? ex.weight ?? 0,
+       };
+     });
 
     const startTime = new Date(session.startedAt).getTime();
     const endTime = Date.now();

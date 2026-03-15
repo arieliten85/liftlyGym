@@ -252,9 +252,10 @@ export function EditExerciseModal({
   onUpdateProgress,
   formatTextTitle,
 }: EditExerciseModalProps) {
-  const [reps, setReps] = useState(10);
-  const [weight, setWeight] = useState(0);
-  const [restSeconds, setRestSeconds] = useState(60);
+   const [reps, setReps] = useState(10);
+   const [weight, setWeight] = useState(0);
+   const [restSeconds, setRestSeconds] = useState(60);
+   const [sets, setSets] = useState(3);
 
   const slideAnim = useRef(new Animated.Value(40)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -267,6 +268,7 @@ export function EditExerciseModal({
       );
       setWeight(progress.editedWeight ?? 0);
       setRestSeconds(progress.editedRestSeconds ?? exercise.restSeconds ?? 60);
+      setSets(progress.editedSets ?? exercise.sets ?? 3);
 
       slideAnim.setValue(40);
       fadeAnim.setValue(0);
@@ -292,14 +294,15 @@ export function EditExerciseModal({
   const weightAccent = isDark ? "#F59E0B" : "#D97706";
   const restAccent = isDark ? "#34D399" : "#059669";
 
-  const handleSave = () => {
-    onUpdateProgress({
-      editedReps: reps.toString(),
-      editedWeight: weight,
-      editedRestSeconds: restSeconds,
-    });
-    onClose();
-  };
+   const handleSave = () => {
+     onUpdateProgress({
+       editedReps: reps.toString(),
+       editedWeight: weight,
+       editedRestSeconds: restSeconds,
+       editedSets: sets,
+     });
+     onClose();
+   };
 
   return (
     <Modal
@@ -360,47 +363,72 @@ export function EditExerciseModal({
                   </Text>
                 </View>
 
-                {/* Current values summary */}
-                <View
-                  style={[
-                    sty.summaryRow,
-                    {
-                      backgroundColor: colors.primary + "0C",
-                      borderColor: colors.primary + "22",
-                    },
-                  ]}
-                >
-                  <SummaryChip
-                    icon="repeat"
-                    label="Reps"
-                    value={`${reps}`}
-                    color={repAccent}
-                    colors={colors}
-                  />
-                  <View
-                    style={[sty.summDiv, { backgroundColor: colors.border }]}
-                  />
-                  <SummaryChip
-                    icon="barbell-outline"
-                    label="Peso"
-                    value={weight === 0 ? "Sin peso" : `${weight}kg`}
-                    color={weightAccent}
-                    colors={colors}
-                  />
-                  <View
-                    style={[sty.summDiv, { backgroundColor: colors.border }]}
-                  />
-                  <SummaryChip
-                    icon="time-outline"
-                    label="Descanso"
-                    value={formatRestTime(restSeconds)}
-                    color={restAccent}
-                    colors={colors}
-                  />
-                </View>
+                 {/* Current values summary */}
+                 <View
+                   style={[
+                     sty.summaryRow,
+                     {
+                       backgroundColor: colors.primary + "0C",
+                       borderColor: colors.primary + "22",
+                     },
+                   ]}
+                 >
+                   <SummaryChip
+                     icon="list"
+                     label="Series"
+                     value={`${sets}`}
+                     color={colors.primary}
+                     colors={colors}
+                   />
+                   <View
+                     style={[sty.summDiv, { backgroundColor: colors.border }]}
+                   />
+                   <SummaryChip
+                     icon="repeat"
+                     label="Reps"
+                     value={`${reps}`}
+                     color={repAccent}
+                     colors={colors}
+                   />
+                   <View
+                     style={[sty.summDiv, { backgroundColor: colors.border }]}
+                   />
+                   <SummaryChip
+                     icon="barbell-outline"
+                     label="Peso"
+                     value={weight === 0 ? "Sin peso" : `${weight}kg`}
+                     color={weightAccent}
+                     colors={colors}
+                   />
+                   <View
+                     style={[sty.summDiv, { backgroundColor: colors.border }]}
+                   />
+                   <SummaryChip
+                     icon="time-outline"
+                     label="Descanso"
+                     value={formatRestTime(restSeconds)}
+                     color={restAccent}
+                     colors={colors}
+                   />
+                 </View>
 
-                {/* Reps + Weight — 2 cols */}
+                {/* Sets + Reps + Weight — 3 cols */}
                 <View style={sty.steppersTop}>
+                  <View style={sty.stepperCol}>
+                    <Stepper
+                      label="Series"
+                      icon="list"
+                      value={sets}
+                      min={1}
+                      max={20}
+                      step={1}
+                      onChange={setSets}
+                      colors={colors}
+                      isDark={isDark}
+                      accent={colors.primary}
+                      compact
+                    />
+                  </View>
                   <View style={sty.stepperCol}>
                     <Stepper
                       label="Repeticiones"
@@ -575,12 +603,10 @@ const sty = StyleSheet.create({
   },
   summValue: { fontSize: 14, fontWeight: "700" },
 
-  steppersTop: {
-    flexDirection: "row",
-    gap: 12,
-    alignItems: "stretch",
-  },
-  stepperCol: { flex: 1 },
+   steppersTop: {
+     gap: 16,
+   },
+   stepperCol: { width: '100%' },
 
   stepWrap: {
     flex: 1,

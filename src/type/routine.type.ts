@@ -7,13 +7,14 @@ export interface RoutineExercise {
 }
 
 export interface ExerciseProgress {
-  exerciseIndex: number;
-  completed: boolean;
-  currentSet: number;
-  totalSets: number;
-  editedReps: string;
-  editedWeight: number;
-  editedRestSeconds: number;
+   exerciseIndex: number;
+   completed: boolean;
+   currentSet: number;
+   totalSets: number;
+   editedReps: string;
+   editedWeight: number;
+   editedRestSeconds: number;
+   editedSets: number;
 }
 
 export interface RoutineSession {

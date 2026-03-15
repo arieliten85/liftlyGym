@@ -305,7 +305,7 @@ export function SeriesModal({
     if (visible && progress && exercise) {
       setPhase("active");
       setLocalCurrentSet(progress.currentSet);
-      setLocalTotalSets(progress.totalSets);
+      setLocalTotalSets(progress.editedSets ?? progress.totalSets);
       setRestSeconds(progress.editedRestSeconds ?? exercise.restSeconds ?? 60);
       animateIn();
     }
