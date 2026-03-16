@@ -11,7 +11,7 @@ import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { useRoutineStore } from "@/store/routine/useRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { CompletedRoutinePayload, ExerciseProgress } from "@/type/routine.type";
+import { ExerciseProgress } from "@/type/routine.type";
 
 import { Badge } from "@/shared/components/Badge";
 import { PrimaryButton } from "@/shared/components/PrimaryButton";
@@ -19,7 +19,6 @@ import { StatBar } from "@/shared/components/StatBar";
 import { calculateWorkoutTime } from "@/utils/workout.utils";
 import { formatRestTime } from "../build-routine/utils/formatRestTime";
 import { formatTextTitle } from "../build-routine/utils/formatTextTitle";
-import { EditExerciseModal } from "./EditExerciseModal";
 import { ExerciseCard } from "./ExerciseCard";
 import { SeriesModal } from "./SeriesModal";
 import {
@@ -27,18 +26,13 @@ import {
   WorkoutSurveyPayload,
 } from "./WorkoutSummaryModal";
 
-async function submitRoutinePayload(
-  routine: CompletedRoutinePayload,
-  survey: WorkoutSurveyPayload,
-): Promise<void> {
+async function submitRoutinePayload(payload: any) {
   console.log("════════════════════════════════");
-  console.log("  RUTINA FINALIZADA");
+  console.log("  PAYLOAD FINAL AL BACKEND");
   console.log("════════════════════════════════");
-  console.log("── Datos de rutina ─────────────");
-  console.log(JSON.stringify(routine, null, 2));
-  console.log("── Encuesta del usuario ────────");
-  console.log(JSON.stringify(survey, null, 2));
+  console.log(JSON.stringify(payload, null, 2));
   console.log("════════════════════════════════");
+  // TODO: fetch POST /api/sessions
 }
 
 export function RoutineScreen() {
@@ -48,27 +42,20 @@ export function RoutineScreen() {
     routine,
     session,
     startSession,
-    updateExerciseProgress,
-    nextSet,
-    getExerciseProgress,
+    logSet,
+    updateTotalSets,
+    updateDisplayValues,
     getCompletedRoutinePayload,
     resetSession,
   } = useRoutineStore();
 
   const sessionStartRef = useRef<number>(Date.now());
   const [elapsedMin, setElapsedMin] = useState(0);
-
   const [selectedExerciseIndex, setSelectedExerciseIndex] = useState<
     number | null
   >(null);
-
-  // Series modal (play)
   const [seriesIndex, setSeriesIndex] = useState<number | null>(null);
   const [seriesVisible, setSeriesVisible] = useState(false);
-  // Edit modal (dots)
-  const [editIndex, setEditIndex] = useState<number | null>(null);
-  const [editVisible, setEditVisible] = useState(false);
-  // Summary
   const [summaryVisible, setSummaryVisible] = useState(false);
   const [wasAbandoned, setWasAbandoned] = useState(false);
 
@@ -84,10 +71,6 @@ export function RoutineScreen() {
     }),
     [theme, isDark],
   );
-
-  const handleSelectExercise = useCallback((index: number) => {
-    setSelectedExerciseIndex(index);
-  }, []);
 
   useEffect(() => {
     if (routine && !session) {
@@ -132,13 +115,9 @@ export function RoutineScreen() {
     [seriesIndex, routine],
   );
 
-  const editProgress = useMemo(
-    () => session?.exercises.find((e) => e.exerciseIndex === editIndex) ?? null,
-    [editIndex, session],
-  );
-  const editExercise = useMemo(
-    () => (editIndex !== null && routine ? routine.exercises[editIndex] : null),
-    [editIndex, routine],
+  const handleSelectExercise = useCallback(
+    (index: number) => setSelectedExerciseIndex(index),
+    [],
   );
 
   const handleStartExercise = useCallback((index: number) => {
@@ -147,38 +126,37 @@ export function RoutineScreen() {
     setSeriesVisible(true);
   }, []);
 
-  const handleEditExercise = useCallback((index: number) => {
-    setSelectedExerciseIndex(index);
-    setEditIndex(index);
-    setEditVisible(true);
-  }, []);
-
   const handleCloseSeriesModal = useCallback(() => {
     setSeriesVisible(false);
     setSeriesIndex(null);
   }, []);
 
-  const handleCloseEditModal = useCallback(() => {
-    setEditVisible(false);
-    setEditIndex(null);
-  }, []);
-
-  const handleFinishSet = useCallback(() => {
-    if (seriesIndex === null) return;
-    const progress = getExerciseProgress(seriesIndex);
-    if (!progress) return;
-    nextSet(seriesIndex);
-    if (progress.currentSet >= progress.totalSets) {
-      setSeriesVisible(false);
-      setSeriesIndex(null);
-    }
-  }, [seriesIndex, getExerciseProgress, nextSet]);
-
-  const handleUpdateProgress = useCallback(
-    (updates: Partial<ExerciseProgress>) => {
-      if (editIndex !== null) updateExerciseProgress(editIndex, updates);
+  const handleLogSet = useCallback(
+    (log: {
+      repsCompleted: number | null;
+      weight: number | null;
+      skipped: boolean;
+    }) => {
+      if (seriesIndex === null) return;
+      logSet(seriesIndex, log);
     },
-    [editIndex, updateExerciseProgress],
+    [seriesIndex, logSet],
+  );
+
+  const handleUpdateTotalSets = useCallback(
+    (total: number) => {
+      if (seriesIndex === null) return;
+      updateTotalSets(seriesIndex, total);
+    },
+    [seriesIndex, updateTotalSets],
+  );
+
+  const handleUpdateDisplayValues = useCallback(
+    (values: Partial<ExerciseProgress["displayValues"]>) => {
+      if (seriesIndex === null) return;
+      updateDisplayValues(seriesIndex, values);
+    },
+    [seriesIndex, updateDisplayValues],
   );
 
   const handleFinishRoutine = useCallback(() => {
@@ -212,8 +190,17 @@ export function RoutineScreen() {
 
   const handleSurveySubmit = useCallback(
     (survey: WorkoutSurveyPayload) => {
-      const routinePayload = getCompletedRoutinePayload();
-      if (routinePayload) submitRoutinePayload(routinePayload, survey);
+      // El feedback viene del survey — se pasa directamente al payload
+      const feedback = {
+        intensity: survey.intensity > 0 ? survey.intensity : null,
+        energy: survey.energy > 0 ? survey.energy : null,
+        painLevel: survey.painLevel > 0 ? survey.painLevel : null,
+        comment: survey.comment,
+      };
+
+      const payload = getCompletedRoutinePayload(feedback);
+      if (payload) submitRoutinePayload(payload);
+
       setSummaryVisible(false);
       resetSession();
       router.push("../goals");
@@ -240,7 +227,6 @@ export function RoutineScreen() {
         contentContainerStyle={s.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── HEADER ── */}
         <View style={s.header}>
           <Text
             style={[s.routineName, { color: colors.textPrimary }]}
@@ -250,7 +236,6 @@ export function RoutineScreen() {
           </Text>
           <View style={s.badges}>
             <Badge label={routine.goal} color={colors.primary} />
-
             <Badge
               label={routine.experience}
               color={colors.textSecondary}
@@ -259,7 +244,6 @@ export function RoutineScreen() {
           </View>
         </View>
 
-        {/* ── PROGRESS CARD ── */}
         <View
           style={[
             s.progressCard,
@@ -284,7 +268,6 @@ export function RoutineScreen() {
               {completedCount}/{routine.exercises.length} ejercicios
             </Text>
           </View>
-
           <View style={[s.progressTrack, { backgroundColor: colors.border }]}>
             <View
               style={[
@@ -293,7 +276,6 @@ export function RoutineScreen() {
               ]}
             />
           </View>
-
           <View style={s.miniStats}>
             <StatBar
               icon="layers-outline"
@@ -320,7 +302,6 @@ export function RoutineScreen() {
           </View>
         </View>
 
-        {/* ── EXERCISE LIST ── */}
         <Text style={[s.listTitle, { color: colors.textPrimary }]}>
           Ejercicios
         </Text>
@@ -341,7 +322,7 @@ export function RoutineScreen() {
               isSelected={selectedExerciseIndex === idx}
               onSelect={() => handleSelectExercise(idx)}
               onStart={() => handleStartExercise(idx)}
-              onEdit={() => handleEditExercise(idx)}
+              onEdit={() => handleStartExercise(idx)}
               formatRestTime={formatRestTime}
               formatTextTitle={formatTextTitle}
             />
@@ -351,7 +332,6 @@ export function RoutineScreen() {
         <View style={{ height: 20 }} />
       </ScrollView>
 
-      {/* ── FINISH BAR ── */}
       <View
         style={[
           s.finishBar,
@@ -365,7 +345,6 @@ export function RoutineScreen() {
         />
       </View>
 
-      {/* ── Series Modal ── */}
       <SeriesModal
         visible={seriesVisible}
         exercise={seriesExercise}
@@ -373,23 +352,12 @@ export function RoutineScreen() {
         colors={colors}
         isDark={isDark}
         onClose={handleCloseSeriesModal}
-        onFinishSet={handleFinishSet}
+        onLogSet={handleLogSet}
+        onUpdateTotalSets={handleUpdateTotalSets}
+        onUpdateDisplayValues={handleUpdateDisplayValues}
         formatTextTitle={formatTextTitle}
       />
 
-      {/* ── Edit Modal ── */}
-      <EditExerciseModal
-        visible={editVisible}
-        exercise={editExercise}
-        progress={editProgress}
-        colors={colors}
-        isDark={isDark}
-        onClose={handleCloseEditModal}
-        onUpdateProgress={handleUpdateProgress}
-        formatTextTitle={formatTextTitle}
-      />
-
-      {/* ── Summary Modal ── */}
       <WorkoutSummaryModal
         visible={summaryVisible}
         colors={colors}
@@ -405,32 +373,6 @@ export function RoutineScreen() {
   );
 }
 
-// function MiniStat({
-//   icon,
-//   value,
-//   label,
-//   color,
-// }: {
-//   icon: keyof typeof Ionicons.glyphMap;
-//   value: string;
-//   label: string;
-//   color: string;
-// }) {
-//   return (
-//     <View style={ms.wrap}>
-//       <Ionicons name={icon} size={13} color={color} />
-//       <Text style={[ms.value, { color }]}>{value}</Text>
-//       <Text style={[ms.label, { color }]}>{label}</Text>
-//     </View>
-//   );
-// }
-
-// const ms = StyleSheet.create({
-//   wrap: { flexDirection: "row", alignItems: "center", gap: 4 },
-//   value: { fontSize: 13, fontWeight: "700" },
-//   label: { fontSize: 12, fontWeight: "500" },
-// });
-
 const s = StyleSheet.create({
   root: { flex: 1 },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
@@ -445,12 +387,7 @@ const s = StyleSheet.create({
   },
   badges: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
 
-  progressCard: {
-    padding: 16,
-    borderRadius: 18,
-    borderWidth: 1,
-    gap: 12,
-  },
+  progressCard: { padding: 16, borderRadius: 18, borderWidth: 1, gap: 12 },
   progressTop: {
     flexDirection: "row",
     justifyContent: "space-between",

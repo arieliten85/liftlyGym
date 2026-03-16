@@ -10,289 +10,261 @@ interface ThemeColors {
   primary: string;
   border: string;
   bg: string;
+  cardBg: string;
 }
 
 interface ExerciseCardProps {
-  exercise: RoutineExercise;
+  exercise: RoutineExercise & { index: number };
   index: number;
   colors: ThemeColors;
   isDark: boolean;
   isCompleted: boolean;
   isSelected: boolean;
-  progress?: ExerciseProgress;
+  progress: ExerciseProgress | undefined;
+  onSelect: () => void;
   onStart: () => void;
   onEdit: () => void;
-  formatRestTime: (seconds: number) => string;
-  formatTextTitle: (text: string) => string;
-  onSelect: () => void;
+  formatRestTime: (s: number) => string;
+  formatTextTitle: (s: string) => string;
 }
 
 export function ExerciseCard({
   exercise,
+  index,
   colors,
   isDark,
   isCompleted,
   isSelected,
   progress,
+  onSelect,
   onStart,
-  onEdit,
   formatRestTime,
   formatTextTitle,
-  onSelect,
 }: ExerciseCardProps) {
-   const displayReps = progress?.editedReps ?? exercise.reps;
-   const displayRest = progress?.editedRestSeconds ?? exercise.restSeconds;
-   const displaySets = progress?.editedSets ?? exercise.sets;
+  const dv = progress?.displayValues;
+  const displayReps = dv?.reps ?? exercise.reps;
+  const displayWeight = dv?.weight ?? exercise.weight ?? 0;
+  const displayRest = dv?.restSeconds ?? exercise.restSeconds;
+  const displaySets = dv?.sets ?? exercise.sets;
 
-  const isInProgress = !!progress && !isCompleted;
+  // SetLog usa skipped: boolean (no status string)
+  const setsCompleted = progress?.setLogs.filter((l) => !l.skipped).length ?? 0;
+  const setsSkipped = progress?.setLogs.filter((l) => l.skipped).length ?? 0;
+  const currentSet = progress?.currentSet ?? 1;
+  const hasStarted = (progress?.setLogs.length ?? 0) > 0;
 
-  const setsProgress = isInProgress
-    ? (progress!.currentSet - 1) / progress!.totalSets
-    : isCompleted
-      ? 1
-      : 0;
+  const weightAccent = isDark ? "#F59E0B" : "#D97706";
+  const restAccent = isDark ? "#34D399" : "#059669";
+  const setsAccent = isDark ? "#A78BFA" : "#7C3AED";
+
+  const accentColor = isCompleted
+    ? "#22C55E"
+    : isSelected
+      ? colors.primary
+      : isDark
+        ? "#2C2C2C"
+        : "#E8E8E8";
 
   return (
     <TouchableOpacity
-      activeOpacity={0.9}
       onPress={onSelect}
+      activeOpacity={0.85}
       style={[
-        styles.card,
+        sty.card,
         {
-          backgroundColor: isCompleted
-            ? colors.primary + "10"
-            : isDark
-              ? "#1A1A1A"
-              : colors.surface,
-
-          borderColor: isSelected ? colors.primary : "transparent",
-
-          borderWidth: isSelected ? 2 : isInProgress ? 1.5 : 1,
+          backgroundColor: colors.cardBg,
+          borderColor: isDark ? "#222" : "#EBEBEB",
+          borderLeftColor: accentColor,
         },
       ]}
     >
-      {/* ── Name row ── */}
-      <View style={styles.nameRow}>
-        {/* Edit dots */}
-        {!isCompleted ? (
-          <TouchableOpacity
-            onPress={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-            activeOpacity={0.7}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={[
-              styles.iconBtn,
-              { backgroundColor: isDark ? "#2A2A2A" : "#F0F0F0" },
-            ]}
-          >
-            <Ionicons
-              name="ellipsis-horizontal"
-              size={14}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
-        ) : (
-          <View style={[styles.iconBtn, { backgroundColor: colors.primary }]}>
-            <Ionicons name="checkmark" size={13} color="#fff" />
-          </View>
-        )}
+      {/* ── Fila superior ── */}
+      <View style={sty.topRow}>
+        <View style={[sty.indexBadge, { backgroundColor: accentColor + "18" }]}>
+          {isCompleted ? (
+            <Ionicons name="checkmark" size={13} color="#22C55E" />
+          ) : (
+            <Text
+              style={[
+                sty.indexNum,
+                {
+                  color:
+                    accentColor === colors.primary
+                      ? colors.primary
+                      : colors.textSecondary,
+                },
+              ]}
+            >
+              {index + 1}
+            </Text>
+          )}
+        </View>
 
-        {/* Exercise name */}
         <Text
-          style={[
-            styles.name,
-            {
-              color: isCompleted ? colors.textSecondary : colors.textPrimary,
-              textDecorationLine: isCompleted ? "line-through" : "none",
-            },
-          ]}
-          numberOfLines={2}
+          style={[sty.exName, { color: colors.textPrimary }]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
         >
           {formatTextTitle(exercise.name)}
         </Text>
 
-        {/* Play button */}
-        {isCompleted ? (
+        <TouchableOpacity
+          onPress={onStart}
+          activeOpacity={0.75}
+          style={[
+            sty.playBtn,
+            {
+              backgroundColor: isCompleted
+                ? "#22C55E18"
+                : colors.primary + "18",
+              borderColor: isCompleted ? "#22C55E35" : colors.primary + "35",
+            },
+          ]}
+        >
           <Ionicons
-            name="checkmark-circle"
-            size={26}
-            color={colors.primary + "60"}
+            name={
+              isCompleted ? "refresh" : hasStarted ? "play-forward" : "play"
+            }
+            size={16}
+            color={isCompleted ? "#22C55E" : colors.primary}
           />
-        ) : (
-          <TouchableOpacity
-            onPress={(e) => {
-              e.stopPropagation();
-              onStart();
-            }}
-            activeOpacity={0.7}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={[
-              styles.playBtn,
-              {
-                backgroundColor: isInProgress
-                  ? colors.primary
-                  : colors.primary + "15",
-                borderColor: colors.primary + "40",
-              },
-            ]}
-          >
-            <Ionicons
-              name={isInProgress ? "play" : "play-outline"}
-              size={14}
-              color={isInProgress ? "#fff" : colors.primary}
-            />
-          </TouchableOpacity>
-        )}
+        </TouchableOpacity>
       </View>
 
-      {/* ── Detail chips ── */}
-      <View
-        style={[
-          styles.details,
-          { backgroundColor: isDark ? "#111" : "#F2F2F2" },
-        ]}
-      >
-        <Chip label="Series" value={displaySets.toString()} colors={colors} />
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
-        <Chip label="Reps" value={displayReps} colors={colors} />
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
-        <Chip
-          label="Descanso"
-          value={formatRestTime(displayRest)}
-          colors={colors}
-        />
-      </View>
-
-      {/* ── Progress bar ── */}
-      {isInProgress && (
-        <View style={styles.progressWrap}>
+      {/* ── Barra de progreso (si empezó) ── */}
+      {hasStarted && (
+        <View style={sty.progressRow}>
           <View
-            style={[styles.progressTrack, { backgroundColor: colors.border }]}
+            style={[
+              sty.progressTrack,
+              { backgroundColor: isDark ? "#232323" : "#F0F0F0" },
+            ]}
           >
             <View
               style={[
-                styles.progressFill,
+                sty.progressFill,
                 {
-                  backgroundColor: colors.primary,
-                  width: `${setsProgress * 100}%`,
+                  backgroundColor: isCompleted ? "#22C55E" : colors.primary,
+                  width: `${Math.min((setsCompleted / displaySets) * 100, 100)}%`,
                 },
               ]}
             />
           </View>
-
-          <Text style={[styles.progressLabel, { color: colors.textSecondary }]}>
-            {progress!.currentSet <= progress!.totalSets
-              ? `Serie ${progress!.currentSet} de ${progress!.totalSets}`
-              : `${progress!.totalSets} series completadas`}
+          <Text style={[sty.progressLabel, { color: colors.textSecondary }]}>
+            {setsCompleted}/{displaySets}
+            {setsSkipped > 0 ? ` · ${setsSkipped} salt.` : ""}
           </Text>
         </View>
       )}
+
+      {/* ── Chips de stats ── */}
+      <View style={sty.statsRow}>
+        <StatChip
+          icon="repeat"
+          value={displayReps}
+          color={colors.primary}
+          textColor={colors.textSecondary}
+        />
+        <StatChip
+          icon="barbell-outline"
+          value={displayWeight === 0 ? "Sin peso" : `${displayWeight}kg`}
+          color={weightAccent}
+          textColor={colors.textSecondary}
+        />
+        <StatChip
+          icon="time-outline"
+          value={formatRestTime(displayRest)}
+          color={restAccent}
+          textColor={colors.textSecondary}
+        />
+        <StatChip
+          icon="layers-outline"
+          value={
+            hasStarted
+              ? `${Math.min(currentSet, displaySets)}/${displaySets}`
+              : `${displaySets} series`
+          }
+          color={setsAccent}
+          textColor={colors.textSecondary}
+        />
+      </View>
     </TouchableOpacity>
   );
 }
 
-function Chip({
-  label,
+function StatChip({
+  icon,
   value,
-  colors,
+  color,
+  textColor,
 }: {
-  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
   value: string;
-  colors: ThemeColors;
+  color: string;
+  textColor: string;
 }) {
   return (
-    <View style={styles.chip}>
-      <Text style={[styles.chipLabel, { color: colors.textSecondary }]}>
-        {label}
-      </Text>
-      <Text style={[styles.chipValue, { color: colors.textPrimary }]}>
+    <View
+      style={[
+        sty.chip,
+        { backgroundColor: color + "12", borderColor: color + "25" },
+      ]}
+    >
+      <Ionicons name={icon} size={11} color={color} />
+      <Text style={[sty.chipText, { color: textColor }]} numberOfLines={1}>
         {value}
       </Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const sty = StyleSheet.create({
   card: {
-    padding: 16,
-    borderRadius: 20,
-    gap: 12,
-    marginBottom: 8,
-  },
-
-  nameRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderLeftWidth: 3,
+    padding: 14,
     gap: 10,
   },
-
-  iconBtn: {
+  topRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  indexBadge: {
     width: 26,
     height: 26,
-    borderRadius: 13,
+    borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
-    flexShrink: 0,
   },
-
-  name: {
-    fontSize: 16,
-    fontWeight: "600",
-    flex: 1,
-    lineHeight: 22,
-  },
-
+  indexNum: { fontSize: 12, fontWeight: "800" },
+  exName: { flex: 1, fontSize: 15, fontWeight: "700", letterSpacing: -0.3 },
   playBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
-    flexShrink: 0,
   },
 
-  details: {
+  progressRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  progressTrack: { flex: 1, height: 5, borderRadius: 3, overflow: "hidden" },
+  progressFill: { height: "100%", borderRadius: 3 },
+  progressLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    minWidth: 56,
+    textAlign: "right",
+  },
+
+  statsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  chip: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
+    gap: 4,
     paddingHorizontal: 8,
-    borderRadius: 14,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
   },
-  chip: {
-    flex: 1,
-    alignItems: "center",
-    gap: 3,
-  },
-  chipLabel: {
-    fontSize: 10,
-    textTransform: "uppercase",
-    fontWeight: "600",
-    letterSpacing: 0.5,
-  },
-  chipValue: {
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  divider: {
-    width: 1,
-    height: 28,
-  },
-
-  progressWrap: { gap: 6 },
-  progressTrack: {
-    height: 4,
-    borderRadius: 2,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: 2,
-  },
-  progressLabel: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
+  chipText: { fontSize: 11, fontWeight: "600" },
 });

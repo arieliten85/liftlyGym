@@ -29,7 +29,7 @@ interface ThemeColors {
 export interface WorkoutSurveyPayload {
   intensity: number; // 1–5
   energy: number; // 1–5
-  soreness: number; // 1–5
+  painLevel: number; // 1–5
   comment: string;
   completedAt: string;
   durationMinutes: number;
@@ -50,83 +50,111 @@ interface WorkoutSummaryModalProps {
   onClose: () => void;
 }
 
-const RATINGS: { emoji: string; label: string }[][] = [
-  // intensity
-  [
-    { emoji: "🧘", label: "Muy suave" },
-    { emoji: "🚶", label: "Suave" },
-    { emoji: "🏃", label: "Moderado" },
-    { emoji: "💪", label: "Intenso" },
-    { emoji: "🔥", label: "Al límite" },
-  ],
-  // energy
-  [
-    { emoji: "😴", label: "Sin energía" },
-    { emoji: "😐", label: "Bajo" },
-    { emoji: "🙂", label: "Normal" },
-    { emoji: "😄", label: "Con energía" },
-    { emoji: "⚡", label: "Con todo" },
-  ],
-  // soreness
-  [
-    { emoji: "✅", label: "Sin dolor" },
-    { emoji: "🟡", label: "Leve" },
-    { emoji: "🟠", label: "Moderado" },
-    { emoji: "🔴", label: "Fuerte" },
-    { emoji: "🆘", label: "Muy fuerte" },
-  ],
+// ─── ScaleSelector ────────────────────────────────────────────────────────────
+// Selector de 1–5 estilo "peso en rack" — barras de altura creciente
+
+const INTENSITY_LABELS = [
+  "Muy suave",
+  "Suave",
+  "Moderado",
+  "Intenso",
+  "Al límite",
+];
+const ENERGY_LABELS = ["Agotado", "Bajo", "Normal", "Bien", "Excelente"];
+const SORENESS_LABELS = [
+  "Sin molestias",
+  "Leve",
+  "Moderado",
+  "Fuerte",
+  "Muy fuerte",
 ];
 
-function EmojiRating({
-  title,
-  ratings,
+function ScaleSelector({
+  label,
+  sublabel,
   value,
   onChange,
+  accent,
+  labels,
   colors,
   isDark,
-  accentColor,
 }: {
-  title: string;
-  ratings: { emoji: string; label: string }[];
+  label: string;
+  sublabel: string;
   value: number;
   onChange: (v: number) => void;
+  accent: string;
+  labels: string[];
   colors: ThemeColors;
   isDark: boolean;
-  accentColor: string;
 }) {
+  const barHeights = [20, 32, 44, 56, 68];
+
   return (
-    <View style={er.wrap}>
-      <View style={er.titleRow}>
-        <Text style={[er.title, { color: colors.textPrimary }]}>{title}</Text>
-        {value > 0 && (
-          <Text style={[er.selected, { color: accentColor }]}>
-            {ratings[value - 1].label}
+    <View style={sc.wrap}>
+      <View style={sc.labelRow}>
+        <View>
+          <Text style={[sc.label, { color: colors.textPrimary }]}>{label}</Text>
+          <Text style={[sc.sublabel, { color: colors.textSecondary }]}>
+            {sublabel}
           </Text>
+        </View>
+        {value > 0 && (
+          <View
+            style={[
+              sc.valuePill,
+              { backgroundColor: accent + "18", borderColor: accent + "35" },
+            ]}
+          >
+            <Text style={[sc.valueText, { color: accent }]}>
+              {labels[value - 1]}
+            </Text>
+          </View>
         )}
       </View>
-      <View style={er.row}>
-        {ratings.map((item, i) => {
-          const n = i + 1;
-          const active = n === value;
+
+      <View style={sc.barsRow}>
+        {[1, 2, 3, 4, 5].map((n) => {
+          const active = n <= value;
+          const selected = n === value;
           return (
             <TouchableOpacity
               key={n}
               onPress={() => onChange(n)}
               activeOpacity={0.7}
-              style={[
-                er.btn,
-                {
-                  backgroundColor: active
-                    ? accentColor + "20"
-                    : isDark
-                      ? "#1A1A1A"
-                      : "#F0F0F0",
-                  borderColor: active ? accentColor : "transparent",
-                  transform: [{ scale: active ? 1.12 : 1 }],
-                },
-              ]}
+              style={[sc.barWrap, { height: barHeights[n - 1] + 16 }]}
             >
-              <Text style={er.emoji}>{item.emoji}</Text>
+              <Animated.View
+                style={[
+                  sc.bar,
+                  {
+                    height: barHeights[n - 1],
+                    backgroundColor: active
+                      ? accent
+                      : isDark
+                        ? "#252525"
+                        : "#E8E8E8",
+                    borderRadius: 4,
+                    transform: [{ scaleY: selected ? 1.05 : 1 }],
+                    shadowColor: active ? accent : "transparent",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: selected ? 0.45 : 0,
+                    shadowRadius: 6,
+                    elevation: selected ? 4 : 0,
+                  },
+                ]}
+              />
+              <Text
+                style={[
+                  sc.barNum,
+                  {
+                    color: active ? accent : colors.textSecondary,
+                    opacity: active ? 1 : 0.4,
+                  },
+                ]}
+              >
+                {n}
+              </Text>
             </TouchableOpacity>
           );
         })}
@@ -135,40 +163,52 @@ function EmojiRating({
   );
 }
 
-const er = StyleSheet.create({
-  wrap: { gap: 12 },
-  titleRow: {
+const sc = StyleSheet.create({
+  wrap: { gap: 16 },
+  labelRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
   },
-  title: { fontSize: 15, fontWeight: "700" },
-  selected: { fontSize: 13, fontWeight: "600" },
-  row: { flexDirection: "row", gap: 10 },
-  btn: {
-    flex: 1,
-    aspectRatio: 1,
-    maxWidth: 56,
-    borderRadius: 14,
-    borderWidth: 2,
-    justifyContent: "center",
-    alignItems: "center",
+  label: { fontSize: 15, fontWeight: "700", letterSpacing: -0.2 },
+  sublabel: { fontSize: 12, fontWeight: "500", marginTop: 2 },
+  valuePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
   },
-  emoji: { fontSize: 24 },
+  valueText: { fontSize: 12, fontWeight: "700" },
+  barsRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 8,
+  },
+  barWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 6,
+  },
+  bar: { width: "100%" },
+  barNum: { fontSize: 11, fontWeight: "700" },
 });
 
-function AnimatedStat({
+// ─── StatBlock ────────────────────────────────────────────────────────────────
+// Número grande estilo marcador deportivo
+
+function StatBlock({
   value,
+  suffix,
   label,
-  suffix = "",
-  color,
+  accent,
   colors,
-  delay = 0,
+  delay,
 }: {
   value: number;
-  label: string;
   suffix?: string;
-  color: string;
+  label: string;
+  accent: string;
   colors: ThemeColors;
   delay?: number;
 }) {
@@ -176,15 +216,15 @@ function AnimatedStat({
   const [displayed, setDisplayed] = useState(0);
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
+    const t = setTimeout(() => {
       Animated.timing(anim, {
         toValue: value,
-        duration: 900,
+        duration: 800,
         useNativeDriver: false,
         easing: Easing.out(Easing.cubic),
       }).start();
-    }, delay);
-    return () => clearTimeout(timeout);
+    }, delay ?? 0);
+    return () => clearTimeout(t);
   }, [value]);
 
   useEffect(() => {
@@ -193,42 +233,31 @@ function AnimatedStat({
   }, []);
 
   return (
-    <View style={as.wrap}>
-      <View
-        style={[
-          as.circle,
-          { borderColor: color + "30", backgroundColor: color + "10" },
-        ]}
-      >
-        <Text style={[as.num, { color }]}>
-          {displayed}
-          {suffix}
-        </Text>
-      </View>
-      <Text style={[as.label, { color: colors.textSecondary }]}>{label}</Text>
+    <View style={sb.wrap}>
+      <Text style={[sb.num, { color: colors.textPrimary }]}>
+        {displayed}
+        <Text style={[sb.suffix, { color: accent }]}>{suffix}</Text>
+      </Text>
+      <Text style={[sb.label, { color: colors.textSecondary }]}>{label}</Text>
+      <View style={[sb.line, { backgroundColor: accent }]} />
     </View>
   );
 }
 
-const as = StyleSheet.create({
-  wrap: { alignItems: "center", gap: 8, flex: 1 },
-  circle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 2,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  num: { fontSize: 22, fontWeight: "900", letterSpacing: -0.5 },
+const sb = StyleSheet.create({
+  wrap: { flex: 1, alignItems: "center", gap: 6 },
+  num: { fontSize: 40, fontWeight: "900", letterSpacing: -2, lineHeight: 44 },
+  suffix: { fontSize: 20, fontWeight: "700", letterSpacing: -1 },
   label: {
-    fontSize: 11,
-    fontWeight: "600",
+    fontSize: 10,
+    fontWeight: "700",
     textTransform: "uppercase",
-    letterSpacing: 0.5,
-    textAlign: "center",
+    letterSpacing: 1.2,
   },
+  line: { height: 2, width: 24, borderRadius: 1 },
 });
+
+// ─── WorkoutSummaryModal ──────────────────────────────────────────────────────
 
 export function WorkoutSummaryModal({
   visible,
@@ -248,16 +277,15 @@ export function WorkoutSummaryModal({
   const [comment, setComment] = useState("");
 
   const slideAnim = useRef(new Animated.Value(0)).current;
+  const headerAnim = useRef(new Animated.Value(0)).current;
+  const statsAnim = useRef(new Animated.Value(0)).current;
   const btnScale = useRef(new Animated.Value(1)).current;
-  const heroScale = useRef(new Animated.Value(0.6)).current;
-  const heroOpacity = useRef(new Animated.Value(0)).current;
 
   const completionPct =
     exercisesTotal > 0
       ? Math.round((exercisesCompleted / exercisesTotal) * 100)
       : 0;
 
-  // Reset on open
   useEffect(() => {
     if (visible) {
       setStep(1);
@@ -265,20 +293,21 @@ export function WorkoutSummaryModal({
       setEnergy(0);
       setSoreness(0);
       setComment("");
-      heroScale.setValue(0.6);
-      heroOpacity.setValue(0);
-      // Hero entrance animation
-      Animated.parallel([
-        Animated.spring(heroScale, {
+      headerAnim.setValue(0);
+      statsAnim.setValue(0);
+
+      Animated.stagger(120, [
+        Animated.timing(headerAnim, {
           toValue: 1,
+          duration: 420,
           useNativeDriver: true,
-          tension: 60,
-          friction: 7,
+          easing: Easing.out(Easing.cubic),
         }),
-        Animated.timing(heroOpacity, {
+        Animated.timing(statsAnim, {
           toValue: 1,
-          duration: 400,
+          duration: 380,
           useNativeDriver: true,
+          easing: Easing.out(Easing.cubic),
         }),
       ]).start();
     }
@@ -287,7 +316,7 @@ export function WorkoutSummaryModal({
   const goToSurvey = () => {
     Animated.timing(slideAnim, {
       toValue: -1,
-      duration: 280,
+      duration: 260,
       useNativeDriver: true,
       easing: Easing.in(Easing.cubic),
     }).start(() => {
@@ -295,7 +324,7 @@ export function WorkoutSummaryModal({
       slideAnim.setValue(1);
       Animated.timing(slideAnim, {
         toValue: 0,
-        duration: 280,
+        duration: 260,
         useNativeDriver: true,
         easing: Easing.out(Easing.cubic),
       }).start();
@@ -308,13 +337,13 @@ export function WorkoutSummaryModal({
     if (!canSubmit) return;
     Animated.sequence([
       Animated.timing(btnScale, {
-        toValue: 0.94,
-        duration: 80,
+        toValue: 0.95,
+        duration: 70,
         useNativeDriver: true,
       }),
       Animated.timing(btnScale, {
         toValue: 1,
-        duration: 150,
+        duration: 140,
         useNativeDriver: true,
         easing: Easing.out(Easing.back(2)),
       }),
@@ -322,7 +351,7 @@ export function WorkoutSummaryModal({
       onSubmit({
         intensity,
         energy,
-        soreness,
+        painLevel: soreness,
         comment: comment.trim(),
         completedAt: new Date().toISOString(),
         durationMinutes,
@@ -333,33 +362,38 @@ export function WorkoutSummaryModal({
     });
   };
 
-  const isGoodResult = completionPct >= 80 && !wasAbandoned;
-  const heroEmoji = wasAbandoned
-    ? "🚪"
-    : completionPct === 100
-      ? "🏆"
-      : completionPct >= 50
-        ? "💪"
-        : "🌱";
-  const heroTitle = wasAbandoned
-    ? "Rutina abandonada"
-    : completionPct === 100
-      ? "¡Rutina completada!"
-      : `${completionPct}% completado`;
-  const heroSub = wasAbandoned
-    ? "Está bien, lo que hiciste cuenta. ¡La próxima vas con todo!"
-    : completionPct === 100
-      ? "¡Excelente trabajo! Terminaste cada ejercicio."
-      : `Completaste ${exercisesCompleted} de ${exercisesTotal} ejercicios.`;
-
-  const accentIntensity = isDark ? "#F87171" : "#DC2626";
-  const accentEnergy = isDark ? "#34D399" : "#059669";
-  const accentSoreness = isDark ? "#FB923C" : "#EA580C";
-
   const slideTranslate = slideAnim.interpolate({
     inputRange: [-1, 0, 1],
-    outputRange: [-340, 0, 340],
+    outputRange: [-360, 0, 360],
   });
+
+  // Acents
+  const accentIntensity = isDark ? "#F87171" : "#DC2626";
+  const accentEnergy = colors.primary;
+  const accentSoreness = isDark ? "#FB923C" : "#EA580C";
+
+  // Header state text — sin emojis, directo al punto
+  const resultLabel = wasAbandoned
+    ? "SESIÓN INCOMPLETA"
+    : completionPct === 100
+      ? "SESIÓN COMPLETADA"
+      : `${completionPct}% COMPLETADO`;
+
+  const resultSub = wasAbandoned
+    ? `${exercisesCompleted} de ${exercisesTotal} ejercicios realizados`
+    : completionPct === 100
+      ? `${exercisesTotal} ejercicios · ${durationMinutes} min`
+      : `${exercisesCompleted} de ${exercisesTotal} ejercicios realizados`;
+
+  const resultColor = wasAbandoned
+    ? isDark
+      ? "#94A3B8"
+      : "#64748B"
+    : completionPct === 100
+      ? isDark
+        ? "#34D399"
+        : "#059669"
+      : colors.primary;
 
   return (
     <Modal
@@ -369,7 +403,7 @@ export function WorkoutSummaryModal({
       onRequestClose={onClose}
     >
       <SafeAreaView style={[m.safe, { backgroundColor: colors.bg }]}>
-        {/* ─── HEADER ─── */}
+        {/* ── Header fijo ── */}
         <View style={m.header}>
           {step === 2 ? (
             <TouchableOpacity
@@ -382,7 +416,7 @@ export function WorkoutSummaryModal({
             >
               <Ionicons
                 name="arrow-back"
-                size={20}
+                size={18}
                 color={colors.textSecondary}
               />
             </TouchableOpacity>
@@ -390,15 +424,14 @@ export function WorkoutSummaryModal({
             <View style={{ width: 40 }} />
           )}
 
-          {/* Step indicators */}
-          <View style={m.steps}>
+          <View style={m.stepIndicator}>
             <View style={[m.stepDot, { backgroundColor: colors.primary }]} />
             <View
               style={[
                 m.stepDot,
                 {
                   backgroundColor: step === 2 ? colors.primary : colors.border,
-                  width: step === 2 ? 24 : 8,
+                  width: step === 2 ? 20 : 8,
                 },
               ]}
             />
@@ -412,127 +445,135 @@ export function WorkoutSummaryModal({
               { backgroundColor: isDark ? "#1E1E1E" : "#F0F0F0" },
             ]}
           >
-            <Ionicons name="close" size={20} color={colors.textSecondary} />
+            <Ionicons name="close" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
-        {/* ─── ANIMATED CONTENT ─── */}
+        {/* ── Contenido animado ── */}
         <Animated.View
-          style={[{ flex: 1, transform: [{ translateX: slideTranslate }] }]}
+          style={{ flex: 1, transform: [{ translateX: slideTranslate }] }}
         >
-          {/* ══ STEP 1: RESULT ══ */}
+          {/* ══ STEP 1: RESUMEN ══ */}
           {step === 1 && (
             <ScrollView
               contentContainerStyle={m.scroll}
               showsVerticalScrollIndicator={false}
               bounces={false}
             >
-              {/* Hero */}
+              {/* Bloque resultado — tipografía grande, sin adornos */}
               <Animated.View
                 style={[
-                  m.hero,
-                  { transform: [{ scale: heroScale }], opacity: heroOpacity },
+                  m.resultBlock,
+                  {
+                    opacity: headerAnim,
+                    transform: [
+                      {
+                        translateY: headerAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [16, 0],
+                        }),
+                      },
+                    ],
+                  },
                 ]}
               >
-                <View
-                  style={[
-                    m.heroCircle,
-                    {
-                      backgroundColor:
-                        (wasAbandoned ? "#64748B" : colors.primary) + "15",
-                      borderColor:
-                        (wasAbandoned ? "#64748B" : colors.primary) + "30",
-                    },
-                  ]}
-                >
-                  <Text style={m.heroEmoji}>{heroEmoji}</Text>
-                </View>
-                <Text style={[m.heroTitle, { color: colors.textPrimary }]}>
-                  {heroTitle}
+                {/* Barra de estado coloreada */}
+                <View style={[m.statusBar, { backgroundColor: resultColor }]} />
+
+                <Text style={[m.resultLabel, { color: resultColor }]}>
+                  {resultLabel}
                 </Text>
-                <Text style={[m.heroSub, { color: colors.textSecondary }]}>
-                  {heroSub}
+                <Text style={[m.resultSub, { color: colors.textSecondary }]}>
+                  {resultSub}
                 </Text>
               </Animated.View>
 
-              {/* Stats */}
-              <View
+              {/* Stats — números grandes estilo tablero */}
+              <Animated.View
                 style={[
-                  m.statsCard,
+                  m.statsRow,
                   {
-                    backgroundColor: isDark ? "#141414" : "#F7F7F7",
-                    borderColor: isDark ? "#232323" : "#EBEBEB",
+                    backgroundColor: isDark ? "#111" : "#F5F5F5",
+                    borderColor: isDark ? "#1E1E1E" : "#E8E8E8",
+                    opacity: statsAnim,
+                    transform: [
+                      {
+                        translateY: statsAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [20, 0],
+                        }),
+                      },
+                    ],
                   },
                 ]}
               >
-                <AnimatedStat
+                <StatBlock
                   value={durationMinutes}
                   suffix="m"
                   label="Duración"
-                  color={colors.primary}
+                  accent={colors.primary}
                   colors={colors}
-                  delay={200}
+                  delay={180}
                 />
                 <View
-                  style={[m.statsDivider, { backgroundColor: colors.border }]}
+                  style={[
+                    m.statsDivider,
+                    { backgroundColor: isDark ? "#1E1E1E" : "#E8E8E8" },
+                  ]}
                 />
-                <AnimatedStat
+                <StatBlock
                   value={exercisesCompleted}
                   label="Ejercicios"
-                  color={accentEnergy}
+                  accent={accentEnergy}
                   colors={colors}
-                  delay={350}
+                  delay={300}
                 />
                 <View
-                  style={[m.statsDivider, { backgroundColor: colors.border }]}
+                  style={[
+                    m.statsDivider,
+                    { backgroundColor: isDark ? "#1E1E1E" : "#E8E8E8" },
+                  ]}
                 />
-                <AnimatedStat
+                <StatBlock
                   value={completionPct}
                   suffix="%"
                   label="Completado"
-                  color={accentIntensity}
+                  accent={accentIntensity}
                   colors={colors}
-                  delay={500}
+                  delay={420}
                 />
-              </View>
+              </Animated.View>
 
-              {/* Motivational tip */}
-              <View
+              {/* Nota contextual — texto directo, sin card decorativa */}
+              <Text
                 style={[
-                  m.tipCard,
-                  {
-                    backgroundColor: colors.primary + "0A",
-                    borderColor: colors.primary + "20",
-                  },
+                  m.contextNote,
+                  { color: colors.textSecondary, borderLeftColor: resultColor },
                 ]}
               >
-                <Ionicons name="sparkles" size={16} color={colors.primary} />
-                <Text style={[m.tipText, { color: colors.textSecondary }]}>
-                  {wasAbandoned
-                    ? "La IA ajustará tu próxima rutina para que sea más alcanzable."
-                    : isGoodResult
-                      ? "¡Gran trabajo! La constancia es la clave del progreso."
-                      : "Cada entrenamiento te acerca a tu objetivo, seguí así."}
-                </Text>
-              </View>
+                {wasAbandoned
+                  ? "La IA ajustará la próxima sesión en base a lo que registraste hoy."
+                  : completionPct === 100
+                    ? "Datos completos registrados. La IA analizará el rendimiento para la próxima rutina."
+                    : "La IA usará estos datos para optimizar la progresión en la próxima sesión."}
+              </Text>
 
-              {/* CTA to survey */}
+              {/* CTA survey */}
               <TouchableOpacity
                 onPress={goToSurvey}
                 activeOpacity={0.86}
                 style={[m.ctaBtn, { backgroundColor: colors.primary }]}
               >
-                <Text style={m.ctaText}>Contar cómo me fue</Text>
-                <Ionicons name="arrow-forward" size={20} color="#fff" />
+                <Text style={m.ctaText}>Registrar percepción del esfuerzo</Text>
+                <Ionicons name="arrow-forward" size={18} color="#fff" />
               </TouchableOpacity>
 
-              {/* Skip option */}
               <TouchableOpacity
                 onPress={() =>
                   onSubmit({
                     intensity: 0,
                     energy: 0,
-                    soreness: 0,
+                    painLevel: 0,
                     comment: "",
                     completedAt: new Date().toISOString(),
                     durationMinutes,
@@ -545,13 +586,13 @@ export function WorkoutSummaryModal({
                 style={m.skipBtn}
               >
                 <Text style={[m.skipText, { color: colors.textSecondary }]}>
-                  Saltar encuesta
+                  Omitir
                 </Text>
               </TouchableOpacity>
             </ScrollView>
           )}
 
-          {/* ══ STEP 2: SURVEY ══ */}
+          {/* ══ STEP 2: ENCUESTA RPE ══ */}
           {step === 2 && (
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
               <KeyboardAvoidingView
@@ -563,101 +604,113 @@ export function WorkoutSummaryModal({
                   showsVerticalScrollIndicator={false}
                   keyboardShouldPersistTaps="handled"
                 >
+                  {/* Intro — clínico, directo */}
                   <View style={m.surveyIntro}>
                     <Text
                       style={[m.surveyTitle, { color: colors.textPrimary }]}
                     >
-                      ¿Cómo te sentiste? 💬
+                      Percepción del esfuerzo
                     </Text>
                     <Text
                       style={[m.surveySub, { color: colors.textSecondary }]}
                     >
-                      Tu respuesta ayuda a la IA a personalizar tu próxima
-                      sesión
+                      3 métricas clave · menos de 30 segundos
                     </Text>
                   </View>
 
-                  {/* Rating cards */}
+                  {/* Separador con label */}
                   <View
                     style={[
-                      m.ratingCard,
-                      {
-                        backgroundColor: isDark ? "#141414" : "#F7F7F7",
-                        borderColor: isDark ? "#232323" : "#EBEBEB",
-                      },
-                    ]}
-                  >
-                    <EmojiRating
-                      title="💪 Intensidad del entrenamiento"
-                      ratings={RATINGS[0]}
-                      value={intensity}
-                      onChange={setIntensity}
-                      colors={colors}
-                      isDark={isDark}
-                      accentColor={accentIntensity}
-                    />
-                  </View>
-
-                  <View
-                    style={[
-                      m.ratingCard,
-                      {
-                        backgroundColor: isDark ? "#141414" : "#F7F7F7",
-                        borderColor: isDark ? "#232323" : "#EBEBEB",
-                      },
-                    ]}
-                  >
-                    <EmojiRating
-                      title="⚡ Energía al terminar"
-                      ratings={RATINGS[1]}
-                      value={energy}
-                      onChange={setEnergy}
-                      colors={colors}
-                      isDark={isDark}
-                      accentColor={accentEnergy}
-                    />
-                  </View>
-
-                  <View
-                    style={[
-                      m.ratingCard,
-                      {
-                        backgroundColor: isDark ? "#141414" : "#F7F7F7",
-                        borderColor: isDark ? "#232323" : "#EBEBEB",
-                      },
-                    ]}
-                  >
-                    <EmojiRating
-                      title="🩹 Dolor / molestias"
-                      ratings={RATINGS[2]}
-                      value={soreness}
-                      onChange={setSoreness}
-                      colors={colors}
-                      isDark={isDark}
-                      accentColor={accentSoreness}
-                    />
-                  </View>
-
-                  {/* Comment */}
-                  <View
-                    style={[
-                      m.ratingCard,
-                      {
-                        backgroundColor: isDark ? "#141414" : "#F7F7F7",
-                        borderColor: isDark ? "#232323" : "#EBEBEB",
-                      },
+                      m.dividerRow,
+                      { borderTopColor: isDark ? "#1E1E1E" : "#EBEBEB" },
                     ]}
                   >
                     <Text
+                      style={[m.dividerLabel, { color: colors.textSecondary }]}
+                    >
+                      RPE — Escala 1 al 5
+                    </Text>
+                  </View>
+
+                  {/* Intensidad */}
+                  <View
+                    style={[
+                      m.metricCard,
+                      {
+                        backgroundColor: isDark ? "#111" : "#FAFAFA",
+                        borderColor: isDark ? "#1E1E1E" : "#EBEBEB",
+                      },
+                    ]}
+                  >
+                    <ScaleSelector
+                      label="Intensidad"
+                      sublabel="¿Qué tan duro fue el entrenamiento?"
+                      value={intensity}
+                      onChange={setIntensity}
+                      accent={accentIntensity}
+                      labels={INTENSITY_LABELS}
+                      colors={colors}
+                      isDark={isDark}
+                    />
+                  </View>
+
+                  {/* Energía */}
+                  <View
+                    style={[
+                      m.metricCard,
+                      {
+                        backgroundColor: isDark ? "#111" : "#FAFAFA",
+                        borderColor: isDark ? "#1E1E1E" : "#EBEBEB",
+                      },
+                    ]}
+                  >
+                    <ScaleSelector
+                      label="Energía al terminar"
+                      sublabel="¿Cómo quedaste al finalizar?"
+                      value={energy}
+                      onChange={setEnergy}
+                      accent={accentEnergy}
+                      labels={ENERGY_LABELS}
+                      colors={colors}
+                      isDark={isDark}
+                    />
+                  </View>
+
+                  {/* Dolor muscular */}
+                  <View
+                    style={[
+                      m.metricCard,
+                      {
+                        backgroundColor: isDark ? "#111" : "#FAFAFA",
+                        borderColor: isDark ? "#1E1E1E" : "#EBEBEB",
+                      },
+                    ]}
+                  >
+                    <ScaleSelector
+                      label="Dolor / molestias"
+                      sublabel="Dolor muscular o articular durante la sesión"
+                      value={soreness}
+                      onChange={setSoreness}
+                      accent={accentSoreness}
+                      labels={SORENESS_LABELS}
+                      colors={colors}
+                      isDark={isDark}
+                    />
+                  </View>
+
+                  {/* Comentario — campo limpio sin decoración */}
+                  <View style={m.commentBlock}>
+                    <Text
                       style={[m.commentLabel, { color: colors.textPrimary }]}
                     >
-                      📝 Algo que quieras recordar{" "}
+                      Observaciones
                       <Text
                         style={{
                           color: colors.textSecondary,
                           fontWeight: "500",
                         }}
                       >
+                        {" "}
                         (opcional)
                       </Text>
                     </Text>
@@ -665,12 +718,12 @@ export function WorkoutSummaryModal({
                       style={[
                         m.commentInput,
                         {
-                          backgroundColor: isDark ? "#1A1A1A" : "#FFFFFF",
-                          borderColor: isDark ? "#2A2A2A" : "#E0E0E0",
+                          backgroundColor: isDark ? "#111" : "#FAFAFA",
+                          borderColor: isDark ? "#1E1E1E" : "#E0E0E0",
                           color: colors.textPrimary,
                         },
                       ]}
-                      placeholder="Ej: el hombro me molestó un poco, subir peso en press..."
+                      placeholder="Molestias específicas, notas de progresión, ajustes sugeridos..."
                       placeholderTextColor={colors.textSecondary}
                       value={comment}
                       onChangeText={setComment}
@@ -685,12 +738,15 @@ export function WorkoutSummaryModal({
                 <View
                   style={[
                     m.footer,
-                    { borderTopColor: isDark ? "#1E1E1E" : "#F0F0F0" },
+                    {
+                      borderTopColor: isDark ? "#1E1E1E" : "#F0F0F0",
+                      backgroundColor: colors.bg,
+                    },
                   ]}
                 >
                   {!canSubmit && (
                     <Text style={[m.hint, { color: colors.textSecondary }]}>
-                      Seleccioná las 3 valoraciones para continuar
+                      Completá las 3 métricas para continuar
                     </Text>
                   )}
                   <Animated.View style={{ transform: [{ scale: btnScale }] }}>
@@ -703,14 +759,14 @@ export function WorkoutSummaryModal({
                           backgroundColor: canSubmit
                             ? colors.primary
                             : isDark
-                              ? "#252525"
+                              ? "#222"
                               : "#E5E5E5",
                         },
                       ]}
                     >
                       <Ionicons
                         name="checkmark-done-circle"
-                        size={22}
+                        size={20}
                         color={canSubmit ? "#fff" : colors.textSecondary}
                       />
                       <Text
@@ -719,7 +775,7 @@ export function WorkoutSummaryModal({
                           { color: canSubmit ? "#fff" : colors.textSecondary },
                         ]}
                       >
-                        Guardar y terminar
+                        Guardar y cerrar sesión
                       </Text>
                     </TouchableOpacity>
                   </Animated.View>
@@ -733,6 +789,8 @@ export function WorkoutSummaryModal({
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const m = StyleSheet.create({
   safe: { flex: 1 },
 
@@ -745,125 +803,119 @@ const m = StyleSheet.create({
     paddingBottom: 8,
   },
   iconBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  stepIndicator: { flexDirection: "row", alignItems: "center", gap: 5 },
+  stepDot: { height: 7, width: 7, borderRadius: 3.5 },
+
+  scroll: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 36, gap: 20 },
+
+  // ── Step 1 ──
+  resultBlock: {
+    gap: 8,
+    paddingTop: 12,
+    paddingBottom: 4,
+  },
+  statusBar: {
+    height: 3,
     width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
+    borderRadius: 2,
+    marginBottom: 4,
   },
-  steps: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
+  resultLabel: {
+    fontSize: 28,
+    fontWeight: "900",
+    letterSpacing: -0.8,
+    lineHeight: 32,
   },
-  stepDot: {
-    height: 8,
-    width: 8,
-    borderRadius: 4,
-  },
-
-  scroll: {
-    padding: 24,
-    paddingBottom: 32,
-    gap: 18,
-  },
-
-  // Step 1 hero
-  hero: {
-    alignItems: "center",
-    gap: 14,
-    paddingVertical: 8,
-  },
-  heroCircle: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    borderWidth: 2,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  heroEmoji: { fontSize: 52 },
-  heroTitle: {
-    fontSize: 26,
-    fontWeight: "800",
-    letterSpacing: -0.5,
-    textAlign: "center",
-  },
-  heroSub: {
-    fontSize: 15,
+  resultSub: {
+    fontSize: 14,
     fontWeight: "500",
-    textAlign: "center",
-    lineHeight: 22,
+    lineHeight: 20,
   },
 
-  // Stats card
-  statsCard: {
+  statsRow: {
     flexDirection: "row",
-    borderRadius: 20,
+    borderRadius: 18,
     borderWidth: 1,
-    paddingVertical: 20,
-    paddingHorizontal: 8,
-    alignItems: "center",
+    paddingVertical: 24,
+    paddingHorizontal: 12,
+    alignItems: "flex-end",
   },
-  statsDivider: { width: 1, height: 60, marginHorizontal: 4 },
+  statsDivider: { width: 1, height: 50, marginHorizontal: 4 },
 
-  // Tip
-  tipCard: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
+  contextNote: {
+    fontSize: 13,
+    fontWeight: "500",
+    lineHeight: 20,
+    borderLeftWidth: 2,
+    paddingLeft: 12,
+    color: "#888",
   },
-  tipText: { flex: 1, fontSize: 14, fontWeight: "500", lineHeight: 20 },
 
-  // CTA
   ctaBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    paddingVertical: 18,
-    borderRadius: 18,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 8,
+    paddingVertical: 17,
+    borderRadius: 14,
   },
   ctaText: {
     color: "#fff",
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: "800",
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
   },
 
-  skipBtn: { alignItems: "center", paddingVertical: 4 },
-  skipText: { fontSize: 14, fontWeight: "500" },
+  skipBtn: { alignItems: "center", paddingVertical: 2 },
+  skipText: { fontSize: 13, fontWeight: "500" },
 
-  // Step 2 survey
-  surveyIntro: { gap: 6 },
-  surveyTitle: { fontSize: 22, fontWeight: "800", letterSpacing: -0.3 },
-  surveySub: { fontSize: 14, fontWeight: "500", lineHeight: 20 },
+  // ── Step 2 ──
+  surveyIntro: { gap: 4, paddingTop: 8 },
+  surveyTitle: {
+    fontSize: 22,
+    fontWeight: "900",
+    letterSpacing: -0.5,
+    lineHeight: 26,
+  },
+  surveySub: { fontSize: 13, fontWeight: "500" },
 
-  ratingCard: {
-    borderRadius: 18,
+  dividerRow: {
+    borderTopWidth: 1,
+    paddingTop: 14,
+  },
+  dividerLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 1.4,
+  },
+
+  metricCard: {
+    borderRadius: 16,
     borderWidth: 1,
     padding: 18,
   },
 
-  commentLabel: { fontSize: 15, fontWeight: "700", marginBottom: 10 },
+  commentBlock: { gap: 10 },
+  commentLabel: { fontSize: 14, fontWeight: "700" },
   commentInput: {
     borderWidth: 1,
     borderRadius: 12,
     padding: 14,
-    fontSize: 15,
-    minHeight: 88,
+    fontSize: 14,
+    lineHeight: 20,
+    minHeight: 84,
   },
 
   footer: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 14,
     paddingBottom: Platform.OS === "ios" ? 10 : 24,
     borderTopWidth: 1,
     gap: 8,
