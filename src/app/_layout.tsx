@@ -1,8 +1,9 @@
+import { GlobalLoader } from "@/shared/components/GlobalLoader";
 import { ThemeProvider, useAppTheme } from "@/theme/ThemeProvider";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-
+import Toast from "react-native-toast-message";
 function NavigationStack() {
   const { theme, isDark } = useAppTheme();
 
@@ -67,6 +68,8 @@ export default function RootLayout() {
     <ThemeProvider>
       <SafeAreaProvider>
         <NavigationStack />
+        <Toast />
+        <GlobalLoader />
       </SafeAreaProvider>
     </ThemeProvider>
   );
