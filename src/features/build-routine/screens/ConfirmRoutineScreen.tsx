@@ -1,8 +1,10 @@
+import { useUserStore } from "@/features/auth/store/userStore";
 import { RoutineService } from "@/services/routineService";
 import { Badge } from "@/shared/components/Badge";
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
 import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
 import { useRoutineStore } from "@/store/routine/useRoutineStore";
+
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
 import { Ionicons } from "@expo/vector-icons";
@@ -46,7 +48,6 @@ const LEVEL_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
 
 export default function ConfirmRoutineScreen() {
   const { theme, isDark } = useAppTheme();
-
   const routineService = new RoutineService();
 
   const goal = useBuildRoutineStore((s) => s.goal);
@@ -54,6 +55,14 @@ export default function ConfirmRoutineScreen() {
   const experience = useBuildRoutineStore((s) => s.experience);
   const routine = useBuildRoutineStore((s) => s.routine);
   const getQuickPayload = useBuildRoutineStore((s) => s.getQuickPayload);
+
+  const isAuthenticated = useUserStore((s) => s.isAuthenticated);
+  const user = useUserStore((s) => s.user);
+
+  const setLoading = useRoutineStore((s) => s.setLoading);
+  const setRoutine = useRoutineStore((s) => s.setRoutine);
+  const setError = useRoutineStore((s) => s.setError);
+
   const TEAL = theme.colors.primary;
   const textColor = isDark ? "#DFF0EE" : theme.colors.text;
   const subColor = isDark ? "#4A6A66" : theme.colors.textSecondary;
@@ -69,11 +78,13 @@ export default function ConfirmRoutineScreen() {
   const levelIcon = LEVEL_ICON[experience ?? "principiante"];
   const isReady = !!(goal && equipment && experience && routine);
 
-  const setLoading = useRoutineStore((s) => s.setLoading);
-  const setRoutine = useRoutineStore((s) => s.setRoutine);
-  const setError = useRoutineStore((s) => s.setError);
-
   const handleConfirm = async () => {
+    // Si no está autenticado → redirige a login y le dice que vuelva acá
+    if (!isAuthenticated) {
+      router.push("/login?returnTo=confirmRoutine");
+      return;
+    }
+
     const payload = getQuickPayload();
     if (!payload) return;
 
@@ -81,6 +92,7 @@ export default function ConfirmRoutineScreen() {
     router.push("/generatingRoutine");
 
     try {
+      // El axiosClient manda el token automáticamente
       const exercises = await routineService.generateRoutineOnboarding(payload);
       setRoutine({
         exercises,
@@ -98,7 +110,9 @@ export default function ConfirmRoutineScreen() {
       title="Confirmá tu rutina"
       onNext={handleConfirm}
       isNextDisabled={!isReady}
-      nextButtonText="Confirmar y generar"
+      nextButtonText={
+        isAuthenticated ? "Confirmar y generar" : "Iniciar sesión y generar"
+      }
     >
       <View style={styles.container}>
         <ScrollView
@@ -106,7 +120,7 @@ export default function ConfirmRoutineScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* ── BLOQUE 1: QUÉ VAS A HACER HOY ─────────────────── */}
+          {/* ── BLOQUE 1: QUÉ VAS A HACER HOY ── */}
           <View
             style={[
               styles.heroCard,
@@ -130,7 +144,6 @@ export default function ConfirmRoutineScreen() {
                 style={[styles.heroDivider, { backgroundColor: `${TEAL}20` }]}
               />
 
-              {/* Badges: objetivo + equipamiento */}
               <View style={styles.heroMeta}>
                 <Badge label={goal?.toUpperCase() ?? "—"} color="#FF7A59" />
                 <Badge
@@ -139,10 +152,17 @@ export default function ConfirmRoutineScreen() {
                   subtle
                 />
               </View>
+
+              {/* Muestra el nombre del usuario si está logueado */}
+              {user && (
+                <Text style={[styles.userTag, { color: subColor }]}>
+                  Rutina para {user.name}
+                </Text>
+              )}
             </View>
           </View>
 
-          {/* ── BLOQUE 2: PARA QUÉ ENTRENÁS ────────────────────── */}
+          {/* ── BLOQUE 2: OBJETIVO ── */}
           <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
             <View style={styles.cardHeader}>
               <Ionicons name={goalMeta.icon} size={15} color={TEAL} />
@@ -160,7 +180,7 @@ export default function ConfirmRoutineScreen() {
             </Text>
           </View>
 
-          {/* ── BLOQUE 3: CONSEJO SEGÚN NIVEL ───────────────────── */}
+          {/* ── BLOQUE 3: CONSEJO ── */}
           <View
             style={[
               styles.tipCard,
@@ -190,7 +210,22 @@ export default function ConfirmRoutineScreen() {
             </Text>
           </View>
 
-          {/* ── BLOQUE 4: EXPECTATIVA ───────────────────────────── */}
+          {/* ── BLOQUE 4: AUTH NOTICE (solo si no está logueado) ── */}
+          {!isAuthenticated && (
+            <View
+              style={[
+                styles.authNotice,
+                { backgroundColor: `${TEAL}0A`, borderColor: `${TEAL}25` },
+              ]}
+            >
+              <Ionicons name="lock-closed-outline" size={15} color={TEAL} />
+              <Text style={[styles.authNoticeText, { color: subColor }]}>
+                Necesitás iniciar sesión para guardar y generar tu rutina.
+              </Text>
+            </View>
+          )}
+
+          {/* ── BLOQUE 5: EXPECTATIVA ── */}
           <View style={[styles.infoRow, { borderColor }]}>
             <Ionicons name="sparkles-outline" size={15} color={subColor} />
             <Text style={[styles.infoText, { color: subColor }]}>
@@ -211,11 +246,7 @@ const styles = StyleSheet.create({
     paddingBottom: token.spacing.xl,
   },
 
-  heroCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
+  heroCard: { borderRadius: 16, borderWidth: 1, overflow: "hidden" },
   heroTopLine: {
     height: 2,
     width: "55%",
@@ -223,35 +254,26 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     borderRadius: 1,
   },
-  heroContent: {
-    padding: token.spacing.lg,
-    gap: token.spacing.sm,
-  },
+  heroContent: { padding: token.spacing.lg, gap: token.spacing.sm },
   heroTop: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  heroEyebrow: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1.5,
-  },
+  heroEyebrow: { fontSize: 11, fontWeight: "700", letterSpacing: 1.5 },
   heroRoutine: {
     fontSize: 40,
     fontWeight: "900",
     letterSpacing: 1.5,
     lineHeight: 44,
   },
-  heroDivider: {
-    height: 1,
-    marginVertical: token.spacing.xs / 2,
-  },
+  heroDivider: { height: 1, marginVertical: token.spacing.xs / 2 },
   heroMeta: {
     flexDirection: "row",
     alignItems: "center",
     gap: token.spacing.xs,
   },
+  userTag: { fontSize: 12, fontWeight: "500", marginTop: 4 },
 
   card: {
     borderRadius: 16,
@@ -259,20 +281,9 @@ const styles = StyleSheet.create({
     padding: token.spacing.lg,
     gap: token.spacing.sm,
   },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  cardLabel: {
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1.2,
-  },
-  cardBody: {
-    fontSize: token.typography.body,
-    lineHeight: 22,
-  },
+  cardHeader: { flexDirection: "row", alignItems: "center", gap: 6 },
+  cardLabel: { fontSize: 11, fontWeight: "800", letterSpacing: 1.2 },
+  cardBody: { fontSize: token.typography.body, lineHeight: 22 },
 
   tipCard: {
     borderRadius: 16,
@@ -293,13 +304,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexShrink: 0,
   },
-  tipHeaderText: {
-    gap: 2,
+  tipHeaderText: { gap: 2 },
+  tipLevel: { fontSize: 11, fontWeight: "500", letterSpacing: 0.3 },
+
+  authNotice: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: token.spacing.xs,
+    padding: token.spacing.md,
+    borderRadius: 12,
+    borderWidth: 1,
   },
-  tipLevel: {
-    fontSize: 11,
-    fontWeight: "500",
-    letterSpacing: 0.3,
+  authNoticeText: {
+    flex: 1,
+    fontSize: token.typography.bodySmall,
+    lineHeight: 18,
   },
 
   infoRow: {
@@ -310,9 +329,5 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     marginTop: token.spacing.xs,
   },
-  infoText: {
-    flex: 1,
-    fontSize: token.typography.bodySmall,
-    lineHeight: 18,
-  },
+  infoText: { flex: 1, fontSize: token.typography.bodySmall, lineHeight: 18 },
 });
