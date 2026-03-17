@@ -20,7 +20,6 @@ import {
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-
 import Toast from "react-native-toast-message";
 
 import { AuthInput } from "../components/Authinput";
@@ -32,12 +31,10 @@ export default function RegisterScreen() {
   const router = useRouter();
   const { theme, isDark } = useAppTheme();
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
+  const c = theme.colors;
 
   const [loading, setLoading] = useState(false);
-
   const authService = new AuthService();
-
-  const c = theme.colors;
 
   const {
     control,
@@ -45,17 +42,11 @@ export default function RegisterScreen() {
     formState: { errors },
   } = useForm<RegisterSchema>({
     resolver: zodResolver(registerSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    },
+    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
   });
 
   const headerAnim = useRef(new Animated.Value(0)).current;
   const formAnim = useRef(new Animated.Value(0)).current;
-  const footerAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.stagger(100, [
@@ -68,12 +59,6 @@ export default function RegisterScreen() {
       Animated.timing(formAnim, {
         toValue: 1,
         duration: 420,
-        useNativeDriver: true,
-        easing: Easing.out(Easing.cubic),
-      }),
-      Animated.timing(footerAnim, {
-        toValue: 1,
-        duration: 380,
         useNativeDriver: true,
         easing: Easing.out(Easing.cubic),
       }),
@@ -98,20 +83,14 @@ export default function RegisterScreen() {
   const onSubmit = async (data: RegisterSchema) => {
     try {
       setLoading(true);
-
       const payload: RegisterPayload = {
         name: data.name,
         email: data.email,
         password: data.password,
       };
-
       await authService.register(payload);
 
-      Toast.show({
-        type: "success",
-        text1: "Cuenta se creo exitosamente",
-      });
-
+      Toast.show({ type: "success", text1: "Cuenta creada exitosamente" });
       router.push("../goals");
     } catch (error) {
       Toast.show({
@@ -119,7 +98,6 @@ export default function RegisterScreen() {
         text1: "Error al registrarse",
         text2: "Intenta nuevamente",
       });
-
       console.error(error);
     } finally {
       setLoading(false);
@@ -128,6 +106,7 @@ export default function RegisterScreen() {
 
   return (
     <View style={[s.safe, { backgroundColor: bg }]}>
+      {/* Top bar overlay */}
       <View style={s.topBar}>
         <TouchableOpacity
           onPress={toggleTheme}
@@ -155,7 +134,6 @@ export default function RegisterScreen() {
             </View>
 
             <Text style={[s.title, { color: c.text }]}>Crear cuenta</Text>
-
             <Text style={[s.subtitle, { color: c.textSecondary }]}>
               Empezá tu camino hacia un entrenamiento más inteligente
             </Text>
@@ -231,25 +209,25 @@ export default function RegisterScreen() {
                 )}
               />
             </View>
-
-            <PrimaryButton
-              label="Crear cuenta"
-              onPress={handleSubmit(onSubmit)}
-              iconRight="arrow-forward"
-              disabled={loading}
-            />
           </Animated.View>
+        </ScrollView>
 
-          <Animated.View style={[s.footer, makeFade(footerAnim, 12)]}>
+        {/* Footer fijo abajo */}
+        <View style={s.footerContainer}>
+          <PrimaryButton
+            label="Crear cuenta"
+            onPress={handleSubmit(onSubmit)}
+            disabled={loading}
+          />
+          <View style={s.footerRow}>
             <Text style={[s.footerText, { color: c.textSecondary }]}>
               ¿Ya tenés cuenta?
             </Text>
-
             <Pressable onPress={() => router.push("/login")}>
               <Text style={[s.footerLink, { color: TEAL }]}>Iniciá sesión</Text>
             </Pressable>
-          </Animated.View>
-        </ScrollView>
+          </View>
+        </View>
       </KeyboardAvoidingView>
     </View>
   );
@@ -257,14 +235,22 @@ export default function RegisterScreen() {
 
 const s = StyleSheet.create({
   safe: { flex: 1 },
-
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: 28,
+    paddingTop: 80, // ↓ Baja el logo
+    paddingBottom: 32,
+  },
   topBar: {
+    position: "absolute",
+    top: Platform.OS === "android" ? 12 : 44,
+    left: 0,
+    right: 0,
     flexDirection: "row",
     justifyContent: "flex-end",
-    paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingHorizontal: 12,
+    zIndex: 10,
   },
-
   iconBtn: {
     width: 38,
     height: 38,
@@ -272,35 +258,23 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: 28,
-    paddingBottom: 32,
-    gap: 32,
-  },
-
-  header: { gap: 10 },
-
+  header: { gap: 10, marginBottom: 24 },
   logoRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-
   logoName: { fontSize: 22, fontWeight: "800" },
-
   title: { fontSize: 28, fontWeight: "900" },
-
   subtitle: { fontSize: 14 },
-
   formBlock: { gap: 20 },
-
   inputs: { gap: 8 },
-
-  footer: {
+  footerContainer: {
+    paddingHorizontal: 28,
+    paddingBottom: Platform.OS === "android" ? 20 : 32,
+  },
+  footerRow: {
     flexDirection: "row",
     justifyContent: "center",
     gap: 6,
+    marginTop: 12,
   },
-
   footerText: { fontSize: 14 },
-
   footerLink: { fontSize: 14, fontWeight: "700" },
 });

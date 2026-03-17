@@ -203,7 +203,7 @@ export function RoutineScreen() {
 
       setSummaryVisible(false);
       resetSession();
-      router.push("../goals");
+      router.replace("/(tabs)/rutinas");
     },
     [getCompletedRoutinePayload, resetSession, router],
   );
