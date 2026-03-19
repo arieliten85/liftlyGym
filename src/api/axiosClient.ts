@@ -1,6 +1,5 @@
-import { useLoadingStore } from "@/store/loading/loadingStore";
-
 import { useUserStore } from "@/features/auth/store/userStore";
+import { useLoadingStore } from "@/store/loading/loadingStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { API_BASE_URL, API_TIMEOUT } from "./config";
@@ -14,14 +13,17 @@ const axiosClient = axios.create({
 });
 
 /*
+========================
 REQUEST INTERCEPTOR
+========================
 */
 
 axiosClient.interceptors.request.use(
-  (config) => {
+  async (config) => {
     useLoadingStore.getState().setLoading(true);
 
-    const token = useUserStore.getState().token;
+    // 🔥 FIX: SIEMPRE leer desde AsyncStorage
+    const token = await AsyncStorage.getItem("token");
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -36,7 +38,9 @@ axiosClient.interceptors.request.use(
 );
 
 /*
+========================
 RESPONSE INTERCEPTOR
+========================
 */
 
 axiosClient.interceptors.response.use(
@@ -47,9 +51,16 @@ axiosClient.interceptors.response.use(
   async (error) => {
     useLoadingStore.getState().setLoading(false);
 
-    if (error.response?.status === 401) {
-      await AsyncStorage.removeItem("token");
+    const { isRestoring } = useUserStore.getState();
 
+    // 🔥 manejar 401 correctamente
+    if (error.response?.status === 401 && !isRestoring) {
+      console.log("❌ Token inválido → logout");
+
+      // limpiar storage completo
+      await AsyncStorage.multiRemove(["token", "user"]);
+
+      // limpiar estado global
       useUserStore.getState().logout();
     }
 

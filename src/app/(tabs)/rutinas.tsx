@@ -1,8 +1,13 @@
+import { RoutineService } from "@/services/routineService";
+import { useNotificationStore } from "@/store/notification/usenotificationstore";
+import { useRoutineStore } from "@/store/routine/useRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
+import { Routine } from "@/type/routine.type";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useRef } from "react";
 import {
+  Alert,
   Animated,
   Easing,
   ScrollView,
@@ -13,73 +18,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// ─── Types (reales) ───────────────────────────────────────────────────────────
+const routineService = new RoutineService();
 
-export interface RoutineExercise {
-  name: string;
-  sets: number;
-  reps: string;
-  restSeconds: number;
-  weight?: number;
-}
+// ─── UI helpers ───────────────────────────────────────────────────────────────
 
-export interface SetLog {
-  setNumber: number;
-  repsCompleted: number | null;
-  weight: number | null;
-  skipped: boolean;
-}
-
-export interface ExerciseProgress {
-  exerciseIndex: number;
-  completed: boolean;
-  currentSet: number;
-  totalSets: number;
-  setLogs: SetLog[];
-  displayValues: {
-    reps: string;
-    weight: number;
-    restSeconds: number;
-    sets: number;
-  };
-}
-
-export interface RoutineSession {
-  exercises: ExerciseProgress[];
-  startedAt: string;
-}
-
-export interface Routine {
-  routineId?: string;
-  name: string;
-  goal: string;
-  experience: string;
-  exercises: RoutineExercise[];
-  createdAt: string;
-  totalExercises: number;
-  totalSets: number;
-}
-
-export interface CompletedRoutinePayload {
-  routineId?: string;
-  startedAt: string;
-  completedAt: string;
-  wasAbandoned: boolean;
-  feedback: {
-    intensity: number | null;
-    energy: number | null;
-    painLevel: number | null;
-    comment: string;
-  };
-  exercises: {
-    name: string;
-    setLogs: SetLog[];
-  }[];
-}
-
-// ─── UI helpers (solo para el mock, no viajan al backend) ─────────────────────
-
-function estimateDuration(exercises: RoutineExercise[]): number {
+function estimateDuration(exercises: Routine["exercises"]): number {
   const totalSets = exercises.reduce((acc, e) => acc + e.sets, 0);
   const avgRestMin =
     exercises.reduce((acc, e) => acc + e.restSeconds, 0) /
@@ -90,23 +33,26 @@ function estimateDuration(exercises: RoutineExercise[]): number {
 
 const MUSCLE_KEYWORDS: [string, string][] = [
   ["squat", "Quads"],
-  ["deadlift", "Hamstrings"],
-  ["press", "Chest"],
-  ["row", "Back"],
+  ["deadlift", "Isquios"],
+  ["press", "Pecho"],
+  ["row", "Espalda"],
+  ["remo", "Espalda"],
   ["curl", "Bíceps"],
   ["pushdown", "Tríceps"],
   ["lateral", "Hombros"],
   ["ohp", "Hombros"],
   ["shoulder", "Hombros"],
+  ["jalon", "Espalda"],
+  ["dominadas", "Espalda"],
   ["calf", "Pantorrillas"],
   ["lunge", "Quads"],
   ["hip", "Glúteos"],
   ["plank", "Core"],
-  ["push up", "Pecho"],
+  ["push", "Pecho"],
   ["fly", "Pecho"],
 ];
 
-function inferMuscles(exercises: RoutineExercise[]): string[] {
+function inferMuscles(exercises: Routine["exercises"]): string[] {
   const found = new Set<string>();
   for (const ex of exercises) {
     const lower = ex.name.toLowerCase();
@@ -137,110 +83,6 @@ const EXP_COLOR: Record<string, string> = {
   advanced: "#3B82F6",
 };
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-
-const MOCK_ROUTINES: Routine[] = [
-  {
-    routineId: "mock-001",
-    name: "Leg Day Intense",
-    goal: "strength",
-    experience: "advanced",
-    createdAt: new Date().toISOString(),
-    totalExercises: 7,
-    totalSets: 24,
-    exercises: [
-      {
-        name: "Back Squat",
-        sets: 4,
-        reps: "6-8",
-        restSeconds: 120,
-        weight: 100,
-      },
-      {
-        name: "Romanian Deadlift",
-        sets: 4,
-        reps: "8-10",
-        restSeconds: 90,
-        weight: 80,
-      },
-      {
-        name: "Leg Press",
-        sets: 3,
-        reps: "12-15",
-        restSeconds: 90,
-        weight: 160,
-      },
-      {
-        name: "Bulgarian Split Squat",
-        sets: 3,
-        reps: "10-12",
-        restSeconds: 75,
-        weight: 30,
-      },
-      { name: "Leg Extension", sets: 3, reps: "15", restSeconds: 60 },
-      { name: "Lying Leg Curl", sets: 3, reps: "12-15", restSeconds: 60 },
-      { name: "Standing Calf Raise", sets: 4, reps: "20", restSeconds: 45 },
-    ],
-  },
-  {
-    routineId: "mock-002",
-    name: "Upper Body Push",
-    goal: "hypertrophy",
-    experience: "intermediate",
-    createdAt: new Date().toISOString(),
-    totalExercises: 6,
-    totalSets: 20,
-    exercises: [
-      {
-        name: "Barbell Bench Press",
-        sets: 4,
-        reps: "8-10",
-        restSeconds: 90,
-        weight: 80,
-      },
-      {
-        name: "Incline DB Press",
-        sets: 3,
-        reps: "10-12",
-        restSeconds: 75,
-        weight: 28,
-      },
-      { name: "Cable Fly", sets: 3, reps: "12-15", restSeconds: 60 },
-      { name: "OHP", sets: 4, reps: "8-10", restSeconds: 90, weight: 55 },
-      { name: "Lateral Raise", sets: 3, reps: "15-20", restSeconds: 45 },
-      { name: "Tricep Pushdown", sets: 3, reps: "12-15", restSeconds: 60 },
-    ],
-  },
-  {
-    routineId: "mock-003",
-    name: "Full Body Functional",
-    goal: "general_fitness",
-    experience: "beginner",
-    createdAt: new Date().toISOString(),
-    totalExercises: 5,
-    totalSets: 15,
-    exercises: [
-      {
-        name: "Goblet Squat",
-        sets: 3,
-        reps: "12",
-        restSeconds: 60,
-        weight: 16,
-      },
-      { name: "Push Up", sets: 3, reps: "10-15", restSeconds: 60 },
-      {
-        name: "Dumbbell Row",
-        sets: 3,
-        reps: "10-12",
-        restSeconds: 60,
-        weight: 18,
-      },
-      { name: "Hip Thrust", sets: 3, reps: "15", restSeconds: 60, weight: 40 },
-      { name: "Plank", sets: 3, reps: "30s", restSeconds: 45 },
-    ],
-  },
-];
-
 // ─── Routine Card ─────────────────────────────────────────────────────────────
 
 interface RoutineCardProps {
@@ -251,6 +93,8 @@ interface RoutineCardProps {
   textColor: string;
   subColor: string;
   index: number;
+  onDelete: (id: string) => void;
+  onStart: (routine: Routine) => void;
 }
 
 function RoutineCard({
@@ -261,6 +105,8 @@ function RoutineCard({
   textColor,
   subColor,
   index,
+  onDelete,
+  onStart,
 }: RoutineCardProps) {
   const expColor = EXP_COLOR[routine.experience] ?? "#6B7280";
   const expLabel =
@@ -299,6 +145,20 @@ function RoutineCard({
         { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
       ]}
     >
+      {/* Botón eliminar */}
+      {routine.routineId && (
+        <TouchableOpacity
+          onPress={() => onDelete(routine.routineId!)}
+          style={rc.deleteButton}
+        >
+          <MaterialCommunityIcons
+            name="trash-can-outline"
+            size={18}
+            color="#EF4444"
+          />
+        </TouchableOpacity>
+      )}
+
       {/* Cover */}
       <View style={[rc.cover, { backgroundColor: coverColor }]}>
         <View style={rc.coverOverlay} />
@@ -333,7 +193,7 @@ function RoutineCard({
         <TouchableOpacity
           style={[rc.cta, { backgroundColor: accentColor }]}
           activeOpacity={0.8}
-          onPress={() => {}}
+          onPress={() => onStart(routine)}
         >
           <MaterialCommunityIcons name="play" size={14} color="#fff" />
           <Text style={rc.ctaText}>Iniciar entrenamiento</Text>
@@ -348,6 +208,7 @@ function RoutineCard({
 export default function RutinasScreen() {
   const { theme, isDark } = useAppTheme();
   const c = theme.colors;
+  const { setRoutine } = useRoutineStore();
 
   const bg = isDark ? "#070B12" : c.background;
   const cardBg = isDark ? "#0E1219" : c.card;
@@ -359,6 +220,11 @@ export default function RutinasScreen() {
   const headerSlide = useRef(new Animated.Value(20)).current;
   const modesFade = useRef(new Animated.Value(0)).current;
   const modesSlide = useRef(new Animated.Value(16)).current;
+
+  const [routines, setRoutines] = React.useState<Routine[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  const { fetchNotifications } = useNotificationStore();
 
   useEffect(() => {
     Animated.parallel([
@@ -391,13 +257,70 @@ export default function RutinasScreen() {
     ]).start();
   }, []);
 
+  useEffect(() => {
+    const fetchRoutines = async () => {
+      try {
+        const data = await routineService.getUserRoutines();
+        setRoutines(data);
+      } catch (error) {
+        console.error("Error loading routines:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRoutines();
+  }, []);
+
+  const handleDeleteRoutine = async (id: string) => {
+    try {
+      await routineService.deleteRoutineById(id);
+      setRoutines((prev) => prev.filter((r) => r.routineId !== id));
+      await fetchNotifications();
+    } catch (error) {
+      console.error("Error deleting routine:", error);
+    }
+  };
+
+  const confirmDelete = (id: string) => {
+    Alert.alert("Eliminar rutina", "¿Seguro que querés eliminarla?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Eliminar",
+        style: "destructive",
+        onPress: () => handleDeleteRoutine(id),
+      },
+    ]);
+  };
+
+  // ✅ Carga la rutina en el store y navega a la pantalla de ejecución
+  const handleStartRoutine = (routine: Routine) => {
+    setRoutine({
+      exercises: routine.exercises,
+      goal: routine.goal,
+      experience: routine.experience,
+      routineName: routine.name,
+      routineId: routine.routineId,
+    });
+    router.push("/routine");
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView
+        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+      >
+        <Text style={{ color: c.text }}>Cargando rutinas...</Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: bg }]} edges={["top"]}>
       <ScrollView
         contentContainerStyle={s.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Header ── */}
+        {/* Header */}
         <Animated.View
           style={[
             s.header,
@@ -407,7 +330,7 @@ export default function RutinasScreen() {
           <Text style={[s.screenTitle, { color: c.text }]}>Mis Rutinas</Text>
         </Animated.View>
 
-        {/* ── Crear nueva rutina ── */}
+        {/* Crear nueva rutina */}
         <Animated.View
           style={[
             s.createSection,
@@ -422,7 +345,6 @@ export default function RutinasScreen() {
           </Text>
 
           <View style={s.modesRow}>
-            {/* Modo Rápido */}
             <TouchableOpacity
               style={[s.modeCard, s.modeCardActive, { borderColor: TEAL }]}
               activeOpacity={0.82}
@@ -441,7 +363,6 @@ export default function RutinasScreen() {
               </Text>
             </TouchableOpacity>
 
-            {/* Modo Custom */}
             <TouchableOpacity
               style={[
                 s.modeCard,
@@ -474,7 +395,7 @@ export default function RutinasScreen() {
           </View>
         </Animated.View>
 
-        {/* ── Lista de rutinas ── */}
+        {/* Lista de rutinas */}
         <View style={s.routinesSection}>
           <Animated.View
             style={[
@@ -483,23 +404,28 @@ export default function RutinasScreen() {
             ]}
           >
             <Text style={[s.sectionTitle, { color: c.text }]}>Mis Rutinas</Text>
-            <TouchableOpacity onPress={() => {}} activeOpacity={0.7}>
-              <Text style={[s.viewAll, { color: TEAL }]}>Ver todo</Text>
-            </TouchableOpacity>
           </Animated.View>
 
-          {MOCK_ROUTINES.map((routine, index) => (
-            <RoutineCard
-              key={routine.routineId ?? index}
-              routine={routine}
-              accentColor={TEAL}
-              cardBg={cardBg}
-              borderColor={borderCol}
-              textColor={c.text}
-              subColor={subColor}
-              index={index}
-            />
-          ))}
+          {routines.length === 0 ? (
+            <Text style={{ color: subColor, fontSize: 14 }}>
+              Todavía no tenés rutinas creadas
+            </Text>
+          ) : (
+            routines.map((routine, index) => (
+              <RoutineCard
+                key={routine.routineId ?? index}
+                routine={routine}
+                accentColor={TEAL}
+                cardBg={cardBg}
+                borderColor={borderCol}
+                textColor={c.text}
+                subColor={subColor}
+                index={index}
+                onDelete={confirmDelete}
+                onStart={handleStartRoutine}
+              />
+            ))
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -521,21 +447,9 @@ const s = StyleSheet.create({
   },
 
   createSection: { gap: 10 },
-  createTitle: {
-    fontSize: 20,
-    fontWeight: "900",
-    letterSpacing: -0.5,
-  },
-  createSubtitle: {
-    fontSize: 13,
-    fontWeight: "500",
-    marginTop: -4,
-  },
-  modesRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 4,
-  },
+  createTitle: { fontSize: 20, fontWeight: "900", letterSpacing: -0.5 },
+  createSubtitle: { fontSize: 13, fontWeight: "500", marginTop: -4 },
+  modesRow: { flexDirection: "row", gap: 12, marginTop: 4 },
   modeCard: {
     flex: 1,
     borderRadius: 18,
@@ -543,9 +457,7 @@ const s = StyleSheet.create({
     padding: 16,
     gap: 8,
   },
-  modeCardActive: {
-    backgroundColor: "#0D2B2B",
-  },
+  modeCardActive: { backgroundColor: "#0D2B2B" },
   modeIconWrap: {
     width: 44,
     height: 44,
@@ -553,16 +465,8 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  modeTitle: {
-    fontSize: 14,
-    fontWeight: "800",
-    letterSpacing: -0.3,
-  },
-  modeDesc: {
-    fontSize: 11,
-    fontWeight: "500",
-    lineHeight: 15,
-  },
+  modeTitle: { fontSize: 14, fontWeight: "800", letterSpacing: -0.3 },
+  modeDesc: { fontSize: 11, fontWeight: "500", lineHeight: 15 },
 
   routinesSection: { gap: 14 },
   routinesHeader: {
@@ -570,28 +474,12 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "900",
-    letterSpacing: -0.5,
-  },
-  viewAll: {
-    fontSize: 13,
-    fontWeight: "700",
-  },
+  sectionTitle: { fontSize: 20, fontWeight: "900", letterSpacing: -0.5 },
 });
 
 const rc = StyleSheet.create({
-  card: {
-    borderRadius: 20,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  cover: {
-    height: 130,
-    justifyContent: "flex-end",
-    padding: 12,
-  },
+  card: { borderRadius: 20, borderWidth: 1, overflow: "hidden" },
+  cover: { height: 130, justifyContent: "flex-end", padding: 12 },
   coverOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.2)",
@@ -608,10 +496,7 @@ const rc = StyleSheet.create({
     color: "#fff",
     letterSpacing: 0.8,
   },
-  body: {
-    padding: 16,
-    gap: 12,
-  },
+  body: { padding: 16, gap: 12 },
   bodyTop: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -623,20 +508,9 @@ const rc = StyleSheet.create({
     letterSpacing: -0.4,
     marginBottom: 3,
   },
-  muscles: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: 2,
-  },
-  metaText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
+  muscles: { fontSize: 12, fontWeight: "500" },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
+  metaText: { fontSize: 12, fontWeight: "600" },
   cta: {
     flexDirection: "row",
     alignItems: "center",
@@ -651,4 +525,5 @@ const rc = StyleSheet.create({
     color: "#fff",
     letterSpacing: -0.2,
   },
+  deleteButton: { position: "absolute", top: 10, right: 10, zIndex: 10 },
 });

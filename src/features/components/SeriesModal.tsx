@@ -602,6 +602,7 @@ export function SeriesModal({
     if (visible && progress && exercise) {
       const dv = progress.displayValues;
       setPhase("active");
+      // ✅ Siempre sincronizamos desde el store al abrir el modal
       setLocalCurrentSet(progress.currentSet);
       setSetsLocal(dv.sets);
       setSkippedSets(
@@ -616,6 +617,8 @@ export function SeriesModal({
 
   if (!exercise || !progress) return null;
 
+  // ✅ La fuente de verdad del total de series es `sets` (estado local sincronizado con el store).
+  // `localCurrentSet` se incrementa con cada log pero NUNCA puede superar `sets`.
   const localTotalSets = sets;
   const isLastSet = localCurrentSet >= localTotalSets;
 
@@ -651,14 +654,25 @@ export function SeriesModal({
   };
 
   const handleCompleteSet = () => {
+    // ✅ Registrar el log ANTES de avanzar el estado local
     onLogSet({ repsCompleted: reps, weight, skipped: false });
-    setPhase("resting");
+
+    if (isLastSet) {
+      // Última serie completada → ir a descanso (badge "EJERCICIO COMPLETADO")
+      setPhase("resting");
+    } else {
+      setPhase("resting");
+    }
   };
 
   const handleSkipSet = () => {
+    // ✅ Registrar el skip
     onLogSet({ repsCompleted: null, weight: null, skipped: true });
     setSkippedSets((prev) => [...prev, localCurrentSet]);
+
     if (isLastSet) {
+      // ✅ Era la última serie → cerrar el modal directamente
+      // El store ya marcó completed = true en logSet
       onClose();
     } else {
       setLocalCurrentSet((prev) => prev + 1);
@@ -669,6 +683,7 @@ export function SeriesModal({
 
   const handleRestFinished = () => {
     if (isLastSet) {
+      // ✅ Última serie descansada → cerrar
       onClose();
     } else {
       setLocalCurrentSet((prev) => prev + 1);
@@ -805,6 +820,7 @@ export function SeriesModal({
                   label="Series"
                   icon="layers-outline"
                   value={sets}
+                  // ✅ El mínimo es la serie actual: no podés bajar a menos de donde estás
                   min={localCurrentSet}
                   max={20}
                   step={1}

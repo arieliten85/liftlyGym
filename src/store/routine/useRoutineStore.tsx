@@ -39,6 +39,8 @@ interface RoutineStore {
 
   /**
    * Registra el resultado de una serie (completada o skipeada).
+   * Un ejercicio se marca como `completed` cuando se registran TODAS las series,
+   * independientemente de si fueron completadas o skipeadas.
    */
   logSet: (
     exerciseIndex: number,
@@ -163,7 +165,9 @@ export const useRoutineStore = create<RoutineStore>((set, get) => ({
         ...ex,
         setLogs: [...ex.setLogs, newLog],
         currentSet: ex.currentSet + 1,
-        completed: isLastSet && !skipped,
+        // ✅ Fix: completed = true cuando se termina la ÚLTIMA serie,
+        // sin importar si fue completada o skipeada.
+        completed: isLastSet,
       };
     });
 
@@ -200,9 +204,13 @@ export const useRoutineStore = create<RoutineStore>((set, get) => ({
       };
     });
 
+    // wasAbandoned = true si hay al menos un ejercicio que nunca se tocó
+    // (el usuario no registró ni una sola serie, ni siquiera skipeada).
+    // Un ejercicio donde todas las series fueron salteadas NO cuenta como abandonado
+    // porque el usuario sí tomó la decisión activa de saltearlo.
     const wasAbandoned = routine.exercises.some((_, index) => {
       const progress = session.exercises.find((p) => p.exerciseIndex === index);
-      return !progress?.completed;
+      return !progress || progress.setLogs.length === 0;
     });
 
     return {

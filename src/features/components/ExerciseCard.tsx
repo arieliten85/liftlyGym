@@ -24,6 +24,8 @@ interface ExerciseCardProps {
   onSelect: () => void;
   onStart: () => void;
   onEdit: () => void;
+  /** Se llama cuando el ejercicio ya está completado y el usuario toca la card */
+  onViewSummary: () => void;
   formatRestTime: (s: number) => string;
   formatTextTitle: (s: string) => string;
 }
@@ -38,6 +40,7 @@ export function ExerciseCard({
   progress,
   onSelect,
   onStart,
+  onViewSummary,
   formatRestTime,
   formatTextTitle,
 }: ExerciseCardProps) {
@@ -47,7 +50,6 @@ export function ExerciseCard({
   const displayRest = dv?.restSeconds ?? exercise.restSeconds;
   const displaySets = dv?.sets ?? exercise.sets;
 
-  // SetLog usa skipped: boolean (no status string)
   const setsCompleted = progress?.setLogs.filter((l) => !l.skipped).length ?? 0;
   const setsSkipped = progress?.setLogs.filter((l) => l.skipped).length ?? 0;
   const currentSet = progress?.currentSet ?? 1;
@@ -65,9 +67,12 @@ export function ExerciseCard({
         ? "#2C2C2C"
         : "#E8E8E8";
 
+  // Si está completado, tocar la card abre el resumen de solo lectura
+  const handlePress = isCompleted ? onViewSummary : onSelect;
+
   return (
     <TouchableOpacity
-      onPress={onSelect}
+      onPress={handlePress}
       activeOpacity={0.85}
       style={[
         sty.card,
@@ -75,6 +80,8 @@ export function ExerciseCard({
           backgroundColor: colors.cardBg,
           borderColor: isDark ? "#222" : "#EBEBEB",
           borderLeftColor: accentColor,
+          // Sutil opacidad para indicar que está "cerrado"
+          opacity: isCompleted ? 0.82 : 1,
         },
       ]}
     >
@@ -109,27 +116,34 @@ export function ExerciseCard({
           {formatTextTitle(exercise.name)}
         </Text>
 
-        <TouchableOpacity
-          onPress={onStart}
-          activeOpacity={0.75}
-          style={[
-            sty.playBtn,
-            {
-              backgroundColor: isCompleted
-                ? "#22C55E18"
-                : colors.primary + "18",
-              borderColor: isCompleted ? "#22C55E35" : colors.primary + "35",
-            },
-          ]}
-        >
-          <Ionicons
-            name={
-              isCompleted ? "refresh" : hasStarted ? "play-forward" : "play"
-            }
-            size={16}
-            color={isCompleted ? "#22C55E" : colors.primary}
-          />
-        </TouchableOpacity>
+        {/* Botón de acción: solo visible si NO está completado */}
+        {!isCompleted && (
+          <TouchableOpacity
+            onPress={onStart}
+            activeOpacity={0.75}
+            style={[
+              sty.playBtn,
+              {
+                backgroundColor: colors.primary + "18",
+                borderColor: colors.primary + "35",
+              },
+            ]}
+          >
+            <Ionicons
+              name={hasStarted ? "play-forward" : "play"}
+              size={16}
+              color={colors.primary}
+            />
+          </TouchableOpacity>
+        )}
+
+        {/* Si está completado: badge "Ver resumen" en lugar del botón */}
+        {isCompleted && (
+          <View style={sty.completedBadge}>
+            <Ionicons name="eye-outline" size={12} color="#22C55E" />
+            <Text style={sty.completedBadgeText}>Ver</Text>
+          </View>
+        )}
       </View>
 
       {/* ── Barra de progreso (si empezó) ── */}
@@ -182,7 +196,7 @@ export function ExerciseCard({
           icon="layers-outline"
           value={
             hasStarted
-              ? `${Math.min(currentSet, displaySets)}/${displaySets}`
+              ? `${Math.min(currentSet - 1, displaySets)}/${displaySets}`
               : `${displaySets} series`
           }
           color={setsAccent}
@@ -244,6 +258,22 @@ const sty = StyleSheet.create({
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  completedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: "#22C55E18",
+    borderWidth: 1,
+    borderColor: "#22C55E35",
+  },
+  completedBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#22C55E",
   },
 
   progressRow: { flexDirection: "row", alignItems: "center", gap: 8 },

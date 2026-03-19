@@ -1,14 +1,17 @@
 import { useUserStore } from "@/features/auth/store/userStore";
-import { mockNotifications } from "@/mocks/notifications";
+import { AppNotification } from "@/services/notificationService";
+
+import { useNotificationStore } from "@/store/notification/usenotificationstore";
+
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-    FlatList,
-    Modal,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
+  FlatList,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
 const getInitials = (name: string) =>
@@ -19,35 +22,55 @@ const getInitials = (name: string) =>
     .toUpperCase()
     .slice(0, 2);
 
+const TYPE_COLORS: Record<AppNotification["type"], string> = {
+  info: "#339c92",
+  success: "#22C55E",
+  warning: "#F59E0B",
+  error: "#EF4444",
+};
+
 export default function AppHeader() {
   const { user } = useUserStore();
+  const { notifications, fetchNotifications, markAllAsRead } =
+    useNotificationStore();
   const [showNotifications, setShowNotifications] = useState(false);
 
-  const toggleNotifications = () => {
-    setShowNotifications(!showNotifications);
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const handleOpen = () => {
+    setShowNotifications(true);
+    if (unreadCount > 0) markAllAsRead();
   };
 
-  const renderNotification = ({
-    item,
-  }: {
-    item: (typeof mockNotifications)[0];
-  }) => (
-    <View
-      style={[styles.notificationItem, !item.read && styles.notificationUnread]}
-    >
-      <View style={styles.notificationDot} />
-      <View style={styles.notificationContent}>
-        <Text style={styles.notificationTitle}>{item.title}</Text>
-        <Text style={styles.notificationBody}>{item.body}</Text>
-        <Text style={styles.notificationTime}>
-          {new Date(item.timestamp).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </Text>
+  const handleClose = () => setShowNotifications(false);
+
+  const renderNotification = ({ item }: { item: AppNotification }) => {
+    const dotColor = TYPE_COLORS[item.type] ?? "#339c92";
+    return (
+      <View
+        style={[
+          styles.notificationItem,
+          !item.read && styles.notificationUnread,
+        ]}
+      >
+        <View style={[styles.notificationDot, { backgroundColor: dotColor }]} />
+        <View style={styles.notificationContent}>
+          <Text style={styles.notificationTitle}>{item.title}</Text>
+          <Text style={styles.notificationBody}>{item.body}</Text>
+          <Text style={styles.notificationTime}>
+            {new Date(item.createdAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </Text>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -61,44 +84,39 @@ export default function AppHeader() {
           <Text style={styles.greeting}>Hola,</Text>
           <Text style={styles.username}>{user?.name ?? "Usuario"}</Text>
         </View>
-        <Pressable onPress={toggleNotifications} style={styles.bellContainer}>
+        <Pressable onPress={handleOpen} style={styles.bellContainer}>
           <MaterialCommunityIcons name="bell" size={24} color="#fff" />
-          {/* Unread badge */}
-          {mockNotifications.some((n) => !n.read) && (
+          {unreadCount > 0 && (
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>•</Text>
+              <Text style={styles.badgeText}>
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </Text>
             </View>
           )}
         </Pressable>
       </View>
 
-      {/* Modal Overlay */}
       <Modal
-        transparent={true}
+        transparent
         visible={showNotifications}
-        onRequestClose={toggleNotifications}
+        onRequestClose={handleClose}
         animationType="fade"
       >
-        {/* Touchable area to close modal */}
-        <Pressable onPress={toggleNotifications} style={styles.modalBackdrop}>
-          {/* Modal Content */}
+        <Pressable onPress={handleClose} style={styles.modalBackdrop}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Notificaciones</Text>
-              <Pressable
-                onPress={toggleNotifications}
-                style={styles.modalClose}
-              >
+              <Pressable onPress={handleClose} style={styles.modalClose}>
                 <MaterialCommunityIcons name="close" size={20} color="#666" />
               </Pressable>
             </View>
             <FlatList
-              data={mockNotifications}
+              data={notifications}
               keyExtractor={(item) => item.id}
               renderItem={renderNotification}
               ListEmptyComponent={
                 <View style={styles.emptyState}>
-                  <Text style={styles.emptyText}>No tienes notificaciones</Text>
+                  <Text style={styles.emptyText}>No tenés notificaciones</Text>
                 </View>
               }
             />
@@ -110,9 +128,7 @@ export default function AppHeader() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "#fff",
-  },
+  container: { backgroundColor: "#fff" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -134,26 +150,20 @@ const styles = StyleSheet.create({
   userInfo: { flex: 1 },
   greeting: { color: "#fff", fontSize: 14, opacity: 0.9 },
   username: { color: "#fff", fontSize: 18, fontWeight: "600" },
-  bellContainer: {
-    marginLeft: 12,
-    padding: 8,
-  },
+  bellContainer: { marginLeft: 12, padding: 8 },
   badge: {
     position: "absolute",
-    top: -4,
-    right: -4,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: "#ff0000",
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#EF4444",
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 3,
   },
-  badgeText: {
-    color: "#fff",
-    fontSize: 10,
-    fontWeight: "bold",
-  },
+  badgeText: { color: "#fff", fontSize: 10, fontWeight: "800" },
   modalBackdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -175,14 +185,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
-  },
-  modalClose: {
-    padding: 8,
-  },
+  modalTitle: { fontSize: 18, fontWeight: "600", color: "#333" },
+  modalClose: { padding: 8 },
   notificationItem: {
     padding: 16,
     borderBottomWidth: 1,
@@ -190,42 +194,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
   },
-  notificationUnread: {
-    backgroundColor: "#f8f9ff",
-  },
+  notificationUnread: { backgroundColor: "#f8f9ff" },
   notificationDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#339c92",
     marginRight: 12,
     marginTop: 4,
   },
-  notificationContent: {
-    flex: 1,
-  },
+  notificationContent: { flex: 1 },
   notificationTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
     color: "#333",
-    marginBottom: 4,
+    marginBottom: 3,
   },
   notificationBody: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: 13,
+    color: "#555",
     marginBottom: 4,
+    lineHeight: 19,
   },
-  notificationTime: {
-    fontSize: 12,
-    color: "#999",
-  },
-  emptyState: {
-    padding: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyText: {
-    color: "#999",
-    fontSize: 16,
-  },
+  notificationTime: { fontSize: 11, color: "#999" },
+  emptyState: { padding: 24, alignItems: "center" },
+  emptyText: { color: "#999", fontSize: 15 },
 });

@@ -1,11 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
-
-export type User = {
-  id: string;
-  name: string;
-  email: string;
-};
+import { User } from "../types/Auth.types";
 
 type UserStore = {
   user: User | null;

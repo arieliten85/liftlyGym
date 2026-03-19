@@ -27,9 +27,9 @@ interface ThemeColors {
 }
 
 export interface WorkoutSurveyPayload {
-  intensity: number; // 1–5
-  energy: number; // 1–5
-  painLevel: number; // 1–5
+  intensity: number;
+  energy: number;
+  painLevel: number;
   comment: string;
   completedAt: string;
   durationMinutes: number;
@@ -50,9 +50,6 @@ interface WorkoutSummaryModalProps {
   onClose: () => void;
 }
 
-// ─── ScaleSelector ────────────────────────────────────────────────────────────
-// Selector de 1–5 estilo "peso en rack" — barras de altura creciente
-
 const INTENSITY_LABELS = [
   "Muy suave",
   "Suave",
@@ -68,6 +65,8 @@ const SORENESS_LABELS = [
   "Fuerte",
   "Muy fuerte",
 ];
+
+// ─── ScaleSelector ────────────────────────────────────────────────────────────
 
 function ScaleSelector({
   label,
@@ -89,7 +88,6 @@ function ScaleSelector({
   isDark: boolean;
 }) {
   const barHeights = [20, 32, 44, 56, 68];
-
   return (
     <View style={sc.wrap}>
       <View style={sc.labelRow}>
@@ -112,7 +110,6 @@ function ScaleSelector({
           </View>
         )}
       </View>
-
       <View style={sc.barsRow}>
         {[1, 2, 3, 4, 5].map((n) => {
           const active = n <= value;
@@ -179,11 +176,7 @@ const sc = StyleSheet.create({
     borderWidth: 1,
   },
   valueText: { fontSize: 12, fontWeight: "700" },
-  barsRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 8,
-  },
+  barsRow: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
   barWrap: {
     flex: 1,
     alignItems: "center",
@@ -195,7 +188,6 @@ const sc = StyleSheet.create({
 });
 
 // ─── StatBlock ────────────────────────────────────────────────────────────────
-// Número grande estilo marcador deportivo
 
 function StatBlock({
   value,
@@ -276,6 +268,9 @@ export function WorkoutSummaryModal({
   const [soreness, setSoreness] = useState(0);
   const [comment, setComment] = useState("");
 
+  // ✅ Ref local para evitar doble tap antes de que el padre cierre el modal
+  const submittedRef = useRef(false);
+
   const slideAnim = useRef(new Animated.Value(0)).current;
   const headerAnim = useRef(new Animated.Value(0)).current;
   const statsAnim = useRef(new Animated.Value(0)).current;
@@ -288,11 +283,13 @@ export function WorkoutSummaryModal({
 
   useEffect(() => {
     if (visible) {
+      // Reset al abrir
       setStep(1);
       setIntensity(0);
       setEnergy(0);
       setSoreness(0);
       setComment("");
+      submittedRef.current = false;
       headerAnim.setValue(0);
       statsAnim.setValue(0);
 
@@ -333,6 +330,24 @@ export function WorkoutSummaryModal({
 
   const canSubmit = intensity > 0 && energy > 0 && soreness > 0;
 
+  // ✅ Un solo helper que incluye el guard contra doble tap
+  const fireSubmit = (overrides?: Partial<WorkoutSurveyPayload>) => {
+    if (submittedRef.current) return;
+    submittedRef.current = true;
+    onSubmit({
+      intensity,
+      energy,
+      painLevel: soreness,
+      comment: comment.trim(),
+      completedAt: new Date().toISOString(),
+      durationMinutes,
+      exercisesCompleted,
+      exercisesTotal,
+      wasAbandoned,
+      ...overrides,
+    });
+  };
+
   const handleSubmit = () => {
     if (!canSubmit) return;
     Animated.sequence([
@@ -347,19 +362,11 @@ export function WorkoutSummaryModal({
         useNativeDriver: true,
         easing: Easing.out(Easing.back(2)),
       }),
-    ]).start(() => {
-      onSubmit({
-        intensity,
-        energy,
-        painLevel: soreness,
-        comment: comment.trim(),
-        completedAt: new Date().toISOString(),
-        durationMinutes,
-        exercisesCompleted,
-        exercisesTotal,
-        wasAbandoned,
-      });
-    });
+    ]).start(() => fireSubmit());
+  };
+
+  const handleSkip = () => {
+    fireSubmit({ intensity: 0, energy: 0, painLevel: 0, comment: "" });
   };
 
   const slideTranslate = slideAnim.interpolate({
@@ -367,12 +374,10 @@ export function WorkoutSummaryModal({
     outputRange: [-360, 0, 360],
   });
 
-  // Acents
   const accentIntensity = isDark ? "#F87171" : "#DC2626";
   const accentEnergy = colors.primary;
   const accentSoreness = isDark ? "#FB923C" : "#EA580C";
 
-  // Header state text — sin emojis, directo al punto
   const resultLabel = wasAbandoned
     ? "SESIÓN INCOMPLETA"
     : completionPct === 100
@@ -403,7 +408,7 @@ export function WorkoutSummaryModal({
       onRequestClose={onClose}
     >
       <SafeAreaView style={[m.safe, { backgroundColor: colors.bg }]}>
-        {/* ── Header fijo ── */}
+        {/* Header */}
         <View style={m.header}>
           {step === 2 ? (
             <TouchableOpacity
@@ -423,7 +428,6 @@ export function WorkoutSummaryModal({
           ) : (
             <View style={{ width: 40 }} />
           )}
-
           <View style={m.stepIndicator}>
             <View style={[m.stepDot, { backgroundColor: colors.primary }]} />
             <View
@@ -436,7 +440,6 @@ export function WorkoutSummaryModal({
               ]}
             />
           </View>
-
           <TouchableOpacity
             onPress={onClose}
             activeOpacity={0.7}
@@ -449,7 +452,6 @@ export function WorkoutSummaryModal({
           </TouchableOpacity>
         </View>
 
-        {/* ── Contenido animado ── */}
         <Animated.View
           style={{ flex: 1, transform: [{ translateX: slideTranslate }] }}
         >
@@ -460,7 +462,6 @@ export function WorkoutSummaryModal({
               showsVerticalScrollIndicator={false}
               bounces={false}
             >
-              {/* Bloque resultado — tipografía grande, sin adornos */}
               <Animated.View
                 style={[
                   m.resultBlock,
@@ -477,9 +478,7 @@ export function WorkoutSummaryModal({
                   },
                 ]}
               >
-                {/* Barra de estado coloreada */}
                 <View style={[m.statusBar, { backgroundColor: resultColor }]} />
-
                 <Text style={[m.resultLabel, { color: resultColor }]}>
                   {resultLabel}
                 </Text>
@@ -488,7 +487,6 @@ export function WorkoutSummaryModal({
                 </Text>
               </Animated.View>
 
-              {/* Stats — números grandes estilo tablero */}
               <Animated.View
                 style={[
                   m.statsRow,
@@ -544,7 +542,6 @@ export function WorkoutSummaryModal({
                 />
               </Animated.View>
 
-              {/* Nota contextual — texto directo, sin card decorativa */}
               <Text
                 style={[
                   m.contextNote,
@@ -558,7 +555,6 @@ export function WorkoutSummaryModal({
                     : "La IA usará estos datos para optimizar la progresión en la próxima sesión."}
               </Text>
 
-              {/* CTA survey */}
               <TouchableOpacity
                 onPress={goToSurvey}
                 activeOpacity={0.86}
@@ -569,19 +565,7 @@ export function WorkoutSummaryModal({
               </TouchableOpacity>
 
               <TouchableOpacity
-                onPress={() =>
-                  onSubmit({
-                    intensity: 0,
-                    energy: 0,
-                    painLevel: 0,
-                    comment: "",
-                    completedAt: new Date().toISOString(),
-                    durationMinutes,
-                    exercisesCompleted,
-                    exercisesTotal,
-                    wasAbandoned,
-                  })
-                }
+                onPress={handleSkip}
                 activeOpacity={0.7}
                 style={m.skipBtn}
               >
@@ -604,7 +588,6 @@ export function WorkoutSummaryModal({
                   showsVerticalScrollIndicator={false}
                   keyboardShouldPersistTaps="handled"
                 >
-                  {/* Intro — clínico, directo */}
                   <View style={m.surveyIntro}>
                     <Text
                       style={[m.surveyTitle, { color: colors.textPrimary }]}
@@ -618,7 +601,6 @@ export function WorkoutSummaryModal({
                     </Text>
                   </View>
 
-                  {/* Separador con label */}
                   <View
                     style={[
                       m.dividerRow,
@@ -632,7 +614,6 @@ export function WorkoutSummaryModal({
                     </Text>
                   </View>
 
-                  {/* Intensidad */}
                   <View
                     style={[
                       m.metricCard,
@@ -654,7 +635,6 @@ export function WorkoutSummaryModal({
                     />
                   </View>
 
-                  {/* Energía */}
                   <View
                     style={[
                       m.metricCard,
@@ -676,7 +656,6 @@ export function WorkoutSummaryModal({
                     />
                   </View>
 
-                  {/* Dolor muscular */}
                   <View
                     style={[
                       m.metricCard,
@@ -698,7 +677,6 @@ export function WorkoutSummaryModal({
                     />
                   </View>
 
-                  {/* Comentario — campo limpio sin decoración */}
                   <View style={m.commentBlock}>
                     <Text
                       style={[m.commentLabel, { color: colors.textPrimary }]}
@@ -734,7 +712,6 @@ export function WorkoutSummaryModal({
                   </View>
                 </ScrollView>
 
-                {/* Footer */}
                 <View
                   style={[
                     m.footer,
@@ -753,6 +730,7 @@ export function WorkoutSummaryModal({
                     <TouchableOpacity
                       onPress={handleSubmit}
                       activeOpacity={0.86}
+                      disabled={!canSubmit}
                       style={[
                         m.ctaBtn,
                         {
@@ -789,11 +767,8 @@ export function WorkoutSummaryModal({
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
 const m = StyleSheet.create({
   safe: { flex: 1 },
-
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -811,33 +786,16 @@ const m = StyleSheet.create({
   },
   stepIndicator: { flexDirection: "row", alignItems: "center", gap: 5 },
   stepDot: { height: 7, width: 7, borderRadius: 3.5 },
-
   scroll: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 36, gap: 20 },
-
-  // ── Step 1 ──
-  resultBlock: {
-    gap: 8,
-    paddingTop: 12,
-    paddingBottom: 4,
-  },
-  statusBar: {
-    height: 3,
-    width: 40,
-    borderRadius: 2,
-    marginBottom: 4,
-  },
+  resultBlock: { gap: 8, paddingTop: 12, paddingBottom: 4 },
+  statusBar: { height: 3, width: 40, borderRadius: 2, marginBottom: 4 },
   resultLabel: {
     fontSize: 28,
     fontWeight: "900",
     letterSpacing: -0.8,
     lineHeight: 32,
   },
-  resultSub: {
-    fontSize: 14,
-    fontWeight: "500",
-    lineHeight: 20,
-  },
-
+  resultSub: { fontSize: 14, fontWeight: "500", lineHeight: 20 },
   statsRow: {
     flexDirection: "row",
     borderRadius: 18,
@@ -847,7 +805,6 @@ const m = StyleSheet.create({
     alignItems: "flex-end",
   },
   statsDivider: { width: 1, height: 50, marginHorizontal: 4 },
-
   contextNote: {
     fontSize: 13,
     fontWeight: "500",
@@ -856,7 +813,6 @@ const m = StyleSheet.create({
     paddingLeft: 12,
     color: "#888",
   },
-
   ctaBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -871,11 +827,8 @@ const m = StyleSheet.create({
     fontWeight: "800",
     letterSpacing: 0.1,
   },
-
   skipBtn: { alignItems: "center", paddingVertical: 2 },
   skipText: { fontSize: 13, fontWeight: "500" },
-
-  // ── Step 2 ──
   surveyIntro: { gap: 4, paddingTop: 8 },
   surveyTitle: {
     fontSize: 22,
@@ -884,24 +837,14 @@ const m = StyleSheet.create({
     lineHeight: 26,
   },
   surveySub: { fontSize: 13, fontWeight: "500" },
-
-  dividerRow: {
-    borderTopWidth: 1,
-    paddingTop: 14,
-  },
+  dividerRow: { borderTopWidth: 1, paddingTop: 14 },
   dividerLabel: {
     fontSize: 10,
     fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 1.4,
   },
-
-  metricCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 18,
-  },
-
+  metricCard: { borderRadius: 16, borderWidth: 1, padding: 18 },
   commentBlock: { gap: 10 },
   commentLabel: { fontSize: 14, fontWeight: "700" },
   commentInput: {
@@ -912,7 +855,6 @@ const m = StyleSheet.create({
     lineHeight: 20,
     minHeight: 84,
   },
-
   footer: {
     paddingHorizontal: 20,
     paddingTop: 14,

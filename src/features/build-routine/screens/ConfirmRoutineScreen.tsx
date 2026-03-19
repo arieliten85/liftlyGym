@@ -79,7 +79,6 @@ export default function ConfirmRoutineScreen() {
   const isReady = !!(goal && equipment && experience && routine);
 
   const handleConfirm = async () => {
-    // Si no está autenticado → redirige a login y le dice que vuelva acá
     if (!isAuthenticated) {
       router.push("/login?returnTo=confirmRoutine");
       return;
@@ -92,19 +91,19 @@ export default function ConfirmRoutineScreen() {
     router.push("/generatingRoutine");
 
     try {
-      // El axiosClient manda el token automáticamente
-      const exercises = await routineService.generateRoutineOnboarding(payload);
+      const saved = await routineService.generateRoutineOnboarding(payload);
+
       setRoutine({
-        exercises,
-        goal: payload.objetivo,
-        experience: payload.nivel,
-        routineName: payload.rutina ?? "Mi rutina",
+        routineId: saved.routineId,
+        exercises: saved.exercises,
+        goal: saved.goal,
+        experience: saved.experience,
+        routineName: saved.name,
       });
     } catch (e: any) {
       setError(e?.message ?? "Error generando la rutina");
     }
   };
-
   return (
     <OnboardingLayout
       title="Confirmá tu rutina"

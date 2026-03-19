@@ -7,8 +7,16 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
+import { useLoadingStore } from "@/store/loading/loadingStore";
 import { useRoutineStore } from "@/store/routine/useRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { ExerciseProgress } from "@/type/routine.type";
@@ -16,9 +24,14 @@ import { ExerciseProgress } from "@/type/routine.type";
 import { Badge } from "@/shared/components/Badge";
 import { PrimaryButton } from "@/shared/components/PrimaryButton";
 import { StatBar } from "@/shared/components/StatBar";
+
 import { calculateWorkoutTime } from "@/utils/workout.utils";
 import { formatRestTime } from "../build-routine/utils/formatRestTime";
 import { formatTextTitle } from "../build-routine/utils/formatTextTitle";
+
+import { RoutineService } from "@/services/routineService";
+import { useNotificationStore } from "@/store/notification/usenotificationstore";
+import { CompletedExerciseModal } from "./Completedexercisemodal";
 import { ExerciseCard } from "./ExerciseCard";
 import { SeriesModal } from "./SeriesModal";
 import {
@@ -26,14 +39,7 @@ import {
   WorkoutSurveyPayload,
 } from "./WorkoutSummaryModal";
 
-async function submitRoutinePayload(payload: any) {
-  console.log("════════════════════════════════");
-  console.log("  PAYLOAD FINAL AL BACKEND");
-  console.log("════════════════════════════════");
-  console.log(JSON.stringify(payload, null, 2));
-  console.log("════════════════════════════════");
-  // TODO: fetch POST /api/sessions
-}
+const routineService = new RoutineService();
 
 export function RoutineScreen() {
   const router = useRouter();
@@ -49,6 +55,9 @@ export function RoutineScreen() {
     resetSession,
   } = useRoutineStore();
 
+  const { fetchNotifications } = useNotificationStore();
+  const { setLoading } = useLoadingStore();
+
   const sessionStartRef = useRef<number>(Date.now());
   const [elapsedMin, setElapsedMin] = useState(0);
   const [selectedExerciseIndex, setSelectedExerciseIndex] = useState<
@@ -56,8 +65,13 @@ export function RoutineScreen() {
   >(null);
   const [seriesIndex, setSeriesIndex] = useState<number | null>(null);
   const [seriesVisible, setSeriesVisible] = useState(false);
+  const [summaryExerciseIndex, setSummaryExerciseIndex] = useState<
+    number | null
+  >(null);
+  const [completedSummaryVisible, setCompletedSummaryVisible] = useState(false);
   const [summaryVisible, setSummaryVisible] = useState(false);
   const [wasAbandoned, setWasAbandoned] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   const colors = useMemo(
     () => ({
@@ -114,16 +128,71 @@ export function RoutineScreen() {
       seriesIndex !== null && routine ? routine.exercises[seriesIndex] : null,
     [seriesIndex, routine],
   );
+  const summaryExerciseProgress = useMemo(
+    () =>
+      session?.exercises.find(
+        (e) => e.exerciseIndex === summaryExerciseIndex,
+      ) ?? null,
+    [summaryExerciseIndex, session],
+  );
+  const summaryExerciseData = useMemo(
+    () =>
+      summaryExerciseIndex !== null && routine
+        ? routine.exercises[summaryExerciseIndex]
+        : null,
+    [summaryExerciseIndex, routine],
+  );
+
+  // ✅ Volver atrás con confirmación si hay progreso
+  const handleGoBack = useCallback(() => {
+    const hasProgress =
+      session?.exercises.some((e) => e.setLogs.length > 0) ?? false;
+
+    if (!hasProgress) {
+      // No empezó nada → salir directo sin preguntar
+      resetSession();
+      router.back();
+      return;
+    }
+
+    Alert.alert(
+      "¿Salir del entrenamiento?",
+      "Tu progreso actual no se guardará. ¿Querés salir igual?",
+      [
+        { text: "Seguir entrenando", style: "cancel" },
+        {
+          text: "Salir",
+          style: "destructive",
+          onPress: () => {
+            resetSession();
+            router.back();
+          },
+        },
+      ],
+    );
+  }, [session, resetSession, router]);
 
   const handleSelectExercise = useCallback(
     (index: number) => setSelectedExerciseIndex(index),
     [],
   );
 
-  const handleStartExercise = useCallback((index: number) => {
-    setSelectedExerciseIndex(index);
-    setSeriesIndex(index);
-    setSeriesVisible(true);
+  const handleStartExercise = useCallback(
+    (index: number) => {
+      const progress = session?.exercises.find(
+        (e) => e.exerciseIndex === index,
+      );
+      if (progress?.completed) return;
+      setSelectedExerciseIndex(index);
+      setSeriesIndex(index);
+      setSeriesVisible(true);
+    },
+    [session],
+  );
+
+  const handleViewCompletedExercise = useCallback((index: number) => {
+    setSummaryExerciseIndex(index);
+    setCompletedSummaryVisible(true);
   }, []);
 
   const handleCloseSeriesModal = useCallback(() => {
@@ -189,8 +258,10 @@ export function RoutineScreen() {
   }, [allCompleted, completedCount, routine]);
 
   const handleSurveySubmit = useCallback(
-    (survey: WorkoutSurveyPayload) => {
-      // El feedback viene del survey — se pasa directamente al payload
+    async (survey: WorkoutSurveyPayload) => {
+      if (isSubmittingRef.current) return;
+      isSubmittingRef.current = true;
+
       const feedback = {
         intensity: survey.intensity > 0 ? survey.intensity : null,
         energy: survey.energy > 0 ? survey.energy : null,
@@ -199,13 +270,32 @@ export function RoutineScreen() {
       };
 
       const payload = getCompletedRoutinePayload(feedback);
-      if (payload) submitRoutinePayload(payload);
+      if (!payload) {
+        isSubmittingRef.current = false;
+        return;
+      }
 
       setSummaryVisible(false);
-      resetSession();
-      router.replace("/(tabs)/rutinas");
+      setLoading(true);
+      try {
+        await routineService.completeSession(payload);
+        await fetchNotifications();
+      } catch (error) {
+        console.error("[RoutineScreen] Error al guardar sesión:", error);
+      } finally {
+        setLoading(false);
+        isSubmittingRef.current = false;
+        resetSession();
+        router.back(); // ✅ back en vez de replace — vuelve a rutinas limpio
+      }
     },
-    [getCompletedRoutinePayload, resetSession, router],
+    [
+      getCompletedRoutinePayload,
+      resetSession,
+      router,
+      fetchNotifications,
+      setLoading,
+    ],
   );
 
   if (!routine) {
@@ -223,25 +313,47 @@ export function RoutineScreen() {
 
   return (
     <View style={[s.root, { backgroundColor: colors.bg }]}>
+      {/* ✅ Header con botón volver */}
+      <View
+        style={[
+          s.topBar,
+          { borderBottomColor: colors.border, backgroundColor: colors.bg },
+        ]}
+      >
+        <TouchableOpacity
+          onPress={handleGoBack}
+          activeOpacity={0.7}
+          style={[
+            s.backBtn,
+            { backgroundColor: isDark ? "#1E1E1E" : "#F0F0F0" },
+          ]}
+        >
+          <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
+        </TouchableOpacity>
+
+        <Text
+          style={[s.topBarTitle, { color: colors.textPrimary }]}
+          numberOfLines={1}
+        >
+          {routine.name || "Rutina de hoy"}
+        </Text>
+
+        {/* Espacio para centrar el título */}
+        <View style={{ width: 40 }} />
+      </View>
+
       <ScrollView
         contentContainerStyle={s.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <View style={s.header}>
-          <Text
-            style={[s.routineName, { color: colors.textPrimary }]}
-            numberOfLines={1}
-          >
-            {routine.name || "Rutina de hoy"}
-          </Text>
-          <View style={s.badges}>
-            <Badge label={routine.goal} color={colors.primary} />
-            <Badge
-              label={routine.experience}
-              color={colors.textSecondary}
-              subtle
-            />
-          </View>
+        {/* Badges debajo del header */}
+        <View style={s.badgesRow}>
+          <Badge label={routine.goal} color={colors.primary} />
+          <Badge
+            label={routine.experience}
+            color={colors.textSecondary}
+            subtle
+          />
         </View>
 
         <View
@@ -310,6 +422,7 @@ export function RoutineScreen() {
           const progress = session?.exercises.find(
             (e) => e.exerciseIndex === idx,
           );
+          const isCompleted = progress?.completed ?? false;
           return (
             <ExerciseCard
               key={idx}
@@ -317,12 +430,15 @@ export function RoutineScreen() {
               index={idx}
               colors={colors}
               isDark={isDark}
-              isCompleted={progress?.completed ?? false}
+              isCompleted={isCompleted}
               progress={progress}
               isSelected={selectedExerciseIndex === idx}
-              onSelect={() => handleSelectExercise(idx)}
+              onSelect={() => {
+                if (!isCompleted) handleSelectExercise(idx);
+              }}
               onStart={() => handleStartExercise(idx)}
               onEdit={() => handleStartExercise(idx)}
+              onViewSummary={() => handleViewCompletedExercise(idx)}
               formatRestTime={formatRestTime}
               formatTextTitle={formatTextTitle}
             />
@@ -358,6 +474,19 @@ export function RoutineScreen() {
         formatTextTitle={formatTextTitle}
       />
 
+      <CompletedExerciseModal
+        visible={completedSummaryVisible}
+        exercise={summaryExerciseData}
+        progress={summaryExerciseProgress}
+        colors={colors}
+        isDark={isDark}
+        onClose={() => {
+          setCompletedSummaryVisible(false);
+          setSummaryExerciseIndex(null);
+        }}
+        formatTextTitle={formatTextTitle}
+      />
+
       <WorkoutSummaryModal
         visible={summaryVisible}
         colors={colors}
@@ -376,16 +505,35 @@ export function RoutineScreen() {
 const s = StyleSheet.create({
   root: { flex: 1 },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  scroll: { padding: 20, gap: 14, paddingBottom: 24 },
 
-  header: { gap: 8 },
-  routineName: {
-    fontSize: 26,
-    fontWeight: "800",
-    letterSpacing: -0.5,
-    lineHeight: 32,
+  // ── Top bar ──
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingTop: 52, // SafeArea manual — ajustá si usás SafeAreaView
+    paddingBottom: 12,
+    borderBottomWidth: 1,
   },
-  badges: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  topBarTitle: {
+    flex: 1,
+    fontSize: 17,
+    fontWeight: "800",
+    letterSpacing: -0.3,
+    textAlign: "center",
+    marginHorizontal: 8,
+  },
+
+  scroll: { padding: 20, gap: 14, paddingBottom: 24 },
+  badgesRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
 
   progressCard: { padding: 16, borderRadius: 18, borderWidth: 1, gap: 12 },
   progressTop: {
