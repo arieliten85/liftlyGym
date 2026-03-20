@@ -1,4 +1,4 @@
-// ─── Ejercicio del plan original ─────────────────────────────────────────────
+// Ejercicio del plan original
 
 export interface RoutineExercise {
   name: string;
@@ -8,16 +8,16 @@ export interface RoutineExercise {
   weight?: number;
 }
 
-// ─── Log de una serie — alineado al schema del backend ───────────────────────
+// Log de una serie
 
 export interface SetLog {
-  setNumber: number; // 1-based
-  repsCompleted: number | null; // null si skipped
-  weight: number | null; // null si skipped
+  setNumber: number;
+  repsCompleted: number | null;
+  weight: number | null;
   skipped: boolean;
 }
 
-// ─── Progreso en memoria durante la sesión ────────────────────────────────────
+//  Progreso
 
 export interface ExerciseProgress {
   exerciseIndex: number;
@@ -26,7 +26,7 @@ export interface ExerciseProgress {
   totalSets: number;
   setLogs: SetLog[];
 
-  // Refleja lo último editado en el modal → lo que muestra la card en tiempo real
+  // Refleja lo último editado en el modal , lo que muestra la card en tiempo real
   displayValues: {
     reps: string;
     weight: number;
@@ -35,17 +35,15 @@ export interface ExerciseProgress {
   };
 }
 
-// ─── Sesión activa ────────────────────────────────────────────────────────────
+// Sesión activa
 
 export interface RoutineSession {
   exercises: ExerciseProgress[];
   startedAt: string;
 }
 
-// ─── Rutina ───────────────────────────────────────────────────────────────────
-
 export interface Routine {
-  routineId?: string; // opcional hasta que el backend lo devuelva
+  routineId?: string;
   name: string;
   goal: string;
   experience: string;
@@ -54,9 +52,6 @@ export interface Routine {
   totalExercises: number;
   totalSets: number;
 }
-
-// ─── Payload final al backend ─────────────────────────────────────────────────
-// Estructura exacta que espera el backend.
 
 export interface CompletedRoutinePayload {
   routineId?: string;

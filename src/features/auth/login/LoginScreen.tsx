@@ -7,6 +7,7 @@ import { useRouter } from "expo-router";
 import { jwtDecode } from "jwt-decode";
 
 import { PrimaryButton } from "@/shared/components/PrimaryButton";
+import { LoginForm } from "@/types/auth/auth";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -24,13 +25,12 @@ import Toast from "react-native-toast-message";
 import { AuthInput } from "../components/Authinput";
 import { AuthService } from "../service/auth.service";
 import { useUserStore } from "../store/userStore";
-import { LoginForm } from "../types/Auth.types";
 
 export default function LoginScreen() {
   const router = useRouter();
   const { theme, isDark } = useAppTheme();
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
-  const c = theme.colors;
+  const c = theme;
 
   const [form, setForm] = useState<LoginForm>({ email: "", password: "" });
 
@@ -113,29 +113,31 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={[s.safe, { backgroundColor: bg }]}>
+    <View style={[styles.safe, { backgroundColor: bg }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
         <ScrollView
-          contentContainerStyle={s.scroll}
+          contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
-          <Animated.View style={[s.brand, makeFade(logoAnim, 32)]}>
+          <Animated.View style={[styles.brand, makeFade(logoAnim, 32)]}>
             <LiftlyIcon size={52} />
-            <Text style={[s.brandName, { color: c.text }]}>Liftly</Text>
-            <Text style={[s.brandTagline, { color: c.textSecondary }]}>
+            <Text style={[styles.brandName, { color: c.text }]}>Liftly</Text>
+            <Text style={[styles.brandTagline, { color: c.textSecondary }]}>
               Tu entrenamiento, optimizado por IA
             </Text>
           </Animated.View>
 
-          <Animated.View style={[s.formBlock, makeFade(formAnim)]}>
-            <Text style={[s.formTitle, { color: c.text }]}>Iniciar sesión</Text>
+          <Animated.View style={[styles.formBlock, makeFade(formAnim)]}>
+            <Text style={[styles.formTitle, { color: c.text }]}>
+              Iniciar sesión
+            </Text>
 
-            <View style={s.inputs}>
+            <View style={styles.inputs}>
               <AuthInput
                 label="Correo electrónico"
                 icon="mail"
@@ -158,30 +160,30 @@ export default function LoginScreen() {
           </Animated.View>
         </ScrollView>
 
-        {/* Footer fijo abajo */}
-        <View style={s.footerContainer}>
+        <View style={styles.footerContainer}>
           <PrimaryButton
             label="Entrar"
             onPress={handleLogin}
             disabled={!form.email || !form.password}
           />
-          <View style={s.footerRow}>
-            <Text style={[s.footerText, { color: c.textSecondary }]}>
+          <View style={styles.footerRow}>
+            <Text style={[styles.footerText, { color: c.textSecondary }]}>
               ¿No tenés cuenta?
             </Text>
             <Pressable onPress={() => router.push("/register")}>
-              <Text style={[s.footerLink, { color: TEAL }]}>Registrate</Text>
+              <Text style={[styles.footerLink, { color: TEAL }]}>
+                Registrate
+              </Text>
             </Pressable>
           </View>
         </View>
 
-        {/* Top bar overlay */}
-        <View style={s.topBar}>
+        <View style={styles.topBar}>
           {router.canGoBack() && (
             <TouchableOpacity
               onPress={() => router.replace("/")}
               activeOpacity={0.7}
-              style={s.iconBtn}
+              style={styles.iconBtn}
             >
               <Feather name="arrow-left" size={20} color={TEAL} />
             </TouchableOpacity>
@@ -192,7 +194,7 @@ export default function LoginScreen() {
           <TouchableOpacity
             onPress={toggleTheme}
             activeOpacity={0.7}
-            style={s.iconBtn}
+            style={styles.iconBtn}
           >
             <Feather name={isDark ? "sun" : "moon"} size={20} color={TEAL} />
           </TouchableOpacity>
@@ -202,12 +204,12 @@ export default function LoginScreen() {
   );
 }
 
-const s = StyleSheet.create({
+const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: {
     flexGrow: 1,
     paddingHorizontal: 28,
-    paddingTop: 80, // ↓ Se baja el logo
+    paddingTop: 80,
     paddingBottom: 32,
   },
   topBar: {
@@ -227,7 +229,7 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  brand: { alignItems: "center", gap: 10, marginBottom: 32 }, // ↓ Más espacio debajo del logo
+  brand: { alignItems: "center", gap: 10, marginBottom: 32 },
   brandName: { fontSize: 36, fontWeight: "800" },
   brandTagline: { fontSize: 14 },
   formBlock: { gap: 24 },

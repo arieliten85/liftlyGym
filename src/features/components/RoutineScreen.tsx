@@ -19,7 +19,7 @@ import {
 import { useLoadingStore } from "@/store/loading/loadingStore";
 import { useRoutineStore } from "@/store/routine/useRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { ExerciseProgress } from "@/type/routine.type";
+import { ExerciseProgress } from "@/types/routine/exercise";
 
 import { Badge } from "@/shared/components/Badge";
 import { PrimaryButton } from "@/shared/components/PrimaryButton";
@@ -73,18 +73,18 @@ export function RoutineScreen() {
   const [wasAbandoned, setWasAbandoned] = useState(false);
   const isSubmittingRef = useRef(false);
 
-  const colors = useMemo(
-    () => ({
-      bg: theme.colors.background,
-      surface: theme.colors.surface || (isDark ? "#1E1E1E" : "#FFFFFF"),
-      textPrimary: theme.colors.text,
-      textSecondary: isDark ? "#A0A0A0" : "#5E5E5E",
-      primary: theme.colors.primary,
-      border: isDark ? "#2C2C2C" : "#F0F0F0",
-      cardBg: isDark ? "#1A1A1A" : "#FFFFFF",
-    }),
-    [theme, isDark],
-  );
+   const colors = useMemo(
+     () => ({
+       bg: theme.background,
+       surface: theme.surface || (isDark ? "#1E1E1E" : "#FFFFFF"),
+       textPrimary: theme.text,
+       textSecondary: isDark ? "#A0A0A0" : "#5E5E5E",
+       primary: theme.primary,
+       border: isDark ? "#2C2C2C" : "#F0F0F0",
+       cardBg: isDark ? "#1A1A1A" : "#FFFFFF",
+     }),
+     [theme, isDark],
+   );
 
   useEffect(() => {
     if (routine && !session) {

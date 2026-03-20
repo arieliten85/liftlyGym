@@ -15,8 +15,6 @@ import { PhoneFrame } from "./Phoneframe";
 
 export interface SlideImage {
   uri: string;
-  // o si usas require:
-  // image: any;
 }
 
 export interface Slide {
@@ -67,8 +65,6 @@ export function ImageSlider({ isDark, TEAL }: ImageSliderProps) {
   ).current;
 
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
-
-  // ── Theme-derived colors ──
   const phoneBorder = isDark ? "rgba(46,207,190,0.28)" : "rgba(46,207,190,0.4)";
   const titleColor = isDark ? "#DFF0EE" : "#1A2E2B";
   const subtitleColor = isDark
@@ -83,7 +79,6 @@ export function ImageSlider({ isDark, TEAL }: ImageSliderProps) {
 
   return (
     <View style={styles.sliderContainer}>
-      {/* Fixed-height text header — prevents layout jump between slides */}
       <View style={styles.slideHeader}>
         <Text
           style={[
@@ -104,7 +99,6 @@ export function ImageSlider({ isDark, TEAL }: ImageSliderProps) {
         </Text>
       </View>
 
-      {/* Full-width FlatList so pagingEnabled works correctly */}
       <FlatList
         ref={flatListRef}
         data={SLIDES_OPTION_DATA}
@@ -141,7 +135,6 @@ export function ImageSlider({ isDark, TEAL }: ImageSliderProps) {
         )}
       />
 
-      {/* Pagination dots */}
       <View style={styles.dotsRow}>
         {SLIDES_OPTION_DATA.map((_, i) => (
           <TouchableOpacity

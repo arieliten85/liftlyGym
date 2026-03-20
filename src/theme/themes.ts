@@ -1,10 +1,10 @@
-import { ColorScheme, ColorTheme } from "./types";
+import { ColorScheme, ColorTheme } from "@/types/theme";
 
 const lightColors: ColorScheme = {
   background: "#F8F9FB",
   surface: "#FFFFFF",
-  primary: "#2ECFBE", // teal vibrante — igual al músculo resaltado
-  secondary: "#1A9E90", // teal más oscuro para contraste
+  primary: "#2ECFBE",
+  secondary: "#1A9E90",
   text: "#1C1C1E",
   textSecondary: "#6C6C70",
   border: "#E5E7EB",
@@ -15,7 +15,7 @@ const lightColors: ColorScheme = {
 const darkColors: ColorScheme = {
   background: "#0F1115",
   surface: "#1C1F26",
-  primary: "#2ECFBE", // mismo teal — mantiene identidad en dark
+  primary: "#2ECFBE",
   secondary: "#1A9E90",
   text: "#F2F2F7",
   textSecondary: "#A1A1AA",

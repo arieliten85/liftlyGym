@@ -1,4 +1,4 @@
-import { ExerciseProgress, RoutineExercise } from "@/type/routine.type";
+import { ExerciseProgress, RoutineExercise } from "@/types/routine/exercise";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";

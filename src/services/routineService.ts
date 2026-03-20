@@ -1,6 +1,10 @@
 import axiosClient from "@/api/axiosClient";
 import { RoutinePayload } from "@/features/build-routine/type/routine-builder.types";
-import { CompletedRoutinePayload, Routine } from "@/type/routine.type";
+import {
+  CompletedRoutinePayload,
+  Routine,
+  RoutineExercise,
+} from "@/types/routine";
 import {
   CompleteSessionResponse,
   RoutineApiResponse,
@@ -23,7 +27,10 @@ export class RoutineService {
         exercises: data.exercises,
         createdAt: data.createdAt,
         totalExercises: data.exercises.length,
-        totalSets: data.exercises.reduce((acc, ex) => acc + ex.sets, 0),
+        totalSets: data.exercises.reduce(
+          (acc: number, ex: RoutineExercise) => acc + ex.sets,
+          0,
+        ),
       };
     } catch (error) {
       console.error("Error generating routine:", error);
@@ -43,7 +50,10 @@ export class RoutineService {
         exercises: r.exercises,
         createdAt: r.createdAt,
         totalExercises: r.exercises.length,
-        totalSets: r.exercises.reduce((acc, ex) => acc + ex.sets, 0),
+        totalSets: r.exercises.reduce(
+          (acc: number, ex: RoutineExercise) => acc + ex.sets,
+          0,
+        ),
       }));
     } catch (error) {
       console.error("Error fetching routines:", error);
@@ -60,9 +70,8 @@ export class RoutineService {
     }
   }
 
-  // ✅ Envía la sesión completada al backend
-  // El backend guarda la sesión, llama a la IA para ajustar la rutina
-  // y crea la notificación con el resumen del ajuste.
+  //  envía la sesión completada al backend
+
   async completeSession(payload: CompletedRoutinePayload): Promise<void> {
     try {
       await axiosClient.post<CompleteSessionResponse>(

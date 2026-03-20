@@ -1,5 +1,6 @@
-import { User } from "@/types/auth/user";
+import { User } from './user';
 
+// Form types for UI validation (React Hook Form, Yup, Zod)
 export interface LoginForm {
   email: string;
   password: string;
@@ -10,6 +11,7 @@ export interface RegisterForm extends LoginForm {
   confirmPassword: string;
 }
 
+// Payload types for API requests
 export interface LoginPayload {
   email: string;
   password: string;
@@ -21,6 +23,7 @@ export interface RegisterPayload {
   password: string;
 }
 
+// Response types for API responses
 export interface RegisterResponse {
   id: string;
   name: string;
@@ -32,6 +35,7 @@ export interface LoginResponse {
   user: User;
 }
 
+// Component props
 export interface AuthScreenProps {
   onSuccess?: () => void;
 }

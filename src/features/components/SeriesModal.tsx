@@ -1,5 +1,5 @@
 import { PrimaryButton } from "@/shared/components/PrimaryButton";
-import { ExerciseProgress, RoutineExercise } from "@/type/routine.type";
+import { ExerciseProgress, RoutineExercise } from "@/types/routine/exercise";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {

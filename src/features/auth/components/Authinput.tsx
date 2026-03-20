@@ -1,14 +1,14 @@
 import { Feather } from "@expo/vector-icons";
 import React, { useRef, useState } from "react";
 import {
-    Animated,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TextInputProps,
-    TouchableOpacity,
-    View,
+  Animated,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TextInputProps,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 interface ThemeColors {
@@ -99,17 +99,17 @@ export function AuthInput({
   });
 
   return (
-    <View style={inp.wrap}>
+    <View style={styles.wrap}>
       <Animated.View
         style={[
-          inp.field,
+          styles.field,
           { borderBottomColor: error ? "#EF4444" : borderColor },
         ]}
       >
         {/* Label flotante */}
         <Animated.Text
           style={[
-            inp.label,
+            styles.label,
             {
               top: labelTop,
               fontSize: labelSize,
@@ -120,15 +120,15 @@ export function AuthInput({
           {label}
         </Animated.Text>
 
-        <View style={inp.row}>
+        <View style={styles.row}>
           <Feather
             name={icon}
             size={18}
             color={focused ? colors.primary : colors.textSecondary}
-            style={inp.icon}
+            style={styles.icon}
           />
           <TextInput
-            style={[inp.input, { color: colors.text }]}
+            style={[styles.input, { color: colors.text }]}
             placeholderTextColor="transparent"
             secureTextEntry={isPassword && !showPassword}
             value={value}
@@ -142,7 +142,7 @@ export function AuthInput({
             <TouchableOpacity
               onPress={() => setShowPassword(!showPassword)}
               activeOpacity={0.7}
-              style={inp.eyeBtn}
+              style={styles.eyeBtn}
             >
               <Feather
                 name={showPassword ? "eye-off" : "eye"}
@@ -154,12 +154,12 @@ export function AuthInput({
         </View>
       </Animated.View>
 
-      {error ? <Text style={inp.error}>{error}</Text> : null}
+      {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
   );
 }
 
-const inp = StyleSheet.create({
+const styles = StyleSheet.create({
   wrap: { gap: 4 },
   field: {
     borderBottomWidth: 1.5,

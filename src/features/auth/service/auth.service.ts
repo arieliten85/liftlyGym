@@ -4,7 +4,7 @@ import {
     LoginResponse,
     RegisterPayload,
     RegisterResponse,
-} from "../types/Auth.types";
+} from "@/types/auth/auth";
 
 export class AuthService {
   async register(payload: RegisterPayload): Promise<RegisterResponse> {

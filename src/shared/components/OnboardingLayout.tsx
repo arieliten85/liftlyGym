@@ -33,8 +33,8 @@ export default function OnboardingLayout({
         options={{
           title,
           headerBackTitle: "Atrás",
-          headerStyle: { backgroundColor: theme.colors.background },
-          headerTintColor: theme.colors.text,
+          headerStyle: { backgroundColor: theme.background },
+          headerTintColor: theme.text,
           headerTitleStyle: {
             fontWeight: "bold",
             fontSize: token.typography.h3,
@@ -43,7 +43,7 @@ export default function OnboardingLayout({
       />
 
       <SafeAreaView
-        style={[styles.container, { backgroundColor: theme.colors.background }]}
+        style={[styles.container, { backgroundColor: theme.background }]}
         edges={[]}
       >
         <ParticleBackground isDark={isDark} glowAlpha={glowAlpha} />

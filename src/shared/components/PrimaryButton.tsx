@@ -23,8 +23,8 @@ export function PrimaryButton({
   const { theme } = useAppTheme();
 
   const iconColor = disabled
-    ? theme.colors.textSecondary
-    : theme.colors.onPrimary;
+    ? theme.textSecondary
+    : theme.onPrimary;
 
   return (
     <TouchableOpacity
@@ -35,18 +35,18 @@ export function PrimaryButton({
         styles.btn,
         fullWidth && styles.fullWidth,
         {
-          backgroundColor: theme.colors.primary,
-          shadowColor: theme.colors.primary,
+          backgroundColor: theme.primary,
+          shadowColor: theme.primary,
         },
-        disabled && { backgroundColor: theme.colors.border, shadowOpacity: 0 },
+        disabled && { backgroundColor: theme.border, shadowOpacity: 0 },
       ]}
     >
       {iconLeft && <Ionicons name={iconLeft} size={20} color={iconColor} />}
       <Text
         style={[
           styles.label,
-          { color: theme.colors.onPrimary },
-          disabled && { color: theme.colors.textSecondary },
+          { color: theme.onPrimary },
+          disabled && { color: theme.textSecondary },
         ]}
       >
         {label}

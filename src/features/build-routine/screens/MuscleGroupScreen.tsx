@@ -43,7 +43,7 @@ function RoutineCard({
   const image = option.image ?? ROUTINE_IMAGES[option.type];
   const title = "label" in option ? option.label : option.title;
   const borderSel = isDark ? "rgba(46,207,190,0.6)" : teal;
-  const cardBg = isDark ? "#0C1119" : theme.colors.card;
+  const cardBg = isDark ? "#0C1119" : theme.card;
 
   return (
     <TouchableOpacity
@@ -86,7 +86,7 @@ function RoutineCard({
                     ? teal
                     : isDark
                       ? "#4A6A66"
-                      : theme.colors.textSecondary
+                      : theme.textSecondary
                 }
               />
             )}
@@ -125,14 +125,14 @@ function RoutineCard({
                 : "#EBF9F7"
               : isDark
                 ? "#0C1119"
-                : theme.colors.card,
+                : theme.card,
             borderTopColor: isSelected
               ? isDark
                 ? "rgba(46,207,190,0.25)"
                 : "rgba(46,207,190,0.35)"
               : isDark
                 ? "rgba(255,255,255,0.05)"
-                : theme.colors.border,
+                : theme.border,
           },
         ]}
       >
@@ -141,7 +141,7 @@ function RoutineCard({
           style={[
             cardStyles.title,
             {
-              color: isSelected ? teal : isDark ? "#DFF0EE" : theme.colors.text,
+              color: isSelected ? teal : isDark ? "#DFF0EE" : theme.text,
             },
           ]}
         >
@@ -157,7 +157,7 @@ function RoutineCard({
                   ? isSelected
                     ? "#B8D4D0"
                     : "#4A6A66"
-                  : theme.colors.textSecondary,
+                  : theme.textSecondary,
               },
             ]}
           >
@@ -182,10 +182,10 @@ export default function MuscleGroupScreen() {
     router.push("/confirmRoutine");
   };
 
-  const TEAL = theme.colors.primary;
-  const textColor = isDark ? "#DFF0EE" : theme.colors.text;
-  const subColor = isDark ? "#4A6A66" : theme.colors.textSecondary;
-  const borderDef = isDark ? "rgba(46,207,190,0.15)" : theme.colors.border;
+  const TEAL = theme.primary;
+  const textColor = isDark ? "#DFF0EE" : theme.text;
+  const subColor = isDark ? "#4A6A66" : theme.textSecondary;
+  const borderDef = isDark ? "rgba(46,207,190,0.15)" : theme.border;
 
   const rows = useMemo(() => {
     const result: (typeof QUICK_OPTION_DATA)[] = [];
@@ -243,7 +243,7 @@ export default function MuscleGroupScreen() {
             {
               borderTopColor: isDark
                 ? "rgba(46,207,190,0.12)"
-                : theme.colors.border,
+                : theme.border,
             },
           ]}
         >

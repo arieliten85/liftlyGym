@@ -22,7 +22,7 @@ axiosClient.interceptors.request.use(
   async (config) => {
     useLoadingStore.getState().setLoading(true);
 
-    // 🔥 FIX: SIEMPRE leer desde AsyncStorage
+    // leer desde AsyncStorage
     const token = await AsyncStorage.getItem("token");
 
     if (token) {
@@ -53,9 +53,8 @@ axiosClient.interceptors.response.use(
 
     const { isRestoring } = useUserStore.getState();
 
-    // 🔥 manejar 401 correctamente
     if (error.response?.status === 401 && !isRestoring) {
-      console.log("❌ Token inválido → logout");
+      console.log("Token inválido");
 
       // limpiar storage completo
       await AsyncStorage.multiRemove(["token", "user"]);

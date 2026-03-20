@@ -3,18 +3,20 @@ import React, { createContext, useContext } from "react";
 import { useColorScheme } from "react-native";
 
 import { darkTheme, lightTheme } from "./themes";
-import { ColorTheme } from "./types";
+import { ColorTheme } from "@/types/theme";
 
 type ThemeContextType = {
   theme: ColorTheme;
-  mode: "light" | "dark";
   isDark: boolean;
+  mode: "light" | "dark";
+  toggleTheme: () => void;
 };
 
 const ThemeContext = createContext<ThemeContextType | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemScheme = useColorScheme();
+  const toggleTheme = useThemeStore((state) => state.toggleTheme);
   const mode = useThemeStore((state) => state.mode);
 
   const finalMode = mode === "system" ? systemScheme : mode;
@@ -28,6 +30,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         theme,
         mode: resolvedMode,
         isDark: resolvedMode === "dark",
+        toggleTheme,
       }}
     >
       {children}
@@ -37,5 +40,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 export const useAppTheme = () => {
   const context = useContext(ThemeContext);
   if (!context) throw new Error("ThemeProvider missing");
-  return context;
+  return {
+    theme: context.theme.colors,
+    isDark: context.isDark,
+  };
 };

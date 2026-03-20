@@ -2,7 +2,7 @@ import { RoutineService } from "@/services/routineService";
 import { useNotificationStore } from "@/store/notification/usenotificationstore";
 import { useRoutineStore } from "@/store/routine/useRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { Routine } from "@/type/routine.type";
+import { Routine } from "@/types/routine/session";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useRef } from "react";
@@ -19,8 +19,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const routineService = new RoutineService();
-
-// ─── UI helpers ───────────────────────────────────────────────────────────────
 
 function estimateDuration(exercises: Routine["exercises"]): number {
   const totalSets = exercises.reduce((acc, e) => acc + e.sets, 0);
@@ -82,8 +80,6 @@ const EXP_COLOR: Record<string, string> = {
   intermediate: "#F59E0B",
   advanced: "#3B82F6",
 };
-
-// ─── Routine Card ─────────────────────────────────────────────────────────────
 
 interface RoutineCardProps {
   routine: Routine;
@@ -203,11 +199,9 @@ function RoutineCard({
   );
 }
 
-// ─── Main Screen ──────────────────────────────────────────────────────────────
-
 export default function RutinasScreen() {
   const { theme, isDark } = useAppTheme();
-  const c = theme.colors;
+  const c = theme;
   const { setRoutine } = useRoutineStore();
 
   const bg = isDark ? "#070B12" : c.background;
@@ -292,7 +286,7 @@ export default function RutinasScreen() {
     ]);
   };
 
-  // ✅ Carga la rutina en el store y navega a la pantalla de ejecución
+  // Carga la rutina en el store y navega a la pantalla de ejecución
   const handleStartRoutine = (routine: Routine) => {
     setRoutine({
       exercises: routine.exercises,
@@ -315,57 +309,68 @@ export default function RutinasScreen() {
   }
 
   return (
-    <SafeAreaView style={[s.safe, { backgroundColor: bg }]} edges={["top"]}>
+    <SafeAreaView
+      style={[styles.safe, { backgroundColor: bg }]}
+      edges={["top"]}
+    >
       <ScrollView
-        contentContainerStyle={s.scroll}
+        contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
         <Animated.View
           style={[
-            s.header,
+            styles.header,
             { opacity: headerFade, transform: [{ translateY: headerSlide }] },
           ]}
         >
-          <Text style={[s.screenTitle, { color: c.text }]}>Mis Rutinas</Text>
+          <Text style={[styles.screenTitle, { color: c.text }]}>
+            Mis Rutinas
+          </Text>
         </Animated.View>
 
         {/* Crear nueva rutina */}
         <Animated.View
           style={[
-            s.createSection,
+            styles.createSection,
             { opacity: modesFade, transform: [{ translateY: modesSlide }] },
           ]}
         >
-          <Text style={[s.createTitle, { color: c.text }]}>
+          <Text style={[styles.createTitle, { color: c.text }]}>
             Crear nueva rutina
           </Text>
-          <Text style={[s.createSubtitle, { color: subColor }]}>
+          <Text style={[styles.createSubtitle, { color: subColor }]}>
             Elegí cómo querés empezar hoy
           </Text>
 
-          <View style={s.modesRow}>
+          <View style={styles.modesRow}>
             <TouchableOpacity
-              style={[s.modeCard, s.modeCardActive, { borderColor: TEAL }]}
+              style={[
+                styles.modeCard,
+                styles.modeCardActive,
+                { borderColor: TEAL },
+              ]}
               activeOpacity={0.82}
               onPress={() => router.push("/goals")}
             >
-              <View style={[s.modeIconWrap, { backgroundColor: TEAL }]}>
+              <View style={[styles.modeIconWrap, { backgroundColor: TEAL }]}>
                 <MaterialCommunityIcons
                   name="lightning-bolt"
                   size={22}
                   color="#fff"
                 />
               </View>
-              <Text style={[s.modeTitle, { color: c.text }]}>Modo Rápido</Text>
-              <Text style={[s.modeDesc, { color: subColor }]}>
+              <Text style={[styles.modeTitle, { color: c.text }]}>
+                Modo Rápido
+              </Text>
+              <Text style={[styles.modeDesc, { color: subColor }]}>
                 Plan generado por IA según tus objetivos
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
-                s.modeCard,
+                styles.modeCard,
                 { backgroundColor: cardBg, borderColor: borderCol },
               ]}
               activeOpacity={0.82}
@@ -373,7 +378,7 @@ export default function RutinasScreen() {
             >
               <View
                 style={[
-                  s.modeIconWrap,
+                  styles.modeIconWrap,
                   {
                     backgroundColor: "transparent",
                     borderWidth: 1.5,
@@ -387,8 +392,10 @@ export default function RutinasScreen() {
                   color={subColor}
                 />
               </View>
-              <Text style={[s.modeTitle, { color: c.text }]}>Modo Custom</Text>
-              <Text style={[s.modeDesc, { color: subColor }]}>
+              <Text style={[styles.modeTitle, { color: c.text }]}>
+                Modo Custom
+              </Text>
+              <Text style={[styles.modeDesc, { color: subColor }]}>
                 Armá tu rutina desde cero
               </Text>
             </TouchableOpacity>
@@ -396,14 +403,16 @@ export default function RutinasScreen() {
         </Animated.View>
 
         {/* Lista de rutinas */}
-        <View style={s.routinesSection}>
+        <View style={styles.routinesSection}>
           <Animated.View
             style={[
-              s.routinesHeader,
+              styles.routinesHeader,
               { opacity: modesFade, transform: [{ translateY: modesSlide }] },
             ]}
           >
-            <Text style={[s.sectionTitle, { color: c.text }]}>Mis Rutinas</Text>
+            <Text style={[styles.sectionTitle, { color: c.text }]}>
+              Mis Rutinas
+            </Text>
           </Animated.View>
 
           {routines.length === 0 ? (
@@ -432,9 +441,7 @@ export default function RutinasScreen() {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const s = StyleSheet.create({
+const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { padding: 22, gap: 24, paddingBottom: 48 },
 

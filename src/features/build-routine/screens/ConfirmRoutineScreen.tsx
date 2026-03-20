@@ -63,11 +63,11 @@ export default function ConfirmRoutineScreen() {
   const setRoutine = useRoutineStore((s) => s.setRoutine);
   const setError = useRoutineStore((s) => s.setError);
 
-  const TEAL = theme.colors.primary;
-  const textColor = isDark ? "#DFF0EE" : theme.colors.text;
-  const subColor = isDark ? "#4A6A66" : theme.colors.textSecondary;
-  const cardBg = isDark ? "#0C1119" : theme.colors.card;
-  const borderColor = isDark ? "rgba(46,207,190,0.15)" : theme.colors.border;
+  const TEAL = theme.primary;
+  const textColor = isDark ? "#DFF0EE" : theme.text;
+  const subColor = isDark ? "#4A6A66" : theme.textSecondary;
+  const cardBg = isDark ? "#0C1119" : theme.card;
+  const borderColor = isDark ? "rgba(46,207,190,0.15)" : theme.border;
   const accentBg = isDark ? "rgba(46,207,190,0.07)" : "rgba(46,207,190,0.06)";
   const accentBorder = isDark
     ? "rgba(46,207,190,0.2)"
@@ -152,7 +152,6 @@ export default function ConfirmRoutineScreen() {
                 />
               </View>
 
-              {/* Muestra el nombre del usuario si está logueado */}
               {user && (
                 <Text style={[styles.userTag, { color: subColor }]}>
                   Rutina para {user.name}

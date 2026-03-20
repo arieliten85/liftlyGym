@@ -21,16 +21,15 @@ export default function ExperienceScreen() {
     if (selectedLevel) router.push("/grupoMuscle");
   };
 
-  // Theme-aware colors matching GoalsScreen language
-  const TEAL = theme.colors.primary;
-  const cardBg = isDark ? "#0C1119" : theme.colors.card;
+  const TEAL = theme.primary;
+  const cardBg = isDark ? "#0C1119" : theme.card;
   const cardBgSel = isDark ? "#091714" : "#EBF9F7";
-  const borderDef = isDark ? "rgba(46,207,190,0.15)" : theme.colors.border;
-  const borderSel = isDark ? "rgba(46,207,190,0.5)" : theme.colors.primary;
-  const textColor = isDark ? "#DFF0EE" : theme.colors.text;
-  const subColor = isDark ? "#4A6A66" : theme.colors.textSecondary;
+  const borderDef = isDark ? "rgba(46,207,190,0.15)" : theme.border;
+  const borderSel = isDark ? "rgba(46,207,190,0.5)" : theme.primary;
+  const textColor = isDark ? "#DFF0EE" : theme.text;
+  const subColor = isDark ? "#4A6A66" : theme.textSecondary;
   const titleSel = TEAL;
-  const descSel = isDark ? "#B8D4D0" : theme.colors.text;
+  const descSel = isDark ? "#B8D4D0" : theme.text;
 
   const styles = createStyles(isDark, theme);
 
@@ -50,7 +49,6 @@ export default function ExperienceScreen() {
           </Text>
         </View>
 
-        {/* cards */}
         <View style={styles.optionsWrapper}>
           <View style={styles.optionsContainer}>
             {EXPERIENCE_OPTION_DATA.map((option) => {
@@ -101,7 +99,7 @@ export default function ExperienceScreen() {
                               : `${meta.color}55`
                             : isDark
                               ? "rgba(255,255,255,0.06)"
-                              : theme.colors.border,
+                              : theme.border,
                         },
                       ]}
                     >

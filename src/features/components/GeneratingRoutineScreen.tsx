@@ -20,9 +20,9 @@ export default function GeneratingRoutineScreen() {
   const error = useRoutineStore((s) => s.error);
   const isLoading = useRoutineStore((s) => s.isLoading);
 
-  const bg = theme.colors.background;
-  const primary = theme.colors.primary;
-  const text = theme.colors.text;
+  const bg = theme.background;
+  const primary = theme.primary;
+  const text = theme.text;
   const secondaryText = isDark ? "#8AA4A0" : "#6B7C78";
 
   const glowAlpha = isDark ? "rgba(46,207,190,0.15)" : "rgba(46,207,190,0.08)";

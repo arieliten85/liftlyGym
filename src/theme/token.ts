@@ -1,4 +1,4 @@
-import { DesignTokens, Shadows } from "./types";
+import { DesignTokens, Shadows } from "@/types/theme";
 
 export const spacing = {
   xs: 4,

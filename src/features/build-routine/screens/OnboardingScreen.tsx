@@ -43,11 +43,11 @@ export default function OnboardingScreen() {
   const { theme, isDark } = useAppTheme();
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
 
-  const bg = isDark ? "#070B12" : theme.colors.background;
+  const bg = isDark ? "#070B12" : theme.background;
   const glowAlpha = isDark ? "rgba(46,207,190,0.055)" : "rgba(46,207,190,0.08)";
-  const TEAL = theme.colors.primary;
-  const brandColor = theme.colors.text;
-  const loginColor = theme.colors.text;
+  const TEAL = theme.primary;
+  const brandColor = theme.text;
+  const loginColor = theme.text;
 
   return (
     <View style={[styles.container, { backgroundColor: bg }]}>

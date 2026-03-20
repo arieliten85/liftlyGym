@@ -22,16 +22,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import Toast from "react-native-toast-message";
 
+import { RegisterPayload } from "@/types/auth/auth";
 import { AuthInput } from "../components/Authinput";
 import { registerSchema, RegisterSchema } from "../schemas/auth.schema";
 import { AuthService } from "../service/auth.service";
-import { RegisterPayload } from "../types/Auth.types";
 
 export default function RegisterScreen() {
   const router = useRouter();
   const { theme, isDark } = useAppTheme();
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
-  const c = theme.colors;
+  const c = theme;
 
   const [loading, setLoading] = useState(false);
   const authService = new AuthService();
@@ -105,13 +105,13 @@ export default function RegisterScreen() {
   };
 
   return (
-    <View style={[s.safe, { backgroundColor: bg }]}>
+    <View style={[styles.safe, { backgroundColor: bg }]}>
       {/* Top bar overlay */}
-      <View style={s.topBar}>
+      <View style={styles.topBar}>
         <TouchableOpacity
           onPress={toggleTheme}
           activeOpacity={0.7}
-          style={s.iconBtn}
+          style={styles.iconBtn}
         >
           <Feather name={isDark ? "sun" : "moon"} size={18} color={TEAL} />
         </TouchableOpacity>
@@ -122,25 +122,25 @@ export default function RegisterScreen() {
         style={{ flex: 1 }}
       >
         <ScrollView
-          contentContainerStyle={s.scroll}
+          contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
-          <Animated.View style={[s.header, makeFade(headerAnim, 28)]}>
-            <View style={s.logoRow}>
+          <Animated.View style={[styles.header, makeFade(headerAnim, 28)]}>
+            <View style={styles.logoRow}>
               <LiftlyIcon size={36} />
-              <Text style={[s.logoName, { color: c.text }]}>Liftly</Text>
+              <Text style={[styles.logoName, { color: c.text }]}>Liftly</Text>
             </View>
 
-            <Text style={[s.title, { color: c.text }]}>Crear cuenta</Text>
-            <Text style={[s.subtitle, { color: c.textSecondary }]}>
+            <Text style={[styles.title, { color: c.text }]}>Crear cuenta</Text>
+            <Text style={[styles.subtitle, { color: c.textSecondary }]}>
               Empezá tu camino hacia un entrenamiento más inteligente
             </Text>
           </Animated.View>
 
-          <Animated.View style={[s.formBlock, makeFade(formAnim)]}>
-            <View style={s.inputs}>
+          <Animated.View style={[styles.formBlock, makeFade(formAnim)]}>
+            <View style={styles.inputs}>
               <Controller
                 control={control}
                 name="name"
@@ -213,18 +213,20 @@ export default function RegisterScreen() {
         </ScrollView>
 
         {/* Footer fijo abajo */}
-        <View style={s.footerContainer}>
+        <View style={styles.footerContainer}>
           <PrimaryButton
             label="Crear cuenta"
             onPress={handleSubmit(onSubmit)}
             disabled={loading}
           />
-          <View style={s.footerRow}>
-            <Text style={[s.footerText, { color: c.textSecondary }]}>
+          <View style={styles.footerRow}>
+            <Text style={[styles.footerText, { color: c.textSecondary }]}>
               ¿Ya tenés cuenta?
             </Text>
             <Pressable onPress={() => router.push("/login")}>
-              <Text style={[s.footerLink, { color: TEAL }]}>Iniciá sesión</Text>
+              <Text style={[styles.footerLink, { color: TEAL }]}>
+                Iniciá sesión
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -233,7 +235,7 @@ export default function RegisterScreen() {
   );
 }
 
-const s = StyleSheet.create({
+const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: {
     flexGrow: 1,

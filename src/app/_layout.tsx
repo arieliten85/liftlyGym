@@ -12,25 +12,25 @@ function NavigationStack() {
     <>
       <StatusBar
         style={isDark ? "light" : "dark"}
-        backgroundColor={theme.colors.background}
+        backgroundColor={theme.background}
         translucent={false}
       />
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: theme.colors.background },
-          headerTintColor: theme.colors.text,
+          headerStyle: { backgroundColor: theme.background },
+          headerTintColor: theme.text,
           headerShadowVisible: false,
-          contentStyle: { backgroundColor: theme.colors.background },
+          contentStyle: { backgroundColor: theme.background },
         }}
       >
-        {/* ── Raíz ── */}
+        {/* ── raiz ── */}
         <Stack.Screen name="index" options={{ headerShown: false }} />
 
         {/* ── Auth: back gestual habilitado hacia onboarding ── */}
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="register" options={{ headerShown: false }} />
 
-        {/* ── Tabs: sin header, sin back, sin gesture (es la raíz post-login) ── */}
+        {/* ── Tabs ── */}
         <Stack.Screen
           name="(tabs)"
           options={{
@@ -39,7 +39,7 @@ function NavigationStack() {
           }}
         />
 
-        {/* ── Flujo de onboarding/build-routine ── */}
+        {/* ── Flujo de onboarding ── */}
         <Stack.Screen name="goals" options={{ title: "Objetivos" }} />
         <Stack.Screen name="equipment" options={{ title: "Equipamiento" }} />
         <Stack.Screen name="experience" options={{ title: "Experiencia" }} />

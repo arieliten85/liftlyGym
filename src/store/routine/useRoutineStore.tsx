@@ -5,7 +5,7 @@ import {
   RoutineExercise,
   RoutineSession,
   SetLog,
-} from "@/type/routine.type";
+} from "@/types/routine";
 import { create } from "zustand";
 
 interface RoutineStore {
