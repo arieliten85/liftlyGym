@@ -1,5 +1,5 @@
-import { RoutineExercise } from "@/types/routine/exercise";
-import { RoutineSession } from "@/types/routine/session";
+import { RoutineExercise } from "@/types/routine/exercise.type";
+import { RoutineSession } from "@/types/routine/session.type";
 
 // Adjustment type - define based on what adjustments actually are
 export interface Adjustment {

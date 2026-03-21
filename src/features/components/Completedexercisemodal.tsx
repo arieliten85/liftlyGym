@@ -1,15 +1,19 @@
-import { ExerciseProgress, RoutineExercise, SetLog } from "@/types/routine/exercise";
+import {
+  ExerciseProgress,
+  RoutineExercise,
+  SetLog,
+} from "@/types/routine/exercise.type";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
-    Modal,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Modal,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 interface ThemeColors {

@@ -1,5 +1,6 @@
 // Exercise-related types
 export interface RoutineExercise {
+  id: string;
   name: string;
   sets: number;
   reps: string;

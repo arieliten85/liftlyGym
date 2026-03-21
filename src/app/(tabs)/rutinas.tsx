@@ -1,8 +1,12 @@
+import { ImageSection } from "@/features/build-routine/components/ImageSection";
+import { estimateDuration } from "@/features/build-routine/utils/estimateDuration";
 import { RoutineService } from "@/services/routineService";
+import { Badge } from "@/shared/components/Badge";
+import { PrimaryButton } from "@/shared/components/PrimaryButton";
 import { useNotificationStore } from "@/store/notification/usenotificationstore";
 import { useRoutineStore } from "@/store/routine/useRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { Routine } from "@/types/routine/session";
+import { Routine } from "@/types/routine/session.type";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useRef } from "react";
@@ -19,67 +23,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const routineService = new RoutineService();
-
-function estimateDuration(exercises: Routine["exercises"]): number {
-  const totalSets = exercises.reduce((acc, e) => acc + e.sets, 0);
-  const avgRestMin =
-    exercises.reduce((acc, e) => acc + e.restSeconds, 0) /
-    exercises.length /
-    60;
-  return Math.round(totalSets * (1.5 + avgRestMin));
-}
-
-const MUSCLE_KEYWORDS: [string, string][] = [
-  ["squat", "Quads"],
-  ["deadlift", "Isquios"],
-  ["press", "Pecho"],
-  ["row", "Espalda"],
-  ["remo", "Espalda"],
-  ["curl", "Bíceps"],
-  ["pushdown", "Tríceps"],
-  ["lateral", "Hombros"],
-  ["ohp", "Hombros"],
-  ["shoulder", "Hombros"],
-  ["jalon", "Espalda"],
-  ["dominadas", "Espalda"],
-  ["calf", "Pantorrillas"],
-  ["lunge", "Quads"],
-  ["hip", "Glúteos"],
-  ["plank", "Core"],
-  ["push", "Pecho"],
-  ["fly", "Pecho"],
-];
-
-function inferMuscles(exercises: Routine["exercises"]): string[] {
-  const found = new Set<string>();
-  for (const ex of exercises) {
-    const lower = ex.name.toLowerCase();
-    for (const [key, muscle] of MUSCLE_KEYWORDS) {
-      if (lower.includes(key)) found.add(muscle);
-    }
-  }
-  return found.size > 0 ? Array.from(found).slice(0, 3) : ["Cuerpo completo"];
-}
-
-const COVER_BY_GOAL: Record<string, string> = {
-  strength: "#1B2E1B",
-  hypertrophy: "#1B1B30",
-  general_fitness: "#2A2010",
-  weight_loss: "#2A1010",
-  endurance: "#101828",
-};
-
-const EXP_LABEL: Record<string, string> = {
-  beginner: "PRINCIPIANTE",
-  intermediate: "INTERMEDIO",
-  advanced: "AVANZADO",
-};
-
-const EXP_COLOR: Record<string, string> = {
-  beginner: "#22C55E",
-  intermediate: "#F59E0B",
-  advanced: "#3B82F6",
-};
 
 interface RoutineCardProps {
   routine: Routine;
@@ -104,13 +47,9 @@ function RoutineCard({
   onDelete,
   onStart,
 }: RoutineCardProps) {
-  const expColor = EXP_COLOR[routine.experience] ?? "#6B7280";
-  const expLabel =
-    EXP_LABEL[routine.experience] ?? routine.experience.toUpperCase();
-  const coverColor = COVER_BY_GOAL[routine.goal] ?? "#1A1A1A";
-  const muscles = inferMuscles(routine.exercises);
+  const expColor = "#cfd0d1";
+  const coverColor = "#1A1A1A";
   const duration = estimateDuration(routine.exercises);
-
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
 
@@ -155,11 +94,12 @@ function RoutineCard({
         </TouchableOpacity>
       )}
 
-      {/* Cover */}
-      <View style={[rc.cover, { backgroundColor: coverColor }]}>
+      {/* Cover con imagen */}
+      <View style={rc.cover}>
+        <ImageSection coverColor={coverColor} routineName={routine.name} />
         <View style={rc.coverOverlay} />
-        <View style={[rc.expBadge, { backgroundColor: expColor }]}>
-          <Text style={rc.expText}>{expLabel}</Text>
+        <View style={[rc.expBadge]}>
+          <Badge label={routine.experience} color={expColor} />
         </View>
       </View>
 
@@ -168,10 +108,7 @@ function RoutineCard({
         <View style={rc.bodyTop}>
           <View style={{ flex: 1 }}>
             <Text style={[rc.name, { color: textColor }]} numberOfLines={1}>
-              {routine.name}
-            </Text>
-            <Text style={[rc.muscles, { color: subColor }]} numberOfLines={1}>
-              {muscles.join(", ")}
+              {routine.name} day
             </Text>
           </View>
           <View style={rc.metaRow}>
@@ -186,14 +123,11 @@ function RoutineCard({
           </View>
         </View>
 
-        <TouchableOpacity
-          style={[rc.cta, { backgroundColor: accentColor }]}
-          activeOpacity={0.8}
+        <PrimaryButton
+          iconRight={"play"}
+          label={"Iniciar"}
           onPress={() => onStart(routine)}
-        >
-          <MaterialCommunityIcons name="play" size={14} color="#fff" />
-          <Text style={rc.ctaText}>Iniciar entrenamiento</Text>
-        </TouchableOpacity>
+        />
       </View>
     </Animated.View>
   );
@@ -286,7 +220,6 @@ export default function RutinasScreen() {
     ]);
   };
 
-  // Carga la rutina en el store y navega a la pantalla de ejecución
   const handleStartRoutine = (routine: Routine) => {
     setRoutine({
       exercises: routine.exercises,
@@ -485,13 +418,26 @@ const styles = StyleSheet.create({
 });
 
 const rc = StyleSheet.create({
-  card: { borderRadius: 20, borderWidth: 1, overflow: "hidden" },
-  cover: { height: 130, justifyContent: "flex-end", padding: 12 },
+  card: {
+    borderRadius: 20,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  cover: {
+    height: 130,
+    position: "relative",
+    overflow: "hidden",
+  },
   coverOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.2)",
+    zIndex: 1,
   },
   expBadge: {
+    position: "absolute",
+    bottom: 12,
+    left: 12,
+    zIndex: 2,
     alignSelf: "flex-start",
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -503,7 +449,10 @@ const rc = StyleSheet.create({
     color: "#fff",
     letterSpacing: 0.8,
   },
-  body: { padding: 16, gap: 12 },
+  body: {
+    padding: 16,
+    gap: 12,
+  },
   bodyTop: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -514,10 +463,22 @@ const rc = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: -0.4,
     marginBottom: 3,
+    textTransform: "capitalize",
   },
-  muscles: { fontSize: 12, fontWeight: "500" },
-  metaRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
-  metaText: { fontSize: 12, fontWeight: "600" },
+  muscles: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 2,
+  },
+  metaText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
   cta: {
     flexDirection: "row",
     alignItems: "center",
@@ -532,5 +493,10 @@ const rc = StyleSheet.create({
     color: "#fff",
     letterSpacing: -0.2,
   },
-  deleteButton: { position: "absolute", top: 10, right: 10, zIndex: 10 },
+  deleteButton: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    zIndex: 10,
+  },
 });

@@ -1,2 +1,3 @@
-export * from './exercise';
-export * from './session';
+export * from "./exercise.type";
+export * from "./session.type";
+

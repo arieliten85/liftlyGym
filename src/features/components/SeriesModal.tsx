@@ -1,10 +1,16 @@
 import { PrimaryButton } from "@/shared/components/PrimaryButton";
-import { ExerciseProgress, RoutineExercise } from "@/types/routine/exercise";
+import {
+  ExerciseProgress,
+  RoutineExercise,
+} from "@/types/routine/exercise.type";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+
 import {
+  ActivityIndicator,
   Animated,
   Easing,
+  Image,
   Modal,
   Platform,
   SafeAreaView,
@@ -16,6 +22,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
+import { useExerciseGif } from "../auth/hooks/useExerciseGif";
 import {
   formatRest,
   formatRestTime,
@@ -48,8 +55,6 @@ interface SeriesModalProps {
   ) => void;
   formatTextTitle: (text: string) => string;
 }
-
-// ─── Stepper ──────────────────────────────────────────────────────────────────
 
 interface StepperProps {
   label: string;
@@ -567,7 +572,7 @@ export function SeriesModal({
 }: SeriesModalProps) {
   const { height } = useWindowDimensions();
   const isShortDevice = height < 700;
-
+  const [ratio, setRatio] = useState(1);
   const [phase, setPhase] = useState<Phase>("active");
   const [localCurrentSet, setLocalCurrentSet] = useState(1);
   const [skippedSets, setSkippedSets] = useState<number[]>([]);
@@ -579,6 +584,8 @@ export function SeriesModal({
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
+
+  const { gifUrl, loading: gifLoading } = useExerciseGif(exercise.name);
 
   const animateIn = (fromValue = 30) => {
     slideAnim.setValue(fromValue);
@@ -602,7 +609,7 @@ export function SeriesModal({
     if (visible && progress && exercise) {
       const dv = progress.displayValues;
       setPhase("active");
-      // ✅ Siempre sincronizamos desde el store al abrir el modal
+
       setLocalCurrentSet(progress.currentSet);
       setSetsLocal(dv.sets);
       setSkippedSets(
@@ -751,6 +758,47 @@ export function SeriesModal({
                     ? "¡Último set! Dalo todo 🔥"
                     : "Ajustá si necesitás y completá la serie"}
                 </Text>
+
+                {(gifLoading || gifUrl) && (
+                  <View
+                    style={[
+                      sty.gifContainer,
+                      { backgroundColor: isDark ? "#111" : "#F0F0F0" },
+                    ]}
+                  >
+                    {gifLoading ? (
+                      <ActivityIndicator size="small" color={colors.primary} />
+                    ) : gifUrl ? (
+                      <Image
+                        source={{ uri: gifUrl }}
+                        style={{
+                          width: "100%", // ancho completo de la card
+                          aspectRatio: ratio, // mantiene proporción
+                          borderRadius: 12,
+                        }}
+                        resizeMode="contain" // nunca se corta
+                        onLoad={(e) => {
+                          const { width, height } = e.nativeEvent.source;
+                          setRatio(width / height);
+                        }}
+                      />
+                    ) : null}
+
+                    {/* Overlay opcional */}
+                    {gifUrl && (
+                      <View
+                        style={[
+                          sty.gifOverlay,
+                          {
+                            backgroundColor: isDark
+                              ? "rgba(0,0,0,0.3)"
+                              : "rgba(0,0,0,0.08)",
+                          },
+                        ]}
+                      />
+                    )}
+                  </View>
+                )}
               </View>
 
               <SetDots
@@ -1299,4 +1347,41 @@ const sty = StyleSheet.create({
     borderWidth: 1,
   },
   skipRestText: { fontSize: 14, fontWeight: "600" },
+
+  gifContainer: {
+    width: "100%",
+    borderRadius: 12,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  gif: {
+    width: "100%",
+    aspectRatio: 1.5,
+  },
+
+  gifOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  gifLoader: {
+    position: "absolute",
+  },
+  gifCompletedBadge: {
+    position: "absolute",
+    bottom: 8,
+    right: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    backgroundColor: "rgba(0,0,0,0.55)",
+  },
+  gifCompletedText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#22C55E",
+  },
 });
