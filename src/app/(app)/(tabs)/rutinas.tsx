@@ -1,7 +1,6 @@
 import { ImageSection } from "@/features/build-routine/components/ImageSection";
 import { estimateDuration } from "@/features/build-routine/utils/estimateDuration";
 import { RoutineService } from "@/services/routineService";
-import { Badge } from "@/shared/components/Badge";
 import { PrimaryButton } from "@/shared/components/PrimaryButton";
 import { useNotificationStore } from "@/store/notification/usenotificationstore";
 import { useRoutineStore } from "@/store/routine/useRoutineStore";
@@ -53,6 +52,11 @@ function RoutineCard({
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
 
+  const ROUTINEMODE = {
+    quick: "Rápida",
+    custom: "Personalizada",
+  };
+
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -98,8 +102,14 @@ function RoutineCard({
       <View style={rc.cover}>
         <ImageSection coverColor={coverColor} routineName={routine.name} />
         <View style={rc.coverOverlay} />
-        <View style={[rc.expBadge]}>
-          <Badge label={routine.experience} color={expColor} />
+      </View>
+
+      <View style={rc.badgeRow}>
+        <View style={rc.modeBadge}>
+          <Text style={rc.modeText}>{ROUTINEMODE[routine.mode]}</Text>
+        </View>
+        <View style={rc.modeBadge}>
+          <Text style={rc.modeText}>{routine.goal}</Text>
         </View>
       </View>
 
@@ -228,7 +238,7 @@ export default function RutinasScreen() {
       routineName: routine.name,
       routineId: routine.routineId,
     });
-    router.push("/routine");
+    router.push("/(app)/routine?from=tabs");
   };
 
   if (loading) {
@@ -284,7 +294,7 @@ export default function RutinasScreen() {
                 { borderColor: TEAL },
               ]}
               activeOpacity={0.82}
-              onPress={() => router.push("/goals")}
+              onPress={() => router.push("/(onboarding)/(build-routine)/goals")}
             >
               <View style={[styles.modeIconWrap, { backgroundColor: TEAL }]}>
                 <MaterialCommunityIcons
@@ -436,7 +446,7 @@ const rc = StyleSheet.create({
   expBadge: {
     position: "absolute",
     bottom: 12,
-    left: 12,
+    left: 0,
     zIndex: 2,
     alignSelf: "flex-start",
     paddingHorizontal: 10,
@@ -498,5 +508,27 @@ const rc = StyleSheet.create({
     top: 10,
     right: 10,
     zIndex: 10,
+  },
+
+  modeBadge: {
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+
+  modeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+  badgeRow: {
+    position: "absolute",
+    top: 10,
+    left: 10,
+    flexDirection: "row",
+    gap: 6,
+    zIndex: 2,
   },
 });

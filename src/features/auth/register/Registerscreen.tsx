@@ -27,7 +27,14 @@ import { AuthInput } from "../components/Authinput";
 import { registerSchema, RegisterSchema } from "../schemas/auth.schema";
 import { AuthService } from "../service/auth.service";
 
-export default function RegisterScreen() {
+// CAMBIO: recibe onSuccess como prop.
+// La ruta (app/(onboarding)/(auth)/register.tsx) decide a dónde ir después.
+// RegisterScreen ya no sabe nada de rutas.
+type Props = {
+  onSuccess: () => void;
+};
+
+export default function RegisterScreen({ onSuccess }: Props) {
   const router = useRouter();
   const { theme, isDark } = useAppTheme();
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
@@ -91,7 +98,10 @@ export default function RegisterScreen() {
       await authService.register(payload);
 
       Toast.show({ type: "success", text1: "Cuenta creada exitosamente" });
-      router.push("../goals");
+
+      // CAMBIO: antes era router.push("../goals")
+      // Ahora delega la navegación a quien instancia esta pantalla.
+      onSuccess();
     } catch (error) {
       Toast.show({
         type: "error",
@@ -223,7 +233,10 @@ export default function RegisterScreen() {
             <Text style={[styles.footerText, { color: c.textSecondary }]}>
               ¿Ya tenés cuenta?
             </Text>
-            <Pressable onPress={() => router.push("/login")}>
+            {/* CAMBIO: navega a la ruta hermana dentro de (auth) */}
+            <Pressable
+              onPress={() => router.push("/(onboarding)/(auth)/login")}
+            >
               <Text style={[styles.footerLink, { color: TEAL }]}>
                 Iniciá sesión
               </Text>
@@ -240,7 +253,7 @@ const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     paddingHorizontal: 28,
-    paddingTop: 80, // ↓ Baja el logo
+    paddingTop: 80,
     paddingBottom: 32,
   },
   topBar: {

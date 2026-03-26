@@ -18,7 +18,7 @@ export default function ExperienceScreen() {
   const setExperience = useBuildRoutineStore((s) => s.setExperience);
 
   const handleNext = () => {
-    if (selectedLevel) router.push("/grupoMuscle");
+    if (selectedLevel) router.push("/(onboarding)/(build-routine)/splitSelect");
   };
 
   const TEAL = theme.primary;

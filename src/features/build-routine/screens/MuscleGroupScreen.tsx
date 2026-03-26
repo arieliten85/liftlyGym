@@ -6,7 +6,7 @@ import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo } from "react";
 import {
   Dimensions,
@@ -82,11 +82,7 @@ function RoutineCard({
                 name={option.icon as any}
                 size={32}
                 color={
-                  isSelected
-                    ? teal
-                    : isDark
-                      ? "#4A6A66"
-                      : theme.textSecondary
+                  isSelected ? teal : isDark ? "#4A6A66" : theme.textSecondary
                 }
               />
             )}
@@ -177,9 +173,11 @@ export default function MuscleGroupScreen() {
   const setRoutine = useBuildRoutineStore((s) => s.setRoutine);
   const hasSelection = selectedRoutine !== null;
 
+  const { from } = useLocalSearchParams<{ from?: string }>();
+
   const handleNext = () => {
     if (!hasSelection) return;
-    router.push("/confirmRoutine");
+    router.push(`/(onboarding)/(build-routine)/confirm?from=${from}`);
   };
 
   const TEAL = theme.primary;
@@ -241,9 +239,7 @@ export default function MuscleGroupScreen() {
           style={[
             styles.counter,
             {
-              borderTopColor: isDark
-                ? "rgba(46,207,190,0.12)"
-                : theme.border,
+              borderTopColor: isDark ? "rgba(46,207,190,0.12)" : theme.border,
             },
           ]}
         >

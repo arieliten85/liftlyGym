@@ -103,7 +103,9 @@ export default function OnboardingScreen() {
       <Animated.View style={[styles.ctaWrapper]}>
         <PrimaryButton
           label="Empezar"
-          onPress={() => router.push("../goals")}
+          onPress={() =>
+            router.push("/(onboarding)/(build-routine)/goals?from=onboarding")
+          }
         />
       </Animated.View>
     </View>

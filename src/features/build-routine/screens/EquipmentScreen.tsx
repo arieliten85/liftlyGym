@@ -3,19 +3,21 @@ import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { EQUIPAMENTE_OPTION_DATA } from "../constants/routine-builder.constants";
 
 export default function EquipmentScreen() {
   const { theme, isDark } = useAppTheme();
   const router = useRouter();
+  const { from } = useLocalSearchParams<{ from?: string }>();
 
   const selected = useBuildRoutineStore((s) => s.equipment);
   const setEquipment = useBuildRoutineStore((s) => s.setEquipment);
 
   const handleNext = () => {
-    if (selected) router.push("/experience");
+    if (selected)
+      router.push(`/(onboarding)/(build-routine)/experience?from=${from}`);
   };
 
   const TEAL = theme.primary;

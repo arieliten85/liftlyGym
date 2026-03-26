@@ -1,7 +1,8 @@
 import { RoutineExercise } from "@/types/routine/exercise.type";
 import { RoutineSession } from "@/types/routine/session.type";
 
-// Adjustment type - define based on what adjustments actually are
+type Mode = "quick" | "custom";
+
 export interface Adjustment {
   exerciseName: string;
   originalValue: string;
@@ -21,6 +22,7 @@ export interface RoutineDTO {
   name: string;
   goal: string;
   experience: string;
+  mode: Mode;
   createdAt: string;
   exercises: RoutineExercise[];
 }

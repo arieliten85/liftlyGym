@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, {
   useCallback,
   useEffect,
@@ -7,14 +7,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { useLoadingStore } from "@/store/loading/loadingStore";
 import { useRoutineStore } from "@/store/routine/useRoutineStore";
@@ -23,15 +16,18 @@ import { ExerciseProgress } from "@/types/routine/exercise.type";
 
 import { PrimaryButton } from "@/shared/components/PrimaryButton";
 
-import { calculateWorkoutTime } from "@/utils/workout.utils";
 import { formatRestTime } from "../build-routine/utils/formatRestTime";
 import { formatTextTitle } from "../build-routine/utils/formatTextTitle";
 
+import { AppNotification } from "@/services/notificationService";
 import { RoutineService } from "@/services/routineService";
 import { useNotificationStore } from "@/store/notification/usenotificationstore";
 import { CustomHeaderRoutine } from "../build-routine/components/CustomHeaderRoutine";
 import { CompletedExerciseModal } from "./Completedexercisemodal";
 import { ExerciseCard } from "./ExerciseCard";
+import { PendingAdjustmentsModal } from "./PendingAdjustmentsModal";
+import { ReplaceExerciseModal } from "./ReplaceExerciseModal";
+import { RoutineHeader } from "./RoutineHeader";
 import { SeriesModal } from "./SeriesModal";
 import {
   WorkoutSummaryModal,
@@ -72,9 +68,21 @@ export function RoutineScreen() {
     updateDisplayValues,
     getCompletedRoutinePayload,
     resetSession,
+    replaceExerciseName,
   } = useRoutineStore();
-  const { fetchNotifications } = useNotificationStore();
+  const {
+    fetchNotifications,
+    getPendingAdjustmentNotification,
+    clearPendingAdjustments,
+  } = useNotificationStore();
   const { setLoading } = useLoadingStore();
+
+  const [replaceModalVisible, setReplaceModalVisible] = useState(false);
+  const [exerciseToReplace, setExerciseToReplace] = useState<{
+    index: number;
+    name: string;
+    muscle: string;
+  } | null>(null);
 
   const sessionStartRef = useRef<number>(Date.now());
   const [elapsedMin, setElapsedMin] = useState(0);
@@ -89,17 +97,10 @@ export function RoutineScreen() {
   const [completedSummaryVisible, setCompletedSummaryVisible] = useState(false);
   const [summaryVisible, setSummaryVisible] = useState(false);
   const [wasAbandoned, setWasAbandoned] = useState(false);
+  const [adjustmentNotif, setAdjustmentNotif] =
+    useState<AppNotification | null>(null);
   const isSubmittingRef = useRef(false);
-
-  const expColor = routine
-    ? (EXP_COLOR[routine.experience] ?? "#6B7280")
-    : "#6B7280";
-  const expLabel = routine
-    ? (EXP_LABEL[routine.experience] ?? routine.experience.toUpperCase())
-    : "";
-  const coverColor = routine
-    ? (COVER_BY_GOAL[routine.goal] ?? "#1A1A1A")
-    : "#1A1A1A";
+  const { from } = useLocalSearchParams<{ from?: string }>();
 
   const colors = useMemo(
     () => ({
@@ -138,13 +139,12 @@ export function RoutineScreen() {
     [session, routine, completedCount],
   );
 
-  const totalStats = useMemo(() => {
-    if (!routine) return { sets: 0, estimatedMin: 0 };
-    return {
-      sets: routine.exercises.reduce((a, e) => a + e.sets, 0),
-      estimatedMin: calculateWorkoutTime(routine.exercises),
-    };
-  }, [routine]);
+  // Encontrar el primer ejercicio no completado
+  const firstIncompleteExerciseIndex = useMemo(() => {
+    if (!session || !routine) return null;
+    const incompleteIndex = session.exercises.findIndex((e) => !e.completed);
+    return incompleteIndex !== -1 ? incompleteIndex : null;
+  }, [session, routine]);
 
   const seriesProgress = useMemo(
     () =>
@@ -174,27 +174,30 @@ export function RoutineScreen() {
   const handleGoBack = useCallback(() => {
     const hasProgress =
       session?.exercises.some((e) => e.setLogs.length > 0) ?? false;
-    if (!hasProgress) {
+
+    const goBack = () => {
       resetSession();
-      router.replace("/(tabs)/rutinas");
+      if (from === "generating") {
+        router.replace("/(app)/(tabs)/rutinas");
+      } else {
+        router.back();
+      }
+    };
+
+    if (!hasProgress) {
+      goBack();
       return;
     }
+
     Alert.alert(
       "¿Salir del entrenamiento?",
       "Tu progreso actual no se guardará. ¿Querés salir igual?",
       [
         { text: "Seguir entrenando", style: "cancel" },
-        {
-          text: "Salir",
-          style: "destructive",
-          onPress: () => {
-            resetSession();
-            router.replace("/(tabs)/rutinas");
-          },
-        },
+        { text: "Salir", style: "destructive", onPress: goBack },
       ],
     );
-  }, [session, resetSession, router]);
+  }, [session, resetSession, router, from]);
 
   const totalEstimatedMin = useMemo(() => {
     if (!routine) return 0;
@@ -206,20 +209,17 @@ export function RoutineScreen() {
     return Math.round(totalSets * (1.5 + avgRestMin));
   }, [routine]);
 
-  // ── Solo selecciona la card (highlight visual), NO abre el modal ──
   const handleSelectExercise = useCallback(
     (index: number) => {
       const progress = session?.exercises.find(
         (e) => e.exerciseIndex === index,
       );
       if (progress?.completed) return;
-      // Alterna la selección: si ya está seleccionada, la deselecciona
       setSelectedExerciseIndex((prev) => (prev === index ? null : index));
     },
     [session],
   );
 
-  // ── Abre el SeriesModal
   const handleStartExercise = useCallback(
     (index: number) => {
       const progress = session?.exercises.find(
@@ -232,6 +232,12 @@ export function RoutineScreen() {
     },
     [session],
   );
+
+  const handleStartFirstIncomplete = useCallback(() => {
+    if (firstIncompleteExerciseIndex !== null) {
+      handleStartExercise(firstIncompleteExerciseIndex);
+    }
+  }, [firstIncompleteExerciseIndex, handleStartExercise]);
 
   const handleViewCompletedExercise = useCallback((index: number) => {
     setSummaryExerciseIndex(index);
@@ -248,6 +254,7 @@ export function RoutineScreen() {
       repsCompleted: number | null;
       weight: number | null;
       skipped: boolean;
+      restSeconds: number;
     }) => {
       if (seriesIndex === null) return;
       logSet(seriesIndex, log);
@@ -272,12 +279,15 @@ export function RoutineScreen() {
   );
 
   const handleFinishRoutine = useCallback(() => {
+    // Si todos los ejercicios están completados, finalizar directamente sin confirmación
     if (allCompleted) {
       setElapsedMin(Math.round((Date.now() - sessionStartRef.current) / 60000));
       setWasAbandoned(false);
       setSummaryVisible(true);
       return;
     }
+
+    // Si hay ejercicios incompletos, mostrar confirmación antes de finalizar
     Alert.alert(
       "Finalizar rutina",
       completedCount > 0
@@ -320,30 +330,125 @@ export function RoutineScreen() {
 
       setSummaryVisible(false);
       setLoading(true);
+
       try {
         await routineService.completeSession(payload);
         await fetchNotifications();
+
+        const pendingNotif = getPendingAdjustmentNotification();
+        if (pendingNotif) {
+          setAdjustmentNotif(pendingNotif);
+          return;
+        }
       } catch (error) {
         console.error("[RoutineScreen] Error al guardar sesión:", error);
       } finally {
         setLoading(false);
-        isSubmittingRef.current = false;
-        resetSession();
-        router.replace("/(tabs)/rutinas");
+        if (!getPendingAdjustmentNotification()) {
+          isSubmittingRef.current = false;
+          resetSession();
+          router.replace("/(app)/(tabs)/rutinas");
+        }
       }
     },
     [
       fetchNotifications,
       getCompletedRoutinePayload,
+      getPendingAdjustmentNotification,
       resetSession,
       router,
       setLoading,
     ],
   );
 
+  const buttonConfig = useMemo(() => {
+    if (allCompleted) {
+      return {
+        label: "¡Finalizar rutina!",
+        action: handleFinishRoutine,
+        icon: "trophy" as const,
+      };
+    } else {
+      return {
+        label: "Empezar ejercicio",
+        action: handleStartFirstIncomplete,
+        icon: "play-circle" as const,
+      };
+    }
+  }, [allCompleted, handleFinishRoutine, handleStartFirstIncomplete]);
+
+  const handleApplyAdjustments = useCallback(async () => {
+    if (!adjustmentNotif?.routineId) return;
+    try {
+      setLoading(true);
+      await routineService.applyAdjustments(
+        adjustmentNotif.routineId,
+        adjustmentNotif.id,
+      );
+      clearPendingAdjustments(adjustmentNotif.id);
+
+      const routinas = await routineService.getUserRoutines();
+      const updatedRoutine = routinas.find(
+        (r) => r.routineId === adjustmentNotif.routineId,
+      );
+      if (updatedRoutine) {
+        useRoutineStore.getState().setRoutine({
+          exercises: updatedRoutine.exercises,
+          goal: updatedRoutine.goal,
+          experience: updatedRoutine.experience,
+          routineName: updatedRoutine.name,
+          routineId: updatedRoutine.routineId,
+        });
+      }
+    } catch (e) {
+      console.error("[RoutineScreen] Error al aplicar ajustes:", e);
+    } finally {
+      setLoading(false);
+      setAdjustmentNotif(null);
+      isSubmittingRef.current = false;
+      resetSession();
+      router.replace("/(app)/(tabs)/rutinas");
+    }
+  }, [
+    adjustmentNotif,
+    clearPendingAdjustments,
+    resetSession,
+    router,
+    setLoading,
+  ]);
+
+  const handleIgnoreAdjustments = useCallback(() => {
+    if (adjustmentNotif) clearPendingAdjustments(adjustmentNotif.id);
+    setAdjustmentNotif(null);
+    isSubmittingRef.current = false;
+    resetSession();
+    router.replace("/(app)/(tabs)/rutinas");
+  }, [adjustmentNotif, clearPendingAdjustments, resetSession, router]);
+
+  const handleReplaceExercise = useCallback(
+    async (newName: string) => {
+      if (seriesIndex === null || !routine?.routineId) return;
+      const currentExercise = routine.exercises[seriesIndex];
+      try {
+        setLoading(true);
+        await routineService.replaceExercise(
+          routine.routineId,
+          currentExercise.name,
+          newName,
+        );
+        replaceExerciseName(seriesIndex, newName);
+      } catch (e) {
+        console.error("[RoutineScreen] Error al reemplazar ejercicio:", e);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [seriesIndex, routine, setLoading, replaceExerciseName],
+  );
+
   if (!routine) {
     return (
-      <View style={[s.centered, { backgroundColor: colors.bg }]}>
+      <View style={[styles.centered, { backgroundColor: colors.bg }]}>
         <Text style={{ color: colors.textSecondary }}>Cargando rutina...</Text>
       </View>
     );
@@ -354,18 +459,14 @@ export function RoutineScreen() {
       ? (completedCount / routine.exercises.length) * 100
       : 0;
 
+  // Determinar el texto y acción del botón
+
   return (
-    <View style={[s.root, { backgroundColor: colors.bg }]}>
-      <TouchableOpacity
-        onPress={handleGoBack}
-        activeOpacity={0.7}
-        style={[s.backBtn, { backgroundColor: isDark ? "#1E1E1E" : "#F0F0F0" }]}
-      >
-        <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
-      </TouchableOpacity>
+    <View style={[styles.root, { backgroundColor: colors.bg }]}>
+      <RoutineHeader title={"Entrenamiento"} onBack={handleGoBack} />
 
       <ScrollView
-        contentContainerStyle={s.scroll}
+        contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
         <CustomHeaderRoutine
@@ -380,40 +481,42 @@ export function RoutineScreen() {
         {/* Progreso */}
         <View
           style={[
-            s.progressCard,
+            styles.progressCard,
             {
               backgroundColor: colors.primary + "0E",
               borderColor: colors.primary + "25",
             },
           ]}
         >
-          <View style={s.progressTop}>
-            <View style={s.progressLeft}>
+          <View style={styles.progressTop}>
+            <View style={styles.progressLeft}>
               <Ionicons
                 name="fitness-outline"
                 size={16}
                 color={colors.primary}
               />
-              <Text style={[s.progressLabel, { color: colors.primary }]}>
+              <Text style={[styles.progressLabel, { color: colors.primary }]}>
                 Progreso
               </Text>
             </View>
-            <Text style={[s.progressFraction, { color: colors.primary }]}>
+            <Text style={[styles.progressFraction, { color: colors.primary }]}>
               {completedCount}/{routine.exercises.length} ejercicios
             </Text>
           </View>
 
-          <View style={[s.progressTrack, { backgroundColor: colors.border }]}>
+          <View
+            style={[styles.progressTrack, { backgroundColor: colors.border }]}
+          >
             <View
               style={[
-                s.progressFill,
+                styles.progressFill,
                 { backgroundColor: colors.primary, width: `${progressPct}%` },
               ]}
             />
           </View>
         </View>
 
-        <Text style={[s.listTitle, { color: colors.textPrimary }]}>
+        <Text style={[styles.listTitle, { color: colors.textPrimary }]}>
           Ejercicios{" "}
           <Text style={{ color: colors.primary }}>
             ({routine.totalExercises})
@@ -435,12 +538,9 @@ export function RoutineScreen() {
               isCompleted={isCompleted}
               progress={progress}
               isSelected={selectedExerciseIndex === idx}
-              // Tocar la card → solo selecciona (highlight)
               onSelect={() => handleSelectExercise(idx)}
-              // Tocar el botón play → abre el SeriesModal
               onStart={() => handleStartExercise(idx)}
               onEdit={() => handleStartExercise(idx)}
-              // Ejercicio ya completado → abre el resumen de solo lectura
               onViewSummary={() => handleViewCompletedExercise(idx)}
               formatRestTime={formatRestTime}
               formatTextTitle={formatTextTitle}
@@ -451,16 +551,17 @@ export function RoutineScreen() {
         <View style={{ height: 20 }} />
       </ScrollView>
 
-      {/* Botón finalizar */}
+      {/* Botón dinámico */}
       <View
         style={[
-          s.finishBar,
+          styles.finishBar,
           { backgroundColor: colors.bg, borderTopColor: colors.border },
         ]}
       >
         <PrimaryButton
-          label={allCompleted ? "¡Finalizar rutina!" : "Finalizar rutina"}
-          onPress={handleFinishRoutine}
+          label={buttonConfig.label}
+          iconLeft={buttonConfig.icon}
+          onPress={buttonConfig.action}
         />
       </View>
 
@@ -476,6 +577,7 @@ export function RoutineScreen() {
           onUpdateTotalSets={handleUpdateTotalSets}
           onUpdateDisplayValues={handleUpdateDisplayValues}
           formatTextTitle={formatTextTitle}
+          onReplaceExercise={handleReplaceExercise}
         />
       )}
 
@@ -503,11 +605,32 @@ export function RoutineScreen() {
         onSubmit={handleSurveySubmit}
         onClose={() => setSummaryVisible(false)}
       />
+
+      {/* Modal de ajustes de la IA */}
+      <PendingAdjustmentsModal
+        visible={!!adjustmentNotif}
+        routineName={routine.name}
+        adjustments={adjustmentNotif?.pendingAdjustments ?? []}
+        onApply={handleApplyAdjustments}
+        onIgnore={handleIgnoreAdjustments}
+      />
+
+      {/* Modal de ajustes de ejercicio */}
+      <ReplaceExerciseModal
+        visible={replaceModalVisible}
+        muscle={exerciseToReplace?.muscle ?? ""}
+        currentName={exerciseToReplace?.name ?? ""}
+        onSelect={handleReplaceExercise}
+        onClose={() => {
+          setReplaceModalVisible(false);
+          setExerciseToReplace(null);
+        }}
+      />
     </View>
   );
 }
 
-const s = StyleSheet.create({
+const styles = StyleSheet.create({
   root: { flex: 1 },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   topBar: {

@@ -2,7 +2,6 @@ import { LiftlyIcon } from "@/shared/components/BrandIcon";
 import { useThemeStore } from "@/store/themes/themeStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { Feather } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { jwtDecode } from "jwt-decode";
 
@@ -26,7 +25,14 @@ import { AuthInput } from "../components/Authinput";
 import { AuthService } from "../service/auth.service";
 import { useUserStore } from "../store/userStore";
 
-export default function LoginScreen() {
+// CAMBIO: recibe onSuccess como prop.
+// La ruta (app/(onboarding)/(auth)/login.tsx) decide a dónde ir después.
+// LoginScreen ya no sabe nada de rutas ni de stores de build-routine.
+type Props = {
+  onSuccess: () => void;
+};
+
+export default function LoginScreen({ onSuccess }: Props) {
   const router = useRouter();
   const { theme, isDark } = useAppTheme();
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
@@ -88,8 +94,9 @@ export default function LoginScreen() {
         email: decoded.email,
       };
 
-      await AsyncStorage.setItem("token", token);
-      setSession(user, token);
+      // CAMBIO: se eliminó el AsyncStorage.setItem duplicado.
+      // setSession ya persiste el token internamente (ver userStore.ts).
+      await setSession(user, token);
 
       Toast.show({
         type: "success",
@@ -99,7 +106,9 @@ export default function LoginScreen() {
         visibilityTime: 2000,
       });
 
-      router.replace("/(tabs)/rutinas");
+      // CAMBIO: antes era router.replace("/(tabs)/rutinas")
+      // Ahora delega la navegación a quien instancia esta pantalla.
+      onSuccess();
     } catch (error) {
       console.log(error);
       Toast.show({
@@ -170,7 +179,10 @@ export default function LoginScreen() {
             <Text style={[styles.footerText, { color: c.textSecondary }]}>
               ¿No tenés cuenta?
             </Text>
-            <Pressable onPress={() => router.push("/register")}>
+            {/* CAMBIO: ruta actualizada a la nueva estructura */}
+            <Pressable
+              onPress={() => router.push("/(onboarding)/(auth)/register")}
+            >
               <Text style={[styles.footerLink, { color: TEAL }]}>
                 Registrate
               </Text>
@@ -181,7 +193,9 @@ export default function LoginScreen() {
         <View style={styles.topBar}>
           {router.canGoBack() && (
             <TouchableOpacity
-              onPress={() => router.replace("/")}
+              // CAMBIO: antes iba a "/" (que era OnboardingScreen en el root).
+              // Ahora va al grupo correcto.
+              onPress={() => router.replace("/(onboarding)")}
               activeOpacity={0.7}
               style={styles.iconBtn}
             >

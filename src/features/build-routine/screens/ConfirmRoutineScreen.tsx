@@ -1,9 +1,7 @@
 import { useUserStore } from "@/features/auth/store/userStore";
-import { RoutineService } from "@/services/routineService";
 import { Badge } from "@/shared/components/Badge";
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
 import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
-import { useRoutineStore } from "@/store/routine/useRoutineStore";
 
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
@@ -48,20 +46,14 @@ const LEVEL_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
 
 export default function ConfirmRoutineScreen() {
   const { theme, isDark } = useAppTheme();
-  const routineService = new RoutineService();
 
   const goal = useBuildRoutineStore((s) => s.goal);
   const equipment = useBuildRoutineStore((s) => s.equipment);
   const experience = useBuildRoutineStore((s) => s.experience);
   const routine = useBuildRoutineStore((s) => s.routine);
-  const getQuickPayload = useBuildRoutineStore((s) => s.getQuickPayload);
 
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
   const user = useUserStore((s) => s.user);
-
-  const setLoading = useRoutineStore((s) => s.setLoading);
-  const setRoutine = useRoutineStore((s) => s.setRoutine);
-  const setError = useRoutineStore((s) => s.setError);
 
   const TEAL = theme.primary;
   const textColor = isDark ? "#DFF0EE" : theme.text;
@@ -78,31 +70,12 @@ export default function ConfirmRoutineScreen() {
   const levelIcon = LEVEL_ICON[experience ?? "principiante"];
   const isReady = !!(goal && equipment && experience && routine);
 
-  const handleConfirm = async () => {
+  const handleConfirm = () => {
     if (!isAuthenticated) {
-      router.push("/login?returnTo=confirmRoutine");
+      router.push("/(onboarding)/(auth)/login");
       return;
     }
-
-    const payload = getQuickPayload();
-    if (!payload) return;
-
-    setLoading(true);
-    router.push("/generatingRoutine");
-
-    try {
-      const saved = await routineService.generateRoutineOnboarding(payload);
-
-      setRoutine({
-        routineId: saved.routineId,
-        exercises: saved.exercises,
-        goal: saved.goal,
-        experience: saved.experience,
-        routineName: saved.name,
-      });
-    } catch (e: any) {
-      setError(e?.message ?? "Error generando la rutina");
-    }
+    router.push("/(onboarding)/(build-routine)/generating");
   };
   return (
     <OnboardingLayout

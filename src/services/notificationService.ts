@@ -1,5 +1,19 @@
 import axiosClient from "@/api/axiosClient";
 
+export interface PendingAdjustment {
+  name: string;
+  sets?: number;
+  reps?: string;
+  weight?: number;
+  restSeconds?: number;
+  previous: {
+    sets: number;
+    reps: string;
+    weight: number | null;
+    restSeconds: number;
+  } | null;
+}
+
 export interface AppNotification {
   id: string;
   title: string;
@@ -7,6 +21,8 @@ export interface AppNotification {
   type: "info" | "success" | "warning" | "error";
   read: boolean;
   createdAt: string;
+  routineId?: string | null;
+  pendingAdjustments?: PendingAdjustment[] | null;
 }
 
 interface NotificationListResponse {

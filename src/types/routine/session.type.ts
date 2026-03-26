@@ -10,6 +10,7 @@ export interface Routine {
   name: string;
   goal: string;
   experience: string;
+  mode: "quick" | "custom";
   exercises: RoutineExercise[];
   createdAt: string;
   totalExercises: number;

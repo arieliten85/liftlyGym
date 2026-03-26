@@ -1,12 +1,22 @@
+import { useUserStore } from "@/features/auth/store/userStore";
 import { GlobalLoader } from "@/shared/components/GlobalLoader";
 import { ThemeProvider, useAppTheme } from "@/theme/ThemeProvider";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 function NavigationStack() {
   const { theme, isDark } = useAppTheme();
+  const restoreSession = useUserStore((s) => s.restoreSession);
+  const isRestoring = useUserStore((s) => s.isRestoring);
+
+  useEffect(() => {
+    restoreSession();
+  }, []);
+
+  if (isRestoring) return null;
 
   return (
     <>
@@ -23,40 +33,9 @@ function NavigationStack() {
           contentStyle: { backgroundColor: theme.background },
         }}
       >
-        {/* ── raiz ── */}
         <Stack.Screen name="index" options={{ headerShown: false }} />
-
-        {/* ── Auth: back gestual habilitado hacia onboarding ── */}
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen name="register" options={{ headerShown: false }} />
-
-        {/* ── Tabs ── */}
-        <Stack.Screen
-          name="(tabs)"
-          options={{
-            headerShown: false,
-            gestureEnabled: false,
-          }}
-        />
-
-        {/* ── Flujo de onboarding ── */}
-        <Stack.Screen name="goals" options={{ title: "Objetivos" }} />
-        <Stack.Screen name="equipment" options={{ title: "Equipamiento" }} />
-        <Stack.Screen name="experience" options={{ title: "Experiencia" }} />
-        <Stack.Screen
-          name="confirmRoutine"
-          options={{ title: "Confirmar rutina" }}
-        />
-        <Stack.Screen
-          name="generatingRoutine"
-          options={{ headerShown: false, gestureEnabled: false }}
-        />
-
-        {/* ── Ejecución de rutina ── */}
-        <Stack.Screen
-          name="routine"
-          options={{ headerShown: false, gestureEnabled: false }}
-        />
+        <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
+        <Stack.Screen name="(app)" options={{ headerShown: false }} />
       </Stack>
     </>
   );

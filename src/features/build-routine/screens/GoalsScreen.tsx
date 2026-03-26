@@ -3,7 +3,7 @@ import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
 import { Feather } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { GOAL_OPTION_DATA } from "../constants/routine-builder.constants";
 
@@ -13,9 +13,21 @@ export default function GoalsScreen() {
 
   const selectedGoal = useBuildRoutineStore((s) => s.goal);
   const setGoal = useBuildRoutineStore((s) => s.setGoal);
+  const { from } = useLocalSearchParams<{ from?: string }>();
 
   const handleNext = () => {
-    if (selectedGoal) router.push("/equipment");
+    if (selectedGoal)
+      router.push(`/(onboarding)/(build-routine)/equipment?from=${from}`);
+  };
+
+  // Si viene desde tabs → vuelve a rutinas
+  // Si viene desde onboarding → back normal
+  const handleBack = () => {
+    if (from === "tabs") {
+      router.replace("/(app)/(tabs)/rutinas");
+    } else {
+      router.back();
+    }
   };
 
   const TEAL = theme.primary;
@@ -34,10 +46,10 @@ export default function GoalsScreen() {
     <OnboardingLayout
       title="Objetivos"
       onNext={handleNext}
+      onBack={handleBack}
       isNextDisabled={!selectedGoal}
     >
       <View style={styles.container}>
-        {/* Section header */}
         <View style={styles.headerContainer}>
           <Text style={[styles.sectionTitle, { color: textColor }]}>
             ¿Cuál es tu objetivo?
@@ -73,7 +85,6 @@ export default function GoalsScreen() {
                   )}
 
                   <View style={styles.cardContent}>
-                    {/* Icon badge */}
                     <View
                       style={[
                         styles.cardIconWrap,
@@ -138,18 +149,15 @@ export default function GoalsScreen() {
 const createStyles = (isDark: boolean, theme: any) =>
   StyleSheet.create({
     container: { flex: 1 },
-
     particle: {
       position: "absolute",
       borderRadius: 2,
       backgroundColor: "#2ECFBE",
     },
-
     headerContainer: {
       marginBottom: token.spacing.xl,
       marginTop: token.spacing.xs,
     },
-
     sectionTitle: {
       fontSize: token.typography.h2,
       fontWeight: "bold",
@@ -161,10 +169,8 @@ const createStyles = (isDark: boolean, theme: any) =>
       textAlign: "left",
       lineHeight: 20,
     },
-
     optionsWrapper: { flex: 1, justifyContent: "flex-start" },
     optionsContainer: { gap: token.spacing.md },
-
     goalCard: {
       width: "100%",
       borderRadius: 16,
@@ -198,7 +204,6 @@ const createStyles = (isDark: boolean, theme: any) =>
       justifyContent: "center",
     },
     cardText: { flex: 1 },
-
     goalTitle: {
       fontSize: 18,
       fontWeight: "bold",
@@ -211,7 +216,6 @@ const createStyles = (isDark: boolean, theme: any) =>
       textAlign: "left",
       lineHeight: 18,
     },
-
     checkBadge: {
       width: 24,
       height: 24,
@@ -219,6 +223,5 @@ const createStyles = (isDark: boolean, theme: any) =>
       alignItems: "center",
       justifyContent: "center",
     },
-
     bottomSpacer: { height: token.spacing.sm },
   });

@@ -122,7 +122,7 @@ export default function PerfilScreen() {
         style: "destructive",
         onPress: async () => {
           await logout();
-          router.replace("/login");
+          router.replace("/(onboarding)");
         },
       },
     ]);

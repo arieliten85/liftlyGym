@@ -1,8 +1,9 @@
+import { RoutineService } from "@/services/routineService";
+import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
 import { useRoutineStore } from "@/store/routine/useRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { useRouter } from "expo-router";
-import { useEffect } from "react";
-
+import { router } from "expo-router";
+import { useEffect, useRef } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -13,25 +14,66 @@ import {
 } from "react-native";
 import { ParticleBackground } from "../build-routine/components/ParticleBackground";
 
-export default function GeneratingRoutineScreen() {
-  const router = useRouter();
-  const { theme, isDark } = useAppTheme();
+const routineService = new RoutineService();
 
+export default function GeneratingRoutineScreen() {
+  const { theme, isDark } = useAppTheme();
+  const hasStarted = useRef(false);
+
+  const getQuickPayload = useBuildRoutineStore((s) => s.getQuickPayload);
+  const reset = useBuildRoutineStore((s) => s.reset);
+
+  const setLoading = useRoutineStore((s) => s.setLoading);
+  const setRoutine = useRoutineStore((s) => s.setRoutine);
+  const setError = useRoutineStore((s) => s.setError);
   const error = useRoutineStore((s) => s.error);
-  const isLoading = useRoutineStore((s) => s.isLoading);
 
   const bg = theme.background;
   const primary = theme.primary;
   const text = theme.text;
   const secondaryText = isDark ? "#8AA4A0" : "#6B7C78";
-
   const glowAlpha = isDark ? "rgba(46,207,190,0.15)" : "rgba(46,207,190,0.08)";
 
   useEffect(() => {
-    if (!isLoading && !error) {
-      router.replace("/routine");
-    }
-  }, [isLoading, error]);
+    // useRef evita que se llame dos veces en StrictMode
+    if (hasStarted.current) return;
+    hasStarted.current = true;
+
+    const generate = async () => {
+      const payload = getQuickPayload();
+
+      if (!payload) {
+        // No hay payload — el usuario llegó acá sin pasar por el flujo
+        router.replace("/(app)/(tabs)/rutinas");
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const saved = await routineService.generateRoutineOnboarding(payload);
+
+        setRoutine({
+          routineId: saved.routineId,
+          exercises: saved.exercises,
+          goal: saved.goal,
+          experience: saved.experience,
+          routineName: saved.name,
+        });
+
+        // Limpiar el store de onboarding — ya cumplió su función
+        reset();
+
+        // replace borra todo el historial de (onboarding)
+        router.replace("/(app)/(tabs)/rutinas");
+      } catch (e: any) {
+        setError(e?.message ?? "Error generando la rutina");
+        setLoading(false);
+      }
+    };
+
+    generate();
+  }, []);
 
   if (error) {
     return (
@@ -40,7 +82,8 @@ export default function GeneratingRoutineScreen() {
         <Text style={[styles.errorText, { color: text }]}>{error}</Text>
         <TouchableOpacity
           onPress={() => {
-            useRoutineStore.getState().clearRoutine();
+            setError("");
+            hasStarted.current = false;
             router.back();
           }}
           style={{ marginTop: 24 }}
@@ -59,14 +102,12 @@ export default function GeneratingRoutineScreen() {
         <ParticleBackground isDark={isDark} glowAlpha={glowAlpha} />
       </View>
 
-      {/* Logo */}
       <Image
         source={require("../../../assets/loading/logo_loading.png")}
         style={styles.logo}
         resizeMode="contain"
       />
 
-      {/* Texto */}
       <Text style={[styles.title, { color: primary }]}>
         Estamos generando tu{"\n"}rutina personalizada
       </Text>
@@ -75,10 +116,8 @@ export default function GeneratingRoutineScreen() {
         Analizando tus datos para el plan perfecto
       </Text>
 
-      {/* Loader */}
       <ActivityIndicator size="large" color={primary} style={styles.loader} />
 
-      {/* Cancel */}
       <TouchableOpacity onPress={() => router.back()}>
         <Text style={[styles.cancel, { color: secondaryText }]}>Cancelar</Text>
       </TouchableOpacity>
@@ -93,41 +132,34 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 30,
   },
-
   logo: {
     width: 220,
     height: 220,
     marginBottom: 30,
   },
-
   title: {
     fontSize: 24,
     fontWeight: "700",
     textAlign: "center",
     marginBottom: 10,
   },
-
   subtitle: {
     fontSize: 15,
     textAlign: "center",
     marginBottom: 40,
     lineHeight: 20,
   },
-
   loader: {
     marginBottom: 40,
   },
-
   cancel: {
     fontSize: 16,
   },
-
   errorTitle: {
     fontSize: 22,
     fontWeight: "700",
     color: "red",
   },
-
   errorText: {
     fontSize: 16,
     textAlign: "center",

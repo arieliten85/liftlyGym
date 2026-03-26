@@ -1,9 +1,10 @@
 import { ParticleBackground } from "@/features/build-routine/components/ParticleBackground";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
+import { Feather } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import { ReactNode } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PrimaryButton } from "./PrimaryButton";
 
@@ -13,6 +14,7 @@ interface OnboardingLayoutProps {
   onNext: () => void;
   isNextDisabled?: boolean;
   nextButtonText?: string;
+  onBack?: () => void;
 }
 
 export default function OnboardingLayout({
@@ -21,10 +23,10 @@ export default function OnboardingLayout({
   onNext,
   isNextDisabled = true,
   nextButtonText = "Siguiente",
+  onBack,
 }: OnboardingLayoutProps) {
   const { theme, isDark } = useAppTheme();
 
-  // Color del glow basado en el tema
   const glowAlpha = isDark ? "rgba(46,207,190,0.15)" : "rgba(46,207,190,0.08)";
 
   return (
@@ -32,13 +34,29 @@ export default function OnboardingLayout({
       <Stack.Screen
         options={{
           title,
-          headerBackTitle: "Atrás",
           headerStyle: { backgroundColor: theme.background },
           headerTintColor: theme.text,
           headerTitleStyle: {
             fontWeight: "bold",
             fontSize: token.typography.h3,
           },
+          ...(onBack
+            ? {
+                headerBackVisible: false,
+                gestureEnabled: false,
+                headerLeft: () => (
+                  <TouchableOpacity
+                    onPress={onBack}
+                    activeOpacity={0.7}
+                    style={styles.backBtn}
+                  >
+                    <Feather name="arrow-left" size={22} color={theme.text} />
+                  </TouchableOpacity>
+                ),
+              }
+            : {
+                headerBackTitle: "Atrás",
+              }),
         }}
       />
 
@@ -65,10 +83,7 @@ export default function OnboardingLayout({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    position: "relative",
-  },
+  container: { flex: 1, position: "relative" },
   content: {
     flex: 1,
     paddingHorizontal: token.spacing.lg,
@@ -76,7 +91,6 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   childrenContainer: { flex: 1 },
-  buttonContainer: {
-    marginBottom: token.spacing.md,
-  },
+  buttonContainer: { marginBottom: token.spacing.md },
+  backBtn: { paddingHorizontal: 8, paddingVertical: 4 },
 });

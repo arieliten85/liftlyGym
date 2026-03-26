@@ -22,12 +22,13 @@ export const EXECISE_IMAGES: Record<string, ImageSourcePropType> = {
   press_bandas: require("../../../../assets/category-routine/upper.png"),
 
   // ESPALDA
-  dominadas: require("../../../../assets/category-routine/press-banca-pecho.png"),
-  remo_barra: require("../../../../assets/category-routine/upper.png"),
-  remo_mancuernas: require("../../../../assets/category-routine/upper.png"),
-  jalon_al_pecho: require("../../../../assets/category-routine/upper.png"),
-  remo_bandas: require("../../../../assets/category-routine/upper.png"),
-  pullover_mancuerna: require("../../../../assets/category-routine/upper.png"),
+
+  dominadas: require("../../../../assets/exercises/espalda/dominadas.png"),
+  remo_barra: require("../../../../assets/exercises/espalda/remo_barra.png"),
+  remo_mancuernas: require("../../../../assets/exercises/espalda/remo_mancuerna.png"),
+  jalon_al_pecho: require("../../../../assets/exercises/espalda/jalon_al_pecho.png"),
+  remo_bandas: require("../../../../assets/exercises/espalda/remo_bandas.png"),
+  pullover_mancuerna: require("../../../../assets/exercises/espalda/pullover_mancuerna.png"),
 
   // HOMBROS
   press_militar: require("../../../../assets/category-routine/upper.png"),
@@ -38,7 +39,7 @@ export const EXECISE_IMAGES: Record<string, ImageSourcePropType> = {
   pike_pushups: require("../../../../assets/category-routine/upper.png"),
 
   // BICEPS
-  curl_barra: require("../../../../assets/category-routine/upper.png"),
+  curl_barra: require("../../../../assets/exercises/biceps/curl_barra.png"),
   curl_mancuernas: require("../../../../assets/category-routine/upper.png"),
   curl_martillo: require("../../../../assets/category-routine/upper.png"),
   curl_bandas: require("../../../../assets/category-routine/upper.png"),

@@ -76,7 +76,7 @@ export function CustomHeaderRoutine({
           {/* Badge de tiempo total */}
           <View style={styles.badgeWrapper}>
             <Badge label={goalText} color={primaryColor} />
-            <Badge label={`${estimatedMinutes} MINS`} color="#b4b2b2" subtle />
+            <Badge label={`${estimatedMinutes} MINS`} color="#eeeaea" subtle />
           </View>
         </View>
 

@@ -1,3 +1,8 @@
+// store/routine/useRoutineStore.ts
+// CAMBIO: logSet ahora recibe restSeconds y lo guarda en el SetLog.
+// El valor viene del modal (displayValues.restSeconds al momento de completar).
+// getCompletedRoutinePayload no necesita cambios — ya serializa setLogs completo.
+
 import {
   CompletedRoutinePayload,
   ExerciseProgress,
@@ -28,46 +33,32 @@ interface RoutineStore {
   startSession: () => void;
   getExerciseProgress: (exerciseIndex: number) => ExerciseProgress | undefined;
 
-  /**
-   * Actualiza los displayValues (lo que muestra la card en tiempo real).
-   * Se llama cada vez que el usuario mueve un stepper — sin completar la serie.
-   */
   updateDisplayValues: (
     exerciseIndex: number,
     values: Partial<ExerciseProgress["displayValues"]>,
   ) => void;
 
-  /**
-   * Registra el resultado de una serie (completada o skipeada).
-   * Un ejercicio se marca como `completed` cuando se registran TODAS las series,
-   * independientemente de si fueron completadas o skipeadas.
-   */
   logSet: (
     exerciseIndex: number,
     log: {
       repsCompleted: number | null;
       weight: number | null;
       skipped: boolean;
+      restSeconds: number;
     },
   ) => void;
 
-  /**
-   * Actualiza el total de series desde el modal.
-   */
   updateTotalSets: (exerciseIndex: number, totalSets: number) => void;
-
   resetSession: () => void;
 
-  /**
-   * Construye el payload exacto que espera el backend.
-   * Requiere el feedback de la encuesta para completarlo.
-   */
   getCompletedRoutinePayload: (feedback: {
     intensity: number | null;
     energy: number | null;
     painLevel: number | null;
     comment: string;
   }) => CompletedRoutinePayload | null;
+
+  replaceExerciseName: (exerciseIndex: number, newName: string) => void;
 }
 
 export const useRoutineStore = create<RoutineStore>((set, get) => ({
@@ -89,6 +80,7 @@ export const useRoutineStore = create<RoutineStore>((set, get) => ({
         createdAt: new Date().toISOString(),
         totalExercises: exercises.length,
         totalSets: exercises.reduce((acc, ex) => acc + ex.sets, 0),
+        mode: "quick",
       },
       isLoading: false,
       error: null,
@@ -140,7 +132,7 @@ export const useRoutineStore = create<RoutineStore>((set, get) => ({
     set({ session: { ...session, exercises: updated } });
   },
 
-  logSet: (exerciseIndex, { repsCompleted, weight, skipped }) => {
+  logSet: (exerciseIndex, { repsCompleted, weight, skipped, restSeconds }) => {
     const { session } = get();
     if (!session) return;
 
@@ -157,6 +149,7 @@ export const useRoutineStore = create<RoutineStore>((set, get) => ({
       repsCompleted: skipped ? null : repsCompleted,
       weight: skipped ? null : weight,
       skipped,
+      restSeconds, // ← el descanso real de este set específico
     };
 
     const updated = session.exercises.map((ex) => {
@@ -165,8 +158,6 @@ export const useRoutineStore = create<RoutineStore>((set, get) => ({
         ...ex,
         setLogs: [...ex.setLogs, newLog],
         currentSet: ex.currentSet + 1,
-        // ✅ Fix: completed = true cuando se termina la ÚLTIMA serie,
-        // sin importar si fue completada o skipeada.
         completed: isLastSet,
       };
     });
@@ -204,10 +195,6 @@ export const useRoutineStore = create<RoutineStore>((set, get) => ({
       };
     });
 
-    // wasAbandoned = true si hay al menos un ejercicio que nunca se tocó
-    // (el usuario no registró ni una sola serie, ni siquiera skipeada).
-    // Un ejercicio donde todas las series fueron salteadas NO cuenta como abandonado
-    // porque el usuario sí tomó la decisión activa de saltearlo.
     const wasAbandoned = routine.exercises.some((_, index) => {
       const progress = session.exercises.find((p) => p.exerciseIndex === index);
       return !progress || progress.setLogs.length === 0;
@@ -221,5 +208,21 @@ export const useRoutineStore = create<RoutineStore>((set, get) => ({
       feedback,
       exercises,
     };
+  },
+
+  replaceExerciseName: (exerciseIndex, newName) => {
+    const { routine } = get();
+    if (!routine) return;
+
+    const updatedExercises = routine.exercises.map((ex, idx) =>
+      idx === exerciseIndex ? { ...ex, name: newName } : ex,
+    );
+
+    set({
+      routine: {
+        ...routine,
+        exercises: updatedExercises,
+      },
+    });
   },
 }));

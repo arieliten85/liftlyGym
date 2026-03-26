@@ -24,6 +24,7 @@ export class RoutineService {
         name: data.name,
         goal: data.goal,
         experience: data.experience,
+        mode: data.mode,
         exercises: data.exercises,
         createdAt: data.createdAt,
         totalExercises: data.exercises.length,
@@ -47,6 +48,7 @@ export class RoutineService {
         name: r.name,
         goal: r.goal,
         experience: r.experience,
+        mode: r.mode,
         exercises: r.exercises,
         createdAt: r.createdAt,
         totalExercises: r.exercises.length,
@@ -70,8 +72,6 @@ export class RoutineService {
     }
   }
 
-  //  envía la sesión completada al backend
-
   async completeSession(payload: CompletedRoutinePayload): Promise<void> {
     try {
       await axiosClient.post<CompleteSessionResponse>(
@@ -82,5 +82,30 @@ export class RoutineService {
       console.error("Error completing session:", error);
       throw error;
     }
+  }
+
+  async applyAdjustments(
+    routineId: string,
+    notificationId: string,
+  ): Promise<void> {
+    try {
+      await axiosClient.post(`/routines/${routineId}/apply-adjustments`, {
+        notificationId,
+      });
+    } catch (error) {
+      console.error("Error applying adjustments:", error);
+      throw error;
+    }
+  }
+
+  async replaceExercise(
+    routineId: string,
+    exerciseName: string,
+    newName: string,
+  ): Promise<void> {
+    await axiosClient.patch(`/routines/${routineId}/replace-exercise`, {
+      exerciseName,
+      newName,
+    });
   }
 }

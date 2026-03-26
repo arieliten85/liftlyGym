@@ -1,13 +1,22 @@
 import AppHeader from "@/features/components/AppHeader";
+import { useAppTheme } from "@/theme/ThemeProvider";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
 export default function TabsLayout() {
+  const { theme } = useAppTheme();
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <AppHeader />
-      <Tabs>
+      <Tabs
+        screenOptions={{
+          tabBarStyle: { backgroundColor: theme.background },
+          tabBarActiveTintColor: theme.primary,
+          tabBarInactiveTintColor: theme.textSecondary,
+        }}
+      >
         <Tabs.Screen
           name="rutinas"
           options={{
@@ -56,5 +65,5 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: { flex: 1 },
 });

@@ -13,31 +13,30 @@ export function Badge({ label, color, subtle = false }: Props) {
 
   const background = subtle
     ? isDark
-      ? color + "20"
-      : color + "12"
+      ? color + "55"
+      : color + "45"
     : isDark
-      ? color + "30"
-      : color + "18";
+      ? color + "70"
+      : color + "60";
 
   const border = subtle
     ? isDark
-      ? color + "35"
-      : color + "20"
+      ? color + "75"
+      : color + "65"
     : isDark
-      ? color + "45"
-      : color + "30";
+      ? color + "90"
+      : color + "80";
+
+  const textColor = isDark ? color : color + "CC";
 
   return (
     <View
       style={[
         styles.container,
-        {
-          backgroundColor: background,
-          borderColor: border,
-        },
+        { backgroundColor: background, borderColor: border },
       ]}
     >
-      <Text style={[styles.text, { color }]}>{label}</Text>
+      <Text style={[styles.text, { color: textColor }]}>{label}</Text>
     </View>
   );
 }
@@ -51,7 +50,8 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "700",
     textTransform: "capitalize",
+    letterSpacing: 0.2,
   },
 });

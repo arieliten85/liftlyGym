@@ -103,7 +103,10 @@ export default function AppHeader() {
         animationType="fade"
       >
         <Pressable onPress={handleClose} style={styles.modalBackdrop}>
-          <View style={styles.modalContent}>
+          <Pressable
+            onPress={(e) => e.stopPropagation()}
+            style={styles.modalContent}
+          >
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Notificaciones</Text>
               <Pressable onPress={handleClose} style={styles.modalClose}>
@@ -114,13 +117,15 @@ export default function AppHeader() {
               data={notifications}
               keyExtractor={(item) => item.id}
               renderItem={renderNotification}
+              style={{ flexShrink: 1 }}
+              showsVerticalScrollIndicator={false}
               ListEmptyComponent={
                 <View style={styles.emptyState}>
                   <Text style={styles.emptyText}>No tenés notificaciones</Text>
                 </View>
               }
             />
-          </View>
+          </Pressable>
         </Pressable>
       </Modal>
     </View>
@@ -176,6 +181,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 12,
     overflow: "hidden",
+    flex: 0,
   },
   modalHeader: {
     flexDirection: "row",

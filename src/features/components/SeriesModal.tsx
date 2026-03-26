@@ -1,3 +1,4 @@
+import { ExerciseOption, ExerciseService } from "@/services/exerciseService";
 import { PrimaryButton } from "@/shared/components/PrimaryButton";
 import {
   ExerciseProgress,
@@ -5,28 +6,27 @@ import {
 } from "@/types/routine/exercise.type";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   Easing,
-  Image,
   Modal,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   Vibration,
   View,
-  useWindowDimensions,
 } from "react-native";
-import { useExerciseGif } from "../auth/hooks/useExerciseGif";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { CustomExerciseHeader } from "../build-routine/components/CustomExerciseHeader";
 import {
   formatRest,
   formatRestTime,
 } from "../build-routine/utils/formatRestTime";
+import { getMuscleFromName } from "../build-routine/utils/getMuscleFromName";
 
 interface ThemeColors {
   surface: string;
@@ -48,31 +48,18 @@ interface SeriesModalProps {
     repsCompleted: number | null;
     weight: number | null;
     skipped: boolean;
+    restSeconds: number;
   }) => void;
   onUpdateTotalSets: (total: number) => void;
   onUpdateDisplayValues: (
     values: Partial<ExerciseProgress["displayValues"]>,
   ) => void;
   formatTextTitle: (text: string) => string;
+
+  onReplaceExercise?: (newName: string) => void;
 }
 
-interface StepperProps {
-  label: string;
-  value: number;
-  unit?: string;
-  step?: number;
-  min?: number;
-  max?: number;
-  onChange: (val: number) => void;
-  colors: ThemeColors;
-  isDark: boolean;
-  icon: keyof typeof Ionicons.glyphMap;
-  accent: string;
-  compact?: boolean;
-  isModified?: boolean;
-}
-
-function Stepper({
+function BigStepper({
   label,
   value,
   unit = "",
@@ -82,29 +69,34 @@ function Stepper({
   onChange,
   colors,
   isDark,
-  icon,
   accent,
-  compact = false,
   isModified = false,
-}: StepperProps) {
-  const { width } = useWindowDimensions();
-  const isSmall = width < 375;
-  const btnSize = compact ? (isSmall ? 34 : 38) : isSmall ? 40 : 46;
-  const iconSize = compact ? (isSmall ? 15 : 17) : isSmall ? 17 : 20;
-  const valueFontSize = compact ? (isSmall ? 18 : 21) : isSmall ? 22 : 26;
+}: {
+  label: string;
+  value: number;
+  unit?: string;
+  step?: number;
+  min?: number;
+  max?: number;
+  onChange: (val: number) => void;
+  colors: ThemeColors;
+  isDark: boolean;
+  accent: string;
+  isModified?: boolean;
+}) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const pulse = () =>
     Animated.sequence([
       Animated.timing(scaleAnim, {
-        toValue: 0.86,
-        duration: 65,
+        toValue: 0.88,
+        duration: 60,
         useNativeDriver: true,
         easing: Easing.out(Easing.quad),
       }),
       Animated.timing(scaleAnim, {
         toValue: 1,
-        duration: 120,
+        duration: 110,
         useNativeDriver: true,
         easing: Easing.out(Easing.back(3)),
       }),
@@ -126,23 +118,20 @@ function Stepper({
     }
   }, [value, step, max, onChange]);
 
-  const display =
-    unit === "kg"
-      ? value === 0
-        ? "—"
-        : `${value}`
-      : unit === "s"
-        ? formatRest(value)
-        : `${value}`;
+  const rawDisplay = `${value}`;
+  const charCount = rawDisplay.length;
+
+  const valueFontSize =
+    charCount <= 2 ? 28 : charCount <= 3 ? 24 : charCount <= 5 ? 20 : 16;
 
   return (
     <View
       style={[
-        sty.stepWrap,
+        big.wrap,
         {
           backgroundColor: isDark ? "#141414" : "#F5F5F5",
           borderColor: isModified
-            ? accent + "60"
+            ? accent + "70"
             : isDark
               ? "#252525"
               : "#E5E5E5",
@@ -150,60 +139,40 @@ function Stepper({
         },
       ]}
     >
-      <View style={sty.stepHeader}>
-        <View style={[sty.stepIconDot, { backgroundColor: accent + "20" }]}>
-          <Ionicons name={icon} size={12} color={accent} />
-        </View>
-        <Text
-          style={[sty.stepLabel, { color: colors.textSecondary }]}
-          numberOfLines={1}
-        >
-          {label}
-        </Text>
-        {isModified && (
-          <View style={[sty.modDot, { backgroundColor: accent }]} />
-        )}
-      </View>
-      <View style={sty.stepControls}>
+      <Text style={[big.label, { color: colors.textSecondary }]}>{label}</Text>
+      <View style={big.row}>
         <TouchableOpacity
           onPress={decrement}
           activeOpacity={0.7}
           style={[
-            sty.stepBtn,
-            {
-              backgroundColor: accent + "15",
-              borderColor: accent + "35",
-              width: btnSize,
-              height: btnSize,
-              borderRadius: compact ? 10 : 12,
-            },
+            big.btn,
+            { backgroundColor: accent + "18", borderColor: accent + "35" },
           ]}
         >
-          <Ionicons name="remove" size={iconSize} color={accent} />
+          <Ionicons name="remove" size={20} color={accent} />
         </TouchableOpacity>
         <Animated.View
-          style={[sty.stepValueWrap, { transform: [{ scale: scaleAnim }] }]}
+          style={[big.valueWrap, { transform: [{ scale: scaleAnim }] }]}
         >
           <Text
-            style={[
-              sty.stepValue,
-              {
-                color: isModified ? accent : colors.textPrimary,
-                fontSize: valueFontSize,
-              },
-            ]}
+            style={{
+              color: "#FFFFFF",
+              fontSize: valueFontSize,
+              fontWeight: "900",
+              letterSpacing: -1,
+              textAlign: "center",
+              includeFontPadding: false,
+            }}
             numberOfLines={1}
             adjustsFontSizeToFit
-            minimumFontScale={0.6}
+            minimumFontScale={0.5}
           >
-            {display}
+            {rawDisplay}
           </Text>
-          {unit !== "s" && unit !== "" && value !== 0 && (
+          {unit !== "" && (
             <Text
-              style={[
-                sty.stepUnit,
-                { color: accent, fontSize: compact ? 11 : 12 },
-              ]}
+              style={{ color: accent, fontSize: 12, fontWeight: "700" }}
+              numberOfLines={1}
             >
               {unit}
             </Text>
@@ -213,185 +182,358 @@ function Stepper({
           onPress={increment}
           activeOpacity={0.7}
           style={[
-            sty.stepBtn,
-            {
-              backgroundColor: accent + "15",
-              borderColor: accent + "35",
-              width: btnSize,
-              height: btnSize,
-              borderRadius: compact ? 10 : 12,
-            },
+            big.btn,
+            { backgroundColor: accent + "18", borderColor: accent + "35" },
           ]}
         >
-          <Ionicons name="add" size={iconSize} color={accent} />
+          <Ionicons name="add" size={20} color={accent} />
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-// ─── LiveSummaryBar ───────────────────────────────────────────────────────────
+const big = StyleSheet.create({
+  wrap: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 10,
+    alignItems: "center",
+    gap: 6,
+    minWidth: 0,
+  },
+  label: {
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+    gap: 6,
+  },
+  btn: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  valueWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "column",
+    gap: 0,
+    minWidth: 0, // Clave para que el texto se ajuste
+  },
+  value: {
+    fontWeight: "900",
+    letterSpacing: -1,
+    textAlign: "center",
+    flexShrink: 1,
+    flex: 1,
+    minWidth: 0,
+  },
+  unit: {
+    fontSize: 15,
+    fontWeight: "700",
+    alignSelf: "flex-end",
+    marginBottom: 5,
+    flexShrink: 0,
+  },
+  modBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  modText: { fontSize: 10, fontWeight: "700" },
+});
 
-function LiveSummaryBar({
+type SetStatus = "pending" | "active" | "done" | "skipped";
+
+function SetHistoryRow({
+  setNumber,
+  status,
   reps,
   weight,
   restSeconds,
-  sets,
-  plannedReps,
-  plannedWeight,
-  plannedRest,
-  plannedSets,
   colors,
   isDark,
+  primary,
+  onEditRest,
 }: {
-  reps: number;
-  weight: number;
-  restSeconds: number;
-  sets: number;
-  plannedReps: string;
-  plannedWeight: number;
-  plannedRest: number;
-  plannedSets: number;
+  setNumber: number;
+  status: SetStatus;
+  reps?: number;
+  weight?: number;
+  restSeconds?: number;
   colors: ThemeColors;
   isDark: boolean;
-}) {
-  const repAccent = colors.primary;
-  const weightAccent = isDark ? "#F59E0B" : "#D97706";
-  const restAccent = isDark ? "#34D399" : "#059669";
-  const setsAccent = isDark ? "#A78BFA" : "#7C3AED";
-
-  const items = [
-    {
-      icon: "repeat" as const,
-      label: "reps",
-      value: `${reps}`,
-      accent: repAccent,
-      changed: reps.toString() !== plannedReps,
-    },
-    {
-      icon: "barbell-outline" as const,
-      label: "peso",
-      value: weight === 0 ? "—" : `${weight}kg`,
-      accent: weightAccent,
-      changed: weight !== plannedWeight,
-    },
-    {
-      icon: "time-outline" as const,
-      label: "descanso",
-      value: formatRest(restSeconds),
-      accent: restAccent,
-      changed: restSeconds !== plannedRest,
-    },
-    {
-      icon: "layers-outline" as const,
-      label: "series",
-      value: `${sets}`,
-      accent: setsAccent,
-      changed: sets !== plannedSets,
-    },
-  ];
-
-  return (
-    <View
-      style={[
-        sty.liveBar,
-        {
-          backgroundColor: isDark ? "#141414" : "#F7F7F7",
-          borderColor: isDark ? "#232323" : "#E8E8E8",
-        },
-      ]}
-    >
-      {items.map((item, i) => (
-        <React.Fragment key={item.label}>
-          {i > 0 && (
-            <View
-              style={[sty.liveDivider, { backgroundColor: colors.border }]}
-            />
-          )}
-          <View style={sty.liveItem}>
-            {item.changed && (
-              <View style={[sty.changedDot, { backgroundColor: "#F59E0B" }]} />
-            )}
-            <View
-              style={[
-                sty.liveIconWrap,
-                { backgroundColor: item.accent + "18" },
-              ]}
-            >
-              <Ionicons name={item.icon} size={14} color={item.accent} />
-            </View>
-            <Text
-              style={[
-                sty.liveValue,
-                { color: item.changed ? item.accent : colors.textPrimary },
-              ]}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.65}
-            >
-              {item.value}
-            </Text>
-            <Text style={[sty.liveLabel, { color: colors.textSecondary }]}>
-              {item.label}
-            </Text>
-          </View>
-        </React.Fragment>
-      ))}
-    </View>
-  );
-}
-
-// ─── SetDots ──────────────────────────────────────────────────────────────────
-
-function SetDots({
-  current,
-  total,
-  primary,
-  isDark,
-  skippedSets,
-}: {
-  current: number;
-  total: number;
   primary: string;
-  isDark: boolean;
-  skippedSets: number[];
+  onEditRest?: () => void;
 }) {
-  const maxDots = 10;
-  const visible = Math.min(total, maxDots);
-  const overflow = total > maxDots ? total - maxDots : 0;
+  const isActive = status === "active";
+  const restAccent = isDark ? "#34D399" : "#059669";
+
+  // 🎨 Fondo SIEMPRE neutro
+  const bg = "transparent";
+
+  // 🎯 Borde (solo destaca el activo)
+  const borderColor = isActive ? primary : isDark ? "#1F1F1F" : "#E5E5E5";
+
+  // 🔒 Iconos
+  const iconName = isActive ? "radio-button-on" : "lock-closed";
+
+  const iconColor = isActive ? primary : isDark ? "#2A2A2A" : "#CFCFCF";
 
   return (
-    <View style={sty.dotsRow}>
-      {Array.from({ length: visible }).map((_, i) => {
-        const setNum = i + 1;
-        const skipped = skippedSets.includes(setNum);
-        const done = setNum < current && !skipped;
-        const active = setNum === current;
-        return (
-          <View
-            key={i}
-            style={[
-              sty.dot,
-              { backgroundColor: isDark ? "#2A2A2A" : "#E0E0E0" },
-              skipped && { backgroundColor: "#EF444450" },
-              done && { backgroundColor: primary + "70" },
-              active && {
-                backgroundColor: primary,
-                width: 28,
-                borderRadius: 5,
-              },
-            ]}
-          />
-        );
-      })}
-      {overflow > 0 && (
-        <Text style={[sty.dotsOverflow, { color: primary }]}>+{overflow}</Text>
+    <View style={[hist.row, { backgroundColor: bg, borderColor }]}>
+      <Ionicons name={iconName} size={16} color={iconColor} />
+
+      <View style={hist.rowContent}>
+        <Text
+          style={[
+            hist.setLabel,
+            {
+              color: isActive ? primary : colors.textSecondary,
+              opacity: isActive ? 1 : 0.6,
+            },
+          ]}
+        >
+          SERIE {String(setNumber).padStart(2, "0")}
+        </Text>
+
+        <View style={[hist.metaRow, { opacity: isActive ? 1 : 0.5 }]}>
+          {isActive && reps !== undefined && (
+            <>
+              <View style={hist.metaItem}>
+                <Ionicons
+                  name="repeat"
+                  size={11}
+                  color={colors.textSecondary}
+                />
+                <Text style={[hist.metaText, { color: colors.textSecondary }]}>
+                  {reps} reps
+                </Text>
+              </View>
+
+              {weight !== undefined && (
+                <View style={hist.metaItem}>
+                  <Ionicons
+                    name="barbell-outline"
+                    size={11}
+                    color={colors.textSecondary}
+                  />
+                  <Text
+                    style={[hist.metaText, { color: colors.textSecondary }]}
+                  >
+                    {weight === 0 ? "—" : `${weight}kg`}
+                  </Text>
+                </View>
+              )}
+            </>
+          )}
+
+          {restSeconds !== undefined && isActive && (
+            <View style={hist.metaItem}>
+              <Ionicons name="time-outline" size={11} color={primary} />
+              <Text style={[hist.metaText, { color: primary }]}>
+                {formatRest(restSeconds)}
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {isActive && onEditRest && (
+        <TouchableOpacity
+          onPress={onEditRest}
+          activeOpacity={0.7}
+          style={[
+            hist.restBtn,
+            {
+              backgroundColor: "transparent",
+              borderColor: primary + "30",
+            },
+          ]}
+        >
+          <Ionicons name="time-outline" size={16} color={primary} />
+        </TouchableOpacity>
+      )}
+
+      {isActive && !onEditRest && (
+        <View style={[hist.activePill, { backgroundColor: primary }]}>
+          <Text style={hist.activePillText}>AHORA</Text>
+        </View>
       )}
     </View>
   );
 }
 
-// ─── RestCountdown ────────────────────────────────────────────────────────────
+const hist = StyleSheet.create({
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  rowContent: { flex: 1, gap: 3 },
+
+  setLabel: {
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 0.3,
+  },
+
+  metaRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    alignItems: "center",
+  },
+
+  metaItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+  },
+
+  metaText: {
+    fontSize: 11,
+    fontWeight: "500",
+  },
+
+  restBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+
+  activePill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    flexShrink: 0,
+  },
+
+  activePillText: {
+    color: "#fff",
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+  },
+});
+
+function SmallStepper({
+  label,
+  value,
+  unit = "",
+  step = 1,
+  min = 0,
+  max = 999,
+  onChange,
+  colors,
+  isDark,
+  accent,
+}: {
+  label: string;
+  value: number;
+  unit?: string;
+  step?: number;
+  min?: number;
+  max?: number;
+  onChange: (val: number) => void;
+  colors: ThemeColors;
+  isDark: boolean;
+  accent: string;
+}) {
+  const display =
+    unit === "s"
+      ? formatRest(value)
+      : unit === "kg"
+        ? value === 0
+          ? "—"
+          : `${value}`
+        : `${value}`;
+
+  return (
+    <View
+      style={[
+        sm.wrap,
+        {
+          backgroundColor: isDark ? "#141414" : "#F5F5F5",
+          borderColor: isDark ? "#252525" : "#E5E5E5",
+        },
+      ]}
+    >
+      <Text style={[sm.label, { color: colors.textSecondary }]}>{label}</Text>
+      <View style={sm.row}>
+        <TouchableOpacity
+          onPress={() => value - step >= min && onChange(value - step)}
+          activeOpacity={0.7}
+          style={[
+            sm.btn,
+            { backgroundColor: accent + "15", borderColor: accent + "35" },
+          ]}
+        >
+          <Ionicons name="remove" size={18} color={accent} />
+        </TouchableOpacity>
+        <Text style={[sm.value, { color: colors.textPrimary }]}>
+          {display}
+          {unit !== "s" && unit !== "" && value !== 0 ? ` ${unit}` : ""}
+        </Text>
+        <TouchableOpacity
+          onPress={() => value + step <= max && onChange(value + step)}
+          activeOpacity={0.7}
+          style={[
+            sm.btn,
+            { backgroundColor: accent + "15", borderColor: accent + "35" },
+          ]}
+        >
+          <Ionicons name="add" size={18} color={accent} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const sm = StyleSheet.create({
+  wrap: { borderRadius: 14, borderWidth: 1, padding: 14, gap: 8 },
+  label: {
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  row: { flexDirection: "row", alignItems: "center", gap: 8 },
+  btn: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  value: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+  },
+});
 
 function RestCountdown({
   seconds,
@@ -554,8 +696,6 @@ function RestCountdown({
   );
 }
 
-// ─── SeriesModal ──────────────────────────────────────────────────────────────
-
 type Phase = "active" | "resting";
 
 export function SeriesModal({
@@ -569,23 +709,32 @@ export function SeriesModal({
   onUpdateTotalSets,
   onUpdateDisplayValues,
   formatTextTitle,
+  onReplaceExercise,
 }: SeriesModalProps) {
-  const { height } = useWindowDimensions();
-  const isShortDevice = height < 700;
-  const [ratio, setRatio] = useState(1);
   const [phase, setPhase] = useState<Phase>("active");
   const [localCurrentSet, setLocalCurrentSet] = useState(1);
   const [skippedSets, setSkippedSets] = useState<number[]>([]);
+  const [doneSets, setDoneSets] = useState<
+    { setNum: number; reps: number; weight: number; rest: number }[]
+  >([]);
+  const [configVisible, setConfigVisible] = useState(false);
+  const [restVisible, setRestVisible] = useState(false);
 
   const [reps, setRepsLocal] = useState(10);
   const [weight, setWeightLocal] = useState(0);
   const [restSeconds, setRestLocal] = useState(60);
   const [sets, setSetsLocal] = useState(3);
 
+  const [exerciseOptions, setExerciseOptions] = useState<ExerciseOption[]>([]);
+  const [loadingExercises, setLoadingExercises] = useState(false);
+  const [showExerciseSelector, setShowExerciseSelector] = useState(false);
+
+  const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
+
+  const exerciseService = new ExerciseService();
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
-
-  const { gifUrl, loading: gifLoading } = useExerciseGif(exercise.name);
 
   const animateIn = (fromValue = 30) => {
     slideAnim.setValue(fromValue);
@@ -606,14 +755,39 @@ export function SeriesModal({
   };
 
   useEffect(() => {
+    if (!configVisible || !exercise) return;
+
+    const muscle = getMuscleFromName(exercise.name);
+    if (!muscle) return;
+
+    setLoadingExercises(true);
+    exerciseService
+      .getByMuscle(muscle)
+      .then((data) =>
+        setExerciseOptions(data.filter((e) => e.name !== exercise.name)),
+      )
+      .catch(console.error)
+      .finally(() => setLoadingExercises(false));
+  }, [configVisible, exercise]);
+
+  useEffect(() => {
     if (visible && progress && exercise) {
       const dv = progress.displayValues;
       setPhase("active");
-
       setLocalCurrentSet(progress.currentSet);
       setSetsLocal(dv.sets);
       setSkippedSets(
         progress.setLogs.filter((l) => l.skipped).map((l) => l.setNumber),
+      );
+      setDoneSets(
+        progress.setLogs
+          .filter((l) => !l.skipped && l.repsCompleted !== null)
+          .map((l) => ({
+            setNum: l.setNumber,
+            reps: l.repsCompleted!,
+            weight: l.weight ?? 0,
+            rest: l.restSeconds ?? dv.restSeconds,
+          })),
       );
       setRepsLocal(parseInt(dv.reps, 10) || parseInt(exercise.reps, 10) || 10);
       setWeightLocal(dv.weight);
@@ -622,23 +796,18 @@ export function SeriesModal({
     }
   }, [visible]);
 
+  useEffect(() => {
+    if (configVisible && exercise && !selectedExercise) {
+      setSelectedExercise(exercise.name);
+    }
+  }, [configVisible, exercise]);
+
   if (!exercise || !progress) return null;
 
-  // ✅ La fuente de verdad del total de series es `sets` (estado local sincronizado con el store).
-  // `localCurrentSet` se incrementa con cada log pero NUNCA puede superar `sets`.
   const localTotalSets = sets;
   const isLastSet = localCurrentSet >= localTotalSets;
-
-  const plannedReps = exercise.reps;
-  const plannedWeight = exercise.weight ?? 0;
-  const plannedRest = exercise.restSeconds ?? 60;
   const plannedSets = exercise.sets;
-
-  const repModified = reps.toString() !== plannedReps;
-  const weightModified = weight !== plannedWeight;
-  const restModified = restSeconds !== plannedRest;
   const setsModified = sets !== plannedSets;
-
   const weightAccent = isDark ? "#F59E0B" : "#D97706";
   const restAccent = isDark ? "#34D399" : "#059669";
   const setsAccent = isDark ? "#A78BFA" : "#7C3AED";
@@ -656,41 +825,52 @@ export function SeriesModal({
     onUpdateDisplayValues({ restSeconds: val });
   };
   const handleSetsChange = (val: number) => {
+    if (val < localCurrentSet) return;
     setSetsLocal(val);
     onUpdateTotalSets(val);
   };
 
   const handleCompleteSet = () => {
-    // ✅ Registrar el log ANTES de avanzar el estado local
-    onLogSet({ repsCompleted: reps, weight, skipped: false });
-
-    if (isLastSet) {
-      // Última serie completada → ir a descanso (badge "EJERCICIO COMPLETADO")
-      setPhase("resting");
-    } else {
-      setPhase("resting");
-    }
+    onLogSet({ repsCompleted: reps, weight, skipped: false, restSeconds });
+    setDoneSets((prev) => [
+      ...prev,
+      { setNum: localCurrentSet, reps, weight, rest: restSeconds },
+    ]);
+    setPhase("resting");
   };
 
   const handleSkipSet = () => {
-    // ✅ Registrar el skip
-    onLogSet({ repsCompleted: null, weight: null, skipped: true });
-    setSkippedSets((prev) => [...prev, localCurrentSet]);
-
-    if (isLastSet) {
-      // ✅ Era la última serie → cerrar el modal directamente
-      // El store ya marcó completed = true en logSet
-      onClose();
-    } else {
-      setLocalCurrentSet((prev) => prev + 1);
-      setPhase("active");
-      animateIn(20);
-    }
+    Alert.alert(
+      "¿Saltear esta serie?",
+      `La serie ${localCurrentSet} se marcará como salteada.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Saltear",
+          style: "destructive",
+          onPress: () => {
+            onLogSet({
+              repsCompleted: null,
+              weight: null,
+              skipped: true,
+              restSeconds,
+            });
+            setSkippedSets((prev) => [...prev, localCurrentSet]);
+            if (isLastSet) {
+              onClose();
+            } else {
+              setLocalCurrentSet((prev) => prev + 1);
+              setPhase("active");
+              animateIn(20);
+            }
+          },
+        },
+      ],
+    );
   };
 
   const handleRestFinished = () => {
     if (isLastSet) {
-      // ✅ Última serie descansada → cerrar
       onClose();
     } else {
       setLocalCurrentSet((prev) => prev + 1);
@@ -698,6 +878,16 @@ export function SeriesModal({
       animateIn(20);
     }
   };
+
+  const getSetStatus = (setNum: number): SetStatus => {
+    if (skippedSets.includes(setNum)) return "skipped";
+    if (doneSets.find((d) => d.setNum === setNum)) return "done";
+    if (setNum === localCurrentSet) return "active";
+    return "pending";
+  };
+
+  const getDoneData = (setNum: number) =>
+    doneSets.find((d) => d.setNum === setNum);
 
   return (
     <Modal
@@ -707,27 +897,51 @@ export function SeriesModal({
       onRequestClose={onClose}
     >
       <SafeAreaView style={[sty.safe, { backgroundColor: colors.bg }]}>
-        {/* Header */}
+        {/* ── HEADER ── */}
         <View style={sty.header}>
           <TouchableOpacity
             onPress={onClose}
             activeOpacity={0.7}
             style={[
-              sty.closeBtn,
-              { backgroundColor: isDark ? "#1E1E1E" : "#F0F0F0" },
+              sty.headerBtn,
+              { backgroundColor: "#eeeaea55", borderColor: "#eeeaea75" },
             ]}
           >
-            <Ionicons name="close" size={20} color={colors.textSecondary} />
+            <Ionicons name="close" size={20} color="#eeeaea" />
           </TouchableOpacity>
-          <View style={[sty.seriesPill, { backgroundColor: colors.primary }]}>
-            <Text style={sty.seriesPillText}>
-              SERIE {localCurrentSet} / {localTotalSets}
+
+          <View
+            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "700",
+                color: "#FFFFFF",
+                textTransform: "uppercase",
+                letterSpacing: 1.2,
+                opacity: 0.9,
+              }}
+            >
+              EJERCICIO
             </Text>
           </View>
-          <View style={{ width: 40 }} />
+
+          <View style={{ flex: 1 }} />
+
+          <TouchableOpacity
+            onPress={() => setConfigVisible(true)}
+            activeOpacity={0.7}
+            style={[
+              sty.headerBtn,
+              { backgroundColor: "#eeeaea55", borderColor: "#eeeaea75" },
+            ]}
+          >
+            <Ionicons name="settings-outline" size={20} color="#eeeaea" />
+          </TouchableOpacity>
         </View>
 
-        {/* PHASE: ACTIVE */}
+        {/* ── PHASE: ACTIVE ── */}
         {phase === "active" && (
           <Animated.View
             style={{
@@ -737,347 +951,98 @@ export function SeriesModal({
             }}
           >
             <ScrollView
-              contentContainerStyle={[
-                sty.activeContent,
-                isShortDevice && { gap: 10 },
-              ]}
+              contentContainerStyle={sty.activeContent}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
-              <View style={sty.nameBlock}>
-                <Text
-                  style={[sty.exerciseName, { color: colors.textPrimary }]}
-                  numberOfLines={2}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.75}
-                >
-                  {formatTextTitle(exercise.name)}
-                </Text>
-                <Text style={[sty.motivation, { color: colors.textSecondary }]}>
-                  {isLastSet
-                    ? "¡Último set! Dalo todo 🔥"
-                    : "Ajustá si necesitás y completá la serie"}
-                </Text>
-
-                {(gifLoading || gifUrl) && (
-                  <View
-                    style={[
-                      sty.gifContainer,
-                      { backgroundColor: isDark ? "#111" : "#F0F0F0" },
-                    ]}
-                  >
-                    {gifLoading ? (
-                      <ActivityIndicator size="small" color={colors.primary} />
-                    ) : gifUrl ? (
-                      <Image
-                        source={{ uri: gifUrl }}
-                        style={{
-                          width: "100%", // ancho completo de la card
-                          aspectRatio: ratio, // mantiene proporción
-                          borderRadius: 12,
-                        }}
-                        resizeMode="contain" // nunca se corta
-                        onLoad={(e) => {
-                          const { width, height } = e.nativeEvent.source;
-                          setRatio(width / height);
-                        }}
-                      />
-                    ) : null}
-
-                    {/* Overlay opcional */}
-                    {gifUrl && (
-                      <View
-                        style={[
-                          sty.gifOverlay,
-                          {
-                            backgroundColor: isDark
-                              ? "rgba(0,0,0,0.3)"
-                              : "rgba(0,0,0,0.08)",
-                          },
-                        ]}
-                      />
-                    )}
-                  </View>
+              {/* ── CUSTOM EXERCISE HEADER ── Sin padding - toma todo el ancho */}
+              <CustomExerciseHeader
+                exerciseName={exercise.name}
+                formattedTitle={formatTextTitle(
+                  selectedExercise ?? exercise.name,
                 )}
-              </View>
-
-              <SetDots
-                current={localCurrentSet}
-                total={localTotalSets}
-                primary={colors.primary}
+                primaryColor={colors.primary}
                 isDark={isDark}
-                skippedSets={skippedSets}
+                containerHeight={200}
               />
 
-              <LiveSummaryBar
-                reps={reps}
-                weight={weight}
-                restSeconds={restSeconds}
-                sets={sets}
-                plannedReps={plannedReps}
-                plannedWeight={plannedWeight}
-                plannedRest={plannedRest}
-                plannedSets={plannedSets}
-                colors={colors}
-                isDark={isDark}
-              />
-
-              {/* Card: Total de series */}
-              <View
-                style={[
-                  sty.sectionCard,
-                  {
-                    backgroundColor: isDark ? "#111" : "#FAFAFA",
-                    borderColor: isDark ? "#232323" : "#EBEBEB",
-                  },
-                ]}
-              >
-                <View style={sty.cardHeader}>
-                  <View
-                    style={[
-                      sty.cardIconDot,
-                      { backgroundColor: setsAccent + "20" },
-                    ]}
-                  >
-                    <Ionicons
-                      name="layers-outline"
-                      size={12}
-                      color={setsAccent}
-                    />
-                  </View>
-                  <Text
-                    style={[sty.cardTitle, { color: colors.textSecondary }]}
-                  >
-                    TOTAL DE SERIES
-                  </Text>
-                  {setsModified && (
-                    <View
-                      style={[
-                        sty.modPill,
-                        {
-                          backgroundColor: "#F59E0B18",
-                          borderColor: "#F59E0B30",
-                        },
-                      ]}
-                    >
-                      <Text style={sty.modPillText}>modificado</Text>
-                    </View>
-                  )}
-                </View>
-                <Stepper
-                  label="Series"
-                  icon="layers-outline"
-                  value={sets}
-                  // ✅ El mínimo es la serie actual: no podés bajar a menos de donde estás
-                  min={localCurrentSet}
-                  max={20}
-                  step={1}
-                  onChange={handleSetsChange}
-                  colors={colors}
-                  isDark={isDark}
-                  accent={setsAccent}
-                  isModified={setsModified}
-                />
-              </View>
-
-              {/* Card: Carga */}
-              <View
-                style={[
-                  sty.sectionCard,
-                  {
-                    backgroundColor: isDark ? "#111" : "#FAFAFA",
-                    borderColor: isDark ? "#232323" : "#EBEBEB",
-                  },
-                ]}
-              >
-                <View style={sty.cardHeader}>
-                  <View
-                    style={[
-                      sty.cardIconDot,
-                      { backgroundColor: colors.primary + "20" },
-                    ]}
-                  >
-                    <Ionicons
-                      name="barbell-outline"
-                      size={12}
-                      color={colors.primary}
-                    />
-                  </View>
-                  <Text
-                    style={[sty.cardTitle, { color: colors.textSecondary }]}
-                  >
-                    CARGA
-                  </Text>
-                  {(repModified || weightModified) && (
-                    <View
-                      style={[
-                        sty.modPill,
-                        {
-                          backgroundColor: "#F59E0B18",
-                          borderColor: "#F59E0B30",
-                        },
-                      ]}
-                    >
-                      <Text style={sty.modPillText}>modificado</Text>
-                    </View>
-                  )}
-                </View>
+              {/* Contenedor con padding para el resto del contenido */}
+              <View style={{ paddingHorizontal: 20, gap: 16 }}>
                 <View style={sty.steppersRow}>
-                  <View style={{ flex: 1 }}>
-                    <Stepper
-                      label="Repeticiones"
-                      icon="repeat"
-                      value={reps}
-                      min={1}
-                      max={99}
-                      step={1}
-                      onChange={handleRepsChange}
-                      colors={colors}
-                      isDark={isDark}
-                      accent={colors.primary}
-                      compact
-                      isModified={repModified}
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Stepper
-                      label="Peso"
-                      icon="barbell-outline"
-                      value={weight}
-                      unit="kg"
-                      min={0}
-                      max={500}
-                      step={2.5}
-                      onChange={handleWeightChange}
-                      colors={colors}
-                      isDark={isDark}
-                      accent={weightAccent}
-                      compact
-                      isModified={weightModified}
-                    />
-                  </View>
+                  <BigStepper
+                    label="Peso"
+                    value={weight}
+                    unit="kg"
+                    step={2.5}
+                    min={0}
+                    max={500}
+                    onChange={handleWeightChange}
+                    colors={colors}
+                    isDark={isDark}
+                    accent={weightAccent}
+                    isModified={weight !== (exercise.weight ?? 0)}
+                  />
+                  <BigStepper
+                    label="Reps"
+                    value={reps}
+                    step={1}
+                    min={1}
+                    max={99}
+                    onChange={handleRepsChange}
+                    colors={colors}
+                    isDark={isDark}
+                    accent={colors.primary}
+                    isModified={reps !== (parseInt(exercise.reps, 10) || 10)}
+                  />
                 </View>
-              </View>
 
-              {/* Card: Descanso */}
-              <View
-                style={[
-                  sty.sectionCard,
-                  {
-                    backgroundColor: isDark ? "#111" : "#FAFAFA",
-                    borderColor: isDark ? "#232323" : "#EBEBEB",
-                  },
-                ]}
-              >
-                <View style={sty.cardHeader}>
-                  <View
-                    style={[
-                      sty.cardIconDot,
-                      { backgroundColor: restAccent + "20" },
-                    ]}
-                  >
-                    <Ionicons
-                      name="time-outline"
-                      size={12}
-                      color={restAccent}
-                    />
-                  </View>
+                <View style={sty.histSection}>
                   <Text
-                    style={[sty.cardTitle, { color: colors.textSecondary }]}
+                    style={[sty.histTitle, { color: colors.textSecondary }]}
                   >
-                    DESCANSO
+                    SERIES
                   </Text>
-                  {restModified && (
-                    <View
-                      style={[
-                        sty.modPill,
-                        {
-                          backgroundColor: "#F59E0B18",
-                          borderColor: "#F59E0B30",
-                        },
-                      ]}
-                    >
-                      <Text style={sty.modPillText}>modificado</Text>
-                    </View>
-                  )}
-                </View>
-                <Stepper
-                  label="Tiempo"
-                  icon="time-outline"
-                  value={restSeconds}
-                  unit="s"
-                  min={15}
-                  max={600}
-                  step={15}
-                  onChange={handleRestChange}
-                  colors={colors}
-                  isDark={isDark}
-                  accent={restAccent}
-                  isModified={restModified}
-                />
-                <View style={sty.presetsRow}>
-                  {[30, 60, 90, 120, 180].map((s) => (
-                    <TouchableOpacity
-                      key={s}
-                      onPress={() => handleRestChange(s)}
-                      activeOpacity={0.7}
-                      style={[
-                        sty.preset,
-                        restSeconds === s
-                          ? {
-                              backgroundColor: restAccent,
-                              borderColor: restAccent,
-                            }
-                          : {
-                              backgroundColor: isDark ? "#1A1A1A" : "#EFEFEF",
-                              borderColor: isDark ? "#2A2A2A" : "#E0E0E0",
-                            },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          sty.presetText,
-                          {
-                            color:
-                              restSeconds === s ? "#fff" : colors.textSecondary,
-                            fontWeight: restSeconds === s ? "700" : "500",
-                          },
-                        ]}
-                      >
-                        {formatRestTime(s)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                  <View style={sty.histList}>
+                    {Array.from({ length: localTotalSets }).map((_, i) => {
+                      const setNum = i + 1;
+                      const status = getSetStatus(setNum);
+                      const doneData = getDoneData(setNum);
+                      return (
+                        <SetHistoryRow
+                          key={setNum}
+                          setNumber={setNum}
+                          status={status}
+                          reps={status === "active" ? reps : doneData?.reps}
+                          weight={
+                            status === "active" ? weight : doneData?.weight
+                          }
+                          restSeconds={
+                            status === "active" ? restSeconds : doneData?.rest
+                          }
+                          colors={colors}
+                          isDark={isDark}
+                          primary={colors.primary}
+                          onEditRest={
+                            status === "active"
+                              ? () => setRestVisible(true)
+                              : undefined
+                          }
+                        />
+                      );
+                    })}
+                  </View>
                 </View>
               </View>
             </ScrollView>
 
-            {/* Footer */}
             <View
               style={[
                 sty.footer,
                 { borderTopColor: isDark ? "#1E1E1E" : "#EFEFEF" },
               ]}
             >
-              <TouchableOpacity
-                onPress={handleSkipSet}
-                activeOpacity={0.75}
-                style={[
-                  sty.skipSetBtn,
-                  { backgroundColor: "#EF444415", borderColor: "#EF444435" },
-                ]}
-              >
-                <Ionicons name="play-skip-forward" size={17} color="#EF4444" />
-                <Text style={sty.skipSetText}>
-                  Saltear serie {localCurrentSet}
-                </Text>
-              </TouchableOpacity>
               <PrimaryButton
-                label={
-                  isLastSet
-                    ? "Finalizar ejercicio"
-                    : `Completar serie ${localCurrentSet}`
-                }
+                label={isLastSet ? "Finalizar" : "Completar"}
                 iconLeft={isLastSet ? "trophy" : "checkmark-circle"}
                 onPress={handleCompleteSet}
               />
@@ -1085,7 +1050,7 @@ export function SeriesModal({
           </Animated.View>
         )}
 
-        {/* PHASE: RESTING */}
+        {/* ── PHASE: RESTING ── */}
         {phase === "resting" && (
           <RestCountdown
             key={`rest-${localCurrentSet}`}
@@ -1099,185 +1064,396 @@ export function SeriesModal({
           />
         )}
       </SafeAreaView>
+
+      {/* ── REST SHEET ── */}
+      <Modal
+        visible={restVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setRestVisible(false)}
+      >
+        <SafeAreaView style={[sty.safe, { backgroundColor: colors.bg }]}>
+          <View style={sty.sheetHeader}>
+            <View style={sty.sheetTitleRow}>
+              <Ionicons name="time-outline" size={22} color={restAccent} />
+              <Text style={[sty.sheetTitle, { color: colors.textPrimary }]}>
+                Descanso · SET {String(localCurrentSet).padStart(2, "0")}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setRestVisible(false)}
+              style={[
+                sty.headerBtn,
+                { backgroundColor: "#eeeaea55", borderColor: "#eeeaea75" },
+              ]}
+            >
+              <Ionicons name="close" size={20} color="#eeeaea" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={sty.restSheetContent}>
+            <Text style={[sty.restSheetSub, { color: colors.textSecondary }]}>
+              Aplica al descanso después de completar este set.
+            </Text>
+            <View
+              style={[
+                sty.restBigValue,
+                {
+                  backgroundColor: restAccent + "15",
+                  borderColor: restAccent + "35",
+                },
+              ]}
+            >
+              <Ionicons name="time" size={28} color={restAccent} />
+              <Text style={[sty.restBigText, { color: restAccent }]}>
+                {formatRest(restSeconds)}
+              </Text>
+            </View>
+            <SmallStepper
+              label="Ajustar tiempo"
+              value={restSeconds}
+              unit="s"
+              min={15}
+              max={600}
+              step={15}
+              onChange={handleRestChange}
+              colors={colors}
+              isDark={isDark}
+              accent={restAccent}
+            />
+            <View style={sty.presetsGrid}>
+              {[30, 60, 90, 120, 180, 240].map((s) => (
+                <TouchableOpacity
+                  key={s}
+                  onPress={() => handleRestChange(s)}
+                  activeOpacity={0.7}
+                  style={[
+                    sty.presetLarge,
+                    restSeconds === s
+                      ? { backgroundColor: restAccent, borderColor: restAccent }
+                      : {
+                          backgroundColor: isDark ? "#1A1A1A" : "#EFEFEF",
+                          borderColor: isDark ? "#2A2A2A" : "#E0E0E0",
+                        },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      sty.presetLargeText,
+                      {
+                        color: restSeconds === s ? "#fff" : colors.textPrimary,
+                      },
+                    ]}
+                  >
+                    {formatRestTime(s)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View
+            style={[
+              sty.sheetFooter,
+              { borderTopColor: isDark ? "#1E1E1E" : "#EFEFEF" },
+            ]}
+          >
+            <PrimaryButton
+              label="Listo"
+              onPress={() => setRestVisible(false)}
+            />
+          </View>
+        </SafeAreaView>
+      </Modal>
+
+      {/* ── CONFIG SHEET ── */}
+      <Modal
+        visible={configVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setConfigVisible(false)}
+      >
+        <SafeAreaView style={[sty.safe, { backgroundColor: colors.bg }]}>
+          <View style={sty.sheetHeader}>
+            <View style={sty.sheetTitleRow}>
+              <Ionicons
+                name="settings-outline"
+                size={22}
+                color={colors.primary}
+              />
+              <Text style={[sty.sheetTitle, { color: colors.textPrimary }]}>
+                Configurar series
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setConfigVisible(false)}
+              style={[
+                sty.headerBtn,
+                { backgroundColor: "#eeeaea55", borderColor: "#eeeaea75" },
+              ]}
+            >
+              <Ionicons name="close" size={20} color="#eeeaea" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={sty.configContent}>
+            <Text style={[sty.restSheetSub, { color: colors.textSecondary }]}>
+              Podés ajustar el ejercicio o modificar las series.
+            </Text>
+
+            {/* ─── CAMBIO DE EJERCICIO ─── */}
+            {doneSets.length === 0 ? (
+              <>
+                <TouchableOpacity
+                  onPress={() => setShowExerciseSelector((prev) => !prev)}
+                  activeOpacity={0.7}
+                  style={[
+                    sty.exerciseSelector,
+                    {
+                      backgroundColor: isDark ? "#141414" : "#F5F5F5",
+                      borderColor: isDark ? "#252525" : "#E5E5E5",
+                    },
+                  ]}
+                >
+                  <View>
+                    <Text
+                      style={[
+                        sty.selectorLabel,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
+                      EJERCICIO
+                    </Text>
+                    <Text
+                      style={[sty.selectorValue, { color: colors.textPrimary }]}
+                    >
+                      {formatTextTitle(exercise.name)}
+                    </Text>
+                  </View>
+                  <Ionicons
+                    name={showExerciseSelector ? "chevron-up" : "chevron-down"}
+                    size={18}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+
+                {showExerciseSelector && (
+                  <View
+                    style={[
+                      sty.exerciseList,
+                      {
+                        borderColor: isDark ? "#252525" : "#E5E5E5",
+                        backgroundColor: isDark ? "#0F0F0F" : "#FAFAFA",
+                      },
+                    ]}
+                  >
+                    {loadingExercises ? (
+                      <ActivityIndicator
+                        style={{ marginVertical: 16 }}
+                        color={colors.primary}
+                      />
+                    ) : exerciseOptions.length === 0 ? (
+                      <Text
+                        style={[sty.emptyList, { color: colors.textSecondary }]}
+                      >
+                        No hay ejercicios alternativos disponibles
+                      </Text>
+                    ) : (
+                      <ScrollView
+                        style={{ maxHeight: 220 }}
+                        nestedScrollEnabled
+                      >
+                        {exerciseOptions.map((item) => {
+                          const isSelected = item.name === selectedExercise;
+
+                          return (
+                            <TouchableOpacity
+                              key={item.name}
+                              onPress={() => {
+                                setSelectedExercise(item.name);
+                                onReplaceExercise?.(item.name);
+                                setShowExerciseSelector(false);
+                              }}
+                              style={[
+                                sty.exerciseItem,
+                                {
+                                  backgroundColor: isSelected
+                                    ? colors.primary + "20"
+                                    : "transparent",
+                                },
+                              ]}
+                            >
+                              <Text style={{ color: colors.textPrimary }}>
+                                {formatTextTitle(item.name)}
+                              </Text>
+
+                              {isSelected && (
+                                <Ionicons
+                                  name="checkmark"
+                                  size={16}
+                                  color={colors.primary}
+                                />
+                              )}
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </ScrollView>
+                    )}
+                  </View>
+                )}
+              </>
+            ) : (
+              <View
+                style={[
+                  sty.modNote,
+                  {
+                    backgroundColor: isDark ? "#1A1A1A" : "#F5F5F5",
+                    borderColor: isDark ? "#2A2A2A" : "#E5E5E5",
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={16}
+                  color={colors.textSecondary}
+                />
+                <Text
+                  style={[sty.modNoteText, { color: colors.textSecondary }]}
+                >
+                  No podés cambiar el ejercicio después de empezar series
+                </Text>
+              </View>
+            )}
+
+            {!loadingExercises && exerciseOptions.length === 0 && (
+              <Text style={{ padding: 12, textAlign: "center" }}>
+                No hay ejercicios disponibles
+              </Text>
+            )}
+
+            {showExerciseSelector && (
+              <ScrollView style={{ maxHeight: 200 }}>
+                {loadingExercises ? (
+                  <ActivityIndicator style={{ marginVertical: 12 }} />
+                ) : (
+                  exerciseOptions.map((item) => (
+                    <TouchableOpacity
+                      key={item.name}
+                      onPress={() => {
+                        onReplaceExercise?.(item.name);
+                        setShowExerciseSelector(false);
+                      }}
+                      style={sty.exerciseItem}
+                    >
+                      <Text style={sty.exerciseItemText}>
+                        {item.name.replace(/_/g, " ")}
+                      </Text>
+                    </TouchableOpacity>
+                  ))
+                )}
+              </ScrollView>
+            )}
+
+            {/* ─── SERIES ─── */}
+            <SmallStepper
+              label="Total de series"
+              value={sets}
+              min={localCurrentSet}
+              max={20}
+              step={1}
+              onChange={handleSetsChange}
+              colors={colors}
+              isDark={isDark}
+              accent={setsAccent}
+            />
+
+            {setsModified && (
+              <View
+                style={[
+                  sty.modNote,
+                  {
+                    backgroundColor: setsAccent + "15",
+                    borderColor: setsAccent + "35",
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="information-circle-outline"
+                  size={16}
+                  color={setsAccent}
+                />
+                <Text style={[sty.modNoteText, { color: setsAccent }]}>
+                  Modificado · plan original: {plannedSets} series
+                </Text>
+              </View>
+            )}
+          </View>
+
+          <View
+            style={[
+              sty.sheetFooter,
+              { borderTopColor: isDark ? "#1E1E1E" : "#EFEFEF" },
+            ]}
+          >
+            <PrimaryButton
+              label="Listo"
+              onPress={() => {
+                if (selectedExercise && selectedExercise !== exercise.name) {
+                  onReplaceExercise?.(selectedExercise);
+                }
+
+                setConfigVisible(false);
+              }}
+            />
+          </View>
+        </SafeAreaView>
+      </Modal>
     </Modal>
   );
 }
 
 const sty = StyleSheet.create({
   safe: { flex: 1 },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 14,
-    paddingBottom: 10,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
+    gap: 8,
   },
-  closeBtn: {
+  headerBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
+    borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  seriesPill: { paddingHorizontal: 18, paddingVertical: 8, borderRadius: 24 },
-  seriesPillText: {
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "800",
-    letterSpacing: 1.2,
+    flexShrink: 0,
   },
 
   activeContent: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 16,
-    gap: 14,
-  },
-
-  nameBlock: { gap: 4 },
-  exerciseName: {
-    fontSize: 24,
-    fontWeight: "800",
-    letterSpacing: -0.5,
-    lineHeight: 30,
-  },
-  motivation: { fontSize: 13, fontWeight: "500" },
-
-  dotsRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 7,
-    paddingVertical: 2,
-  },
-  dot: { width: 9, height: 9, borderRadius: 4.5 },
-  dotsOverflow: { fontSize: 12, fontWeight: "700", marginLeft: 2 },
-
-  liveBar: {
-    flexDirection: "row",
-    borderRadius: 18,
-    borderWidth: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 6,
-    alignItems: "center",
-  },
-  liveItem: {
-    flex: 1,
-    alignItems: "center",
-    gap: 4,
-    position: "relative",
+    paddingHorizontal: 0,
     paddingTop: 4,
-  },
-  liveIconWrap: {
-    width: 26,
-    height: 26,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  liveValue: { fontSize: 17, fontWeight: "800", letterSpacing: -0.5 },
-  liveLabel: {
-    fontSize: 9,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  liveDivider: { width: 1, height: 38, alignSelf: "center" },
-  changedDot: {
-    position: "absolute",
-    top: 0,
-    right: 6,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    paddingBottom: 16,
+    gap: 16,
   },
 
-  sectionCard: { borderRadius: 18, borderWidth: 1, padding: 14, gap: 12 },
-  cardHeader: { flexDirection: "row", alignItems: "center", gap: 7 },
-  cardIconDot: {
-    width: 22,
-    height: 22,
-    borderRadius: 7,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  cardTitle: {
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-    flex: 1,
-  },
-  modPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  modPillText: { color: "#F59E0B", fontSize: 10, fontWeight: "700" },
-  steppersRow: { flexDirection: "row", gap: 10 },
+  steppersRow: { flexDirection: "row", gap: 12 },
 
-  stepWrap: {
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-    gap: 8,
-  },
-  stepHeader: { flexDirection: "row", alignItems: "center", gap: 6 },
-  stepIconDot: {
-    width: 22,
-    height: 22,
-    borderRadius: 7,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  stepLabel: {
-    fontSize: 10,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    flex: 1,
-  },
-  modDot: { width: 6, height: 6, borderRadius: 3 },
-  stepControls: { flexDirection: "row", alignItems: "center", gap: 8 },
-  stepBtn: { borderWidth: 1.5, justifyContent: "center", alignItems: "center" },
-  stepValueWrap: {
-    flex: 1,
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 3,
-  },
-  stepValue: { fontWeight: "800", letterSpacing: -1 },
-  stepUnit: { fontWeight: "700" },
-
-  presetsRow: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
-  preset: {
-    paddingHorizontal: 11,
-    paddingVertical: 6,
-    borderRadius: 9,
-    borderWidth: 1,
-  },
-  presetText: { fontSize: 12 },
+  histSection: { gap: 8 },
+  histTitle: { fontSize: 10, fontWeight: "800", letterSpacing: 1.2 },
+  histList: { gap: 6 },
 
   footer: {
+    flexDirection: "row",
     paddingHorizontal: 20,
     paddingTop: 14,
     paddingBottom: Platform.OS === "ios" ? 10 : 24,
     borderTopWidth: 1,
     gap: 10,
   },
-  skipSetBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 13,
-    borderRadius: 14,
-    borderWidth: 1.5,
-  },
-  skipSetText: { color: "#EF4444", fontSize: 15, fontWeight: "700" },
 
   countdownFull: {
     flex: 1,
@@ -1348,40 +1524,112 @@ const sty = StyleSheet.create({
   },
   skipRestText: { fontSize: 14, fontWeight: "600" },
 
-  gifContainer: {
-    width: "100%",
-    borderRadius: 12,
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  gif: {
-    width: "100%",
-    aspectRatio: 1.5,
-  },
-
-  gifOverlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  gifLoader: {
-    position: "absolute",
-  },
-  gifCompletedBadge: {
-    position: "absolute",
-    bottom: 8,
-    right: 8,
+  sheetHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
-    backgroundColor: "rgba(0,0,0,0.55)",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 12,
+    gap: 12,
   },
-  gifCompletedText: {
+  sheetTitleRow: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  sheetTitle: {
+    fontSize: 20,
+    fontWeight: "900",
+    letterSpacing: -0.5,
+    flexShrink: 1,
+  },
+  sheetFooter: {
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: Platform.OS === "ios" ? 10 : 24,
+    borderTopWidth: 1,
+  },
+
+  restSheetContent: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    gap: 20,
+  },
+  restSheetSub: { fontSize: 14, fontWeight: "500", lineHeight: 20 },
+  restBigValue: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    paddingVertical: 24,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  restBigText: { fontSize: 48, fontWeight: "900", letterSpacing: -2 },
+  presetsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  presetLarge: {
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    minWidth: "30%",
+    alignItems: "center",
+  },
+  presetLargeText: { fontSize: 15, fontWeight: "700" },
+
+  configContent: { flex: 1, paddingHorizontal: 20, paddingTop: 8, gap: 20 },
+  modNote: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+
+  exerciseSelector: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+
+  selectorLabel: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#22C55E",
+    letterSpacing: 0.8,
   },
+
+  selectorValue: {
+    fontSize: 16,
+    fontWeight: "800",
+  },
+
+  exerciseList: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    overflow: "hidden",
+  },
+  exerciseItem: {
+    padding: 14,
+    borderBottomWidth: 1,
+  },
+
+  exerciseItemText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  emptyList: {
+    padding: 16,
+    textAlign: "center",
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  modNoteText: { fontSize: 13, fontWeight: "600", flex: 1 },
 });

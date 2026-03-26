@@ -1,4 +1,3 @@
-// Exercise-related types
 export interface RoutineExercise {
   id: string;
   name: string;
@@ -9,10 +8,11 @@ export interface RoutineExercise {
 }
 
 export interface SetLog {
-  setNumber: number; // 1-based
-  repsCompleted: number | null; // null si skipped
-  weight: number | null; // null si skipped
+  setNumber: number;
+  repsCompleted: number | null;
+  weight: number | null;
   skipped: boolean;
+  restSeconds: number;
 }
 
 export interface ExerciseProgress {
@@ -21,16 +21,12 @@ export interface ExerciseProgress {
   currentSet: number;
   totalSets: number;
   setLogs: SetLog[];
-
-  // Refleja lo último editado en el modal → lo que muestra la card en tiempo real
   displayValues: {
     reps: string;
     weight: number;
     restSeconds: number;
     sets: number;
   };
-
-  // Editable fields from modal
   editedReps?: string;
   editedWeight?: number;
   editedRestSeconds?: number;
