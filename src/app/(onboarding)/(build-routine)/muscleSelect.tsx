@@ -1,2 +1,2 @@
-import CustomModeSelectScreen from "@/features/build-routine/screens/Custommodeselectscreen";
+import CustomModeSelectScreen from "@/features/build-routine/screens/CustomModeSelectScreen";
 export default CustomModeSelectScreen;

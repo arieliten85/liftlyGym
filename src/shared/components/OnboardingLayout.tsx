@@ -91,6 +91,6 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   childrenContainer: { flex: 1 },
-  buttonContainer: { marginBottom: token.spacing.md },
+  buttonContainer: { marginBottom: token.spacing.lg },
   backBtn: { paddingHorizontal: 8, paddingVertical: 4 },
 });

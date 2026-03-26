@@ -3,6 +3,7 @@ import { ROUTINE_IMAGES } from "@/features/build-routine/constants/routine-image
 import { RoutineSelectionOption } from "@/features/build-routine/type/routine-builder.types";
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
 import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
+
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
 import { Ionicons } from "@expo/vector-icons";
