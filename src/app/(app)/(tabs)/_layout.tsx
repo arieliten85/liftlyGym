@@ -18,7 +18,7 @@ export default function TabsLayout() {
         }}
       >
         <Tabs.Screen
-          name="rutinas"
+          name="routines"
           options={{
             title: "Rutinas",
             tabBarIcon: ({ color, size }) => (
@@ -32,7 +32,7 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="progresos"
+          name="progress"
           options={{
             title: "Progresos",
             tabBarIcon: ({ color, size }) => (
@@ -46,7 +46,7 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="perfil"
+          name="profile"
           options={{
             title: "Perfil",
             tabBarIcon: ({ color, size }) => (

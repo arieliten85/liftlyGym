@@ -1,4 +1,4 @@
-// Ejercicio del plan original
+import { ExerciseProgress } from "@/features/build-routine/type/routine-builder.types";
 
 export interface RoutineExercise {
   name: string;
@@ -8,34 +8,12 @@ export interface RoutineExercise {
   weight?: number;
 }
 
-// Log de una serie
-
 export interface SetLog {
   setNumber: number;
   repsCompleted: number | null;
   weight: number | null;
   skipped: boolean;
 }
-
-//  Progreso
-
-export interface ExerciseProgress {
-  exerciseIndex: number;
-  completed: boolean;
-  currentSet: number;
-  totalSets: number;
-  setLogs: SetLog[];
-
-  // Refleja lo último editado en el modal , lo que muestra la card en tiempo real
-  displayValues: {
-    reps: string;
-    weight: number;
-    restSeconds: number;
-    sets: number;
-  };
-}
-
-// Sesión activa
 
 export interface RoutineSession {
   exercises: ExerciseProgress[];

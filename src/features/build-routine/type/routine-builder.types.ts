@@ -3,10 +3,16 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ImageSourcePropType } from "react-native";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Primitivos compartidos
+// ─────────────────────────────────────────────────────────────────────────────
 export type GoalType = "fuerza" | "hipertrofia" | "masa";
 export type ExperienceType = "principiante" | "intermedio" | "avanzado";
 export type EquipmentType = "gym" | "home";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Tipos de rutina
+// ─────────────────────────────────────────────────────────────────────────────
 export type RoutineQuickType =
   | "push"
   | "pull"
@@ -20,34 +26,42 @@ export type RoutineCustomType =
   | "espalda"
   | "biceps"
   | "triceps"
-  | "hombro"
+  | "hombros"
   | "piernas"
+  | "gluteos"
+  | "core"
   | "pecho_triceps"
   | "espalda_biceps"
-  | "pecho_hombro"
-  | "hombro_triceps"
-  | "espalda_hombro"
+  | "pecho_hombros"
+  | "hombros_triceps"
+  | "espalda_hombros"
   | "biceps_triceps"
-  | "piernas_hombro";
+  | "piernas_hombros";
 
 export type RoutineSelectionType = RoutineQuickType | RoutineCustomType;
 
-// ── Custom sub-mode ───────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Sub-modo custom
+// ─────────────────────────────────────────────────────────────────────────────
 export type CustomSubMode = "plan" | "single";
 
-// ── Week plan ─────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Plan semanal
+// ─────────────────────────────────────────────────────────────────────────────
 export type WeekDayKey = "lun" | "mar" | "mie" | "jue" | "vie" | "sab" | "dom";
 
-/** Un músculo o tipo de rutina quick asignado a un día */
+/** Músculo o tipo de rutina quick asignado a un día */
 export type DaySessionType = RoutineQuickType | RoutineCustomType;
 
-/** Un día del plan semanal con sus músculos asignados */
+/** Día del plan semanal con sus músculos asignados */
 export interface WeekDayPlan {
   day: WeekDayKey;
-  muscles: DaySessionType[]; // ej: ["pecho", "triceps"]
+  muscles: DaySessionType[];
 }
 
-// ── EJERCICIOS (NUEVO) ────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Ejercicios
+// ─────────────────────────────────────────────────────────────────────────────
 export interface Exercise {
   id: string;
   name: string;
@@ -58,44 +72,88 @@ export interface Exercise {
   equipment?: EquipmentType;
 }
 
-export interface SelectedExercise extends Exercise {
-  // Puedes extender si quieres permitir personalizar sets/reps más adelante
-  customSets?: number;
-  customReps?: number;
+export interface RoutineExercise {
+  id: string;
+  name: string;
+  sets: number;
+  reps: string;
+  muscle?: string;
+  restSeconds: number;
+  weight?: number;
 }
 
-// Para sesión única: agrupa ejercicios por grupo muscular
-export interface SingleSessionExercises {
-  [muscle: string]: SelectedExercise[];
+export interface SetLog {
+  setNumber: number;
+  repsCompleted: number | null;
+  weight: number | null;
+  skipped: boolean;
+  restSeconds: number;
 }
 
-// Para plan semanal: ejercicios por día y por grupo muscular
-export interface DayExercises {
-  [muscle: string]: SelectedExercise[];
+export interface ExerciseProgress {
+  exerciseIndex: number;
+  completed: boolean;
+  currentSet: number;
+  totalSets: number;
+  setLogs: SetLog[];
+  displayValues: {
+    reps: string;
+    weight: number;
+    restSeconds: number;
+    sets: number;
+  };
+  editedReps?: string;
+  editedWeight?: number;
+  editedRestSeconds?: number;
+  editedSets?: number;
 }
 
-export interface WeekPlanExercises {
-  [day: string]: DayExercises;
+/** Ejercicios agrupados por músculo — modo single */
+export type SingleSessionExercises = Record<string, RoutineExercise[]>;
+
+/** Plan de ejercicios de un día — modo plan */
+export interface DayExercisePlan {
+  day: WeekDayKey;
+  exercises: RoutineExercise[];
 }
 
-// ── Payload (ACTUALIZADO) ─────────────────────────────────────────────────────
-export interface RoutinePayload {
-  modo: "quick" | "custom";
+interface BasePayload {
   objetivo: GoalType;
   nivel: ExperienceType;
   equipamiento: EquipmentType;
-  // quick
-  rutina?: RoutineQuickType;
-  // custom single
-  customSubMode?: CustomSubMode;
-  musculos?: DaySessionType[];
-  ejerciciosPorMusculo?: SingleSessionExercises; // NUEVO
-  // custom plan
-  weekPlan?: (WeekDayPlan & { ejerciciosPorMusculo?: DayExercises })[]; // ACTUALIZADO
-  diasEntrenamiento?: number;
 }
 
-// ── Option interfaces ─────────────────────────────────────────────────────────
+/** Modo rápido: rutina predefinida */
+export interface QuickRoutinePayload extends BasePayload {
+  modo: "quick";
+  rutina: RoutineQuickType;
+}
+
+/** Modo custom — sesión única */
+export interface CustomSinglePayload extends BasePayload {
+  modo: "custom";
+  customSubMode: "single";
+  musculos: DaySessionType[];
+  ejerciciosPorMusculo: SingleSessionExercises;
+}
+
+/** Modo custom — plan semanal */
+export interface CustomPlanPayload extends BasePayload {
+  modo: "custom";
+  customSubMode: "plan";
+  dias: WeekDayKey[];
+  planSemanal: WeekDayPlan[];
+  ejercicios: DayExercisePlan[];
+}
+
+export type RoutinePayload =
+  | QuickRoutinePayload
+  | CustomSinglePayload
+  | CustomPlanPayload;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Interfaces de opciones (UI)
+// ─────────────────────────────────────────────────────────────────────────────
 export interface GoalOption {
   type: GoalType;
   title: string;

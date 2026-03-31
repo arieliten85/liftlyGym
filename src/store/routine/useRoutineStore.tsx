@@ -1,8 +1,3 @@
-// store/routine/useRoutineStore.ts
-// CAMBIO: logSet ahora recibe restSeconds y lo guarda en el SetLog.
-// El valor viene del modal (displayValues.restSeconds al momento de completar).
-// getCompletedRoutinePayload no necesita cambios — ya serializa setLogs completo.
-
 import {
   CompletedRoutinePayload,
   ExerciseProgress,
@@ -149,7 +144,7 @@ export const useRoutineStore = create<RoutineStore>((set, get) => ({
       repsCompleted: skipped ? null : repsCompleted,
       weight: skipped ? null : weight,
       skipped,
-      restSeconds, // ← el descanso real de este set específico
+      restSeconds,
     };
 
     const updated = session.exercises.map((ex) => {

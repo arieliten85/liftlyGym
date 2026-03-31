@@ -250,7 +250,7 @@ const sb = StyleSheet.create({
   line: { height: 2, width: 24, borderRadius: 1 },
 });
 
-// ─── WorkoutSummaryModal ──────────────────────────────────────────────────────
+// ─── WorkoutSummaryModal
 
 export function WorkoutSummaryModal({
   visible,
@@ -269,7 +269,7 @@ export function WorkoutSummaryModal({
   const [soreness, setSoreness] = useState(0);
   const [comment, setComment] = useState("");
 
-  // ✅ Ref local para evitar doble tap antes de que el padre cierre el modal
+  //   Ref local para evitar doble tap antes de que el padre cierre el modal
   const submittedRef = useRef(false);
 
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -331,7 +331,7 @@ export function WorkoutSummaryModal({
 
   const canSubmit = intensity > 0 && energy > 0 && soreness > 0;
 
-  // ✅ Un solo helper que incluye el guard contra doble tap
+  // Un solo helper que incluye el guard contra doble tap
   const fireSubmit = (overrides?: Partial<WorkoutSurveyPayload>) => {
     if (submittedRef.current) return;
     submittedRef.current = true;
@@ -408,15 +408,15 @@ export function WorkoutSummaryModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <SafeAreaView style={[m.safe, { backgroundColor: colors.bg }]}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]}>
         {/* Header */}
-        <View style={m.header}>
+        <View style={styles.header}>
           {step === 2 ? (
             <TouchableOpacity
               onPress={() => setStep(1)}
               activeOpacity={0.7}
               style={[
-                m.iconBtn,
+                styles.iconBtn,
                 { backgroundColor: isDark ? "#1E1E1E" : "#F0F0F0" },
               ]}
             >
@@ -429,11 +429,13 @@ export function WorkoutSummaryModal({
           ) : (
             <View style={{ width: 40 }} />
           )}
-          <View style={m.stepIndicator}>
-            <View style={[m.stepDot, { backgroundColor: colors.primary }]} />
+          <View style={styles.stepIndicator}>
+            <View
+              style={[styles.stepDot, { backgroundColor: colors.primary }]}
+            />
             <View
               style={[
-                m.stepDot,
+                styles.stepDot,
                 {
                   backgroundColor: step === 2 ? colors.primary : colors.border,
                   width: step === 2 ? 20 : 8,
@@ -445,7 +447,7 @@ export function WorkoutSummaryModal({
             onPress={onClose}
             activeOpacity={0.7}
             style={[
-              m.iconBtn,
+              styles.iconBtn,
               { backgroundColor: isDark ? "#1E1E1E" : "#F0F0F0" },
             ]}
           >
@@ -459,13 +461,13 @@ export function WorkoutSummaryModal({
           {/* ══ STEP 1: RESUMEN ══ */}
           {step === 1 && (
             <ScrollView
-              contentContainerStyle={m.scroll}
+              contentContainerStyle={styles.scroll}
               showsVerticalScrollIndicator={false}
               bounces={false}
             >
               <Animated.View
                 style={[
-                  m.resultBlock,
+                  styles.resultBlock,
                   {
                     opacity: headerAnim,
                     transform: [
@@ -479,18 +481,22 @@ export function WorkoutSummaryModal({
                   },
                 ]}
               >
-                <View style={[m.statusBar, { backgroundColor: resultColor }]} />
-                <Text style={[m.resultLabel, { color: resultColor }]}>
+                <View
+                  style={[styles.statusBar, { backgroundColor: resultColor }]}
+                />
+                <Text style={[styles.resultLabel, { color: resultColor }]}>
                   {resultLabel}
                 </Text>
-                <Text style={[m.resultSub, { color: colors.textSecondary }]}>
+                <Text
+                  style={[styles.resultSub, { color: colors.textSecondary }]}
+                >
                   {resultSub}
                 </Text>
               </Animated.View>
 
               <Animated.View
                 style={[
-                  m.statsRow,
+                  styles.statsRow,
                   {
                     backgroundColor: isDark ? "#111" : "#F5F5F5",
                     borderColor: isDark ? "#1E1E1E" : "#E8E8E8",
@@ -516,7 +522,7 @@ export function WorkoutSummaryModal({
                 />
                 <View
                   style={[
-                    m.statsDivider,
+                    styles.statsDivider,
                     { backgroundColor: isDark ? "#1E1E1E" : "#E8E8E8" },
                   ]}
                 />
@@ -529,7 +535,7 @@ export function WorkoutSummaryModal({
                 />
                 <View
                   style={[
-                    m.statsDivider,
+                    styles.statsDivider,
                     { backgroundColor: isDark ? "#1E1E1E" : "#E8E8E8" },
                   ]}
                 />
@@ -545,7 +551,7 @@ export function WorkoutSummaryModal({
 
               <Text
                 style={[
-                  m.contextNote,
+                  styles.contextNote,
                   { color: colors.textSecondary, borderLeftColor: resultColor },
                 ]}
               >
@@ -559,18 +565,22 @@ export function WorkoutSummaryModal({
               <TouchableOpacity
                 onPress={goToSurvey}
                 activeOpacity={0.86}
-                style={[m.ctaBtn, { backgroundColor: colors.primary }]}
+                style={[styles.ctaBtn, { backgroundColor: colors.primary }]}
               >
-                <Text style={m.ctaText}>Registrar percepción del esfuerzo</Text>
+                <Text style={styles.ctaText}>
+                  Registrar percepción del esfuerzo
+                </Text>
                 <Ionicons name="arrow-forward" size={18} color="#fff" />
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={handleSkip}
                 activeOpacity={0.7}
-                style={m.skipBtn}
+                style={styles.skipBtn}
               >
-                <Text style={[m.skipText, { color: colors.textSecondary }]}>
+                <Text
+                  style={[styles.skipText, { color: colors.textSecondary }]}
+                >
                   Omitir
                 </Text>
               </TouchableOpacity>
@@ -585,18 +595,24 @@ export function WorkoutSummaryModal({
                 style={{ flex: 1 }}
               >
                 <ScrollView
-                  contentContainerStyle={m.scroll}
+                  contentContainerStyle={styles.scroll}
                   showsVerticalScrollIndicator={false}
                   keyboardShouldPersistTaps="handled"
                 >
-                  <View style={m.surveyIntro}>
+                  <View style={styles.surveyIntro}>
                     <Text
-                      style={[m.surveyTitle, { color: colors.textPrimary }]}
+                      style={[
+                        styles.surveyTitle,
+                        { color: colors.textPrimary },
+                      ]}
                     >
                       Percepción del esfuerzo
                     </Text>
                     <Text
-                      style={[m.surveySub, { color: colors.textSecondary }]}
+                      style={[
+                        styles.surveySub,
+                        { color: colors.textSecondary },
+                      ]}
                     >
                       3 métricas clave · menos de 30 segundos
                     </Text>
@@ -604,12 +620,15 @@ export function WorkoutSummaryModal({
 
                   <View
                     style={[
-                      m.dividerRow,
+                      styles.dividerRow,
                       { borderTopColor: isDark ? "#1E1E1E" : "#EBEBEB" },
                     ]}
                   >
                     <Text
-                      style={[m.dividerLabel, { color: colors.textSecondary }]}
+                      style={[
+                        styles.dividerLabel,
+                        { color: colors.textSecondary },
+                      ]}
                     >
                       RPE — Escala 1 al 5
                     </Text>
@@ -617,7 +636,7 @@ export function WorkoutSummaryModal({
 
                   <View
                     style={[
-                      m.metricCard,
+                      styles.metricCard,
                       {
                         backgroundColor: isDark ? "#111" : "#FAFAFA",
                         borderColor: isDark ? "#1E1E1E" : "#EBEBEB",
@@ -638,7 +657,7 @@ export function WorkoutSummaryModal({
 
                   <View
                     style={[
-                      m.metricCard,
+                      styles.metricCard,
                       {
                         backgroundColor: isDark ? "#111" : "#FAFAFA",
                         borderColor: isDark ? "#1E1E1E" : "#EBEBEB",
@@ -659,7 +678,7 @@ export function WorkoutSummaryModal({
 
                   <View
                     style={[
-                      m.metricCard,
+                      styles.metricCard,
                       {
                         backgroundColor: isDark ? "#111" : "#FAFAFA",
                         borderColor: isDark ? "#1E1E1E" : "#EBEBEB",
@@ -678,9 +697,12 @@ export function WorkoutSummaryModal({
                     />
                   </View>
 
-                  <View style={m.commentBlock}>
+                  <View style={styles.commentBlock}>
                     <Text
-                      style={[m.commentLabel, { color: colors.textPrimary }]}
+                      style={[
+                        styles.commentLabel,
+                        { color: colors.textPrimary },
+                      ]}
                     >
                       Observaciones
                       <Text
@@ -695,7 +717,7 @@ export function WorkoutSummaryModal({
                     </Text>
                     <TextInput
                       style={[
-                        m.commentInput,
+                        styles.commentInput,
                         {
                           backgroundColor: isDark ? "#111" : "#FAFAFA",
                           borderColor: isDark ? "#1E1E1E" : "#E0E0E0",
@@ -715,7 +737,7 @@ export function WorkoutSummaryModal({
 
                 <View
                   style={[
-                    m.footer,
+                    styles.footer,
                     {
                       borderTopColor: isDark ? "#1E1E1E" : "#F0F0F0",
                       backgroundColor: colors.bg,
@@ -723,7 +745,9 @@ export function WorkoutSummaryModal({
                   ]}
                 >
                   {!canSubmit && (
-                    <Text style={[m.hint, { color: colors.textSecondary }]}>
+                    <Text
+                      style={[styles.hint, { color: colors.textSecondary }]}
+                    >
                       Completá las 3 métricas para continuar
                     </Text>
                   )}
@@ -733,7 +757,7 @@ export function WorkoutSummaryModal({
                       activeOpacity={0.86}
                       disabled={!canSubmit}
                       style={[
-                        m.ctaBtn,
+                        styles.ctaBtn,
                         {
                           backgroundColor: canSubmit
                             ? colors.primary
@@ -750,7 +774,7 @@ export function WorkoutSummaryModal({
                       />
                       <Text
                         style={[
-                          m.ctaText,
+                          styles.ctaText,
                           { color: canSubmit ? "#fff" : colors.textSecondary },
                         ]}
                       >
@@ -768,7 +792,7 @@ export function WorkoutSummaryModal({
   );
 }
 
-const m = StyleSheet.create({
+const styles = StyleSheet.create({
   safe: { flex: 1 },
   header: {
     flexDirection: "row",

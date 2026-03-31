@@ -1,8 +1,3 @@
-import {
-  ExerciseProgress,
-  RoutineExercise,
-  SetLog,
-} from "@/types/routine/exercise.type";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
@@ -16,6 +11,11 @@ import {
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  ExerciseProgress,
+  RoutineExercise,
+  SetLog,
+} from "../build-routine/type/routine-builder.types";
 
 interface ThemeColors {
   surface: string;

@@ -6,14 +6,15 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 import { router } from "expo-router";
 import { useEffect, useRef } from "react";
 import {
-  ActivityIndicator,
   Image,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
-import { ParticleBackground } from "../build-routine/components/ParticleBackground";
+import { ParticleBackground } from "../components/ParticleBackground";
+
+import ImageLoading from "../../../../assets/loading/logo_loading.png";
 
 const routineService = new RoutineService();
 
@@ -45,7 +46,7 @@ export default function GeneratingRoutineScreen() {
 
       if (!payload) {
         // No hay payload — el usuario llegó acá sin pasar por el flujo
-        router.replace("/(app)/(tabs)/rutinas");
+        router.replace("/(app)/(tabs)/routines");
         return;
       }
 
@@ -62,11 +63,9 @@ export default function GeneratingRoutineScreen() {
           routineName: saved.name,
         });
 
-        // Limpiar el store de onboarding — ya cumplió su función
         reset();
 
-        // replace borra todo el historial de (onboarding)
-        router.replace("/(app)/(tabs)/rutinas");
+        router.replace("/(app)/(tabs)/routines");
       } catch (e: any) {
         setError(e?.message ?? "Error generando la rutina");
         setLoading(false);
@@ -103,11 +102,7 @@ export default function GeneratingRoutineScreen() {
         <ParticleBackground isDark={isDark} glowAlpha={glowAlpha} />
       </View>
 
-      <Image
-        source={require("../../../assets/loading/logo_loading.png")}
-        style={styles.logo}
-        resizeMode="contain"
-      />
+      <Image source={ImageLoading} style={styles.logo} resizeMode="contain" />
 
       <Text style={[styles.title, { color: primary }]}>
         Estamos generando tu{"\n"}rutina personalizada
@@ -117,7 +112,7 @@ export default function GeneratingRoutineScreen() {
         Analizando tus datos para el plan perfecto
       </Text>
 
-      <ActivityIndicator size="large" color={primary} style={styles.loader} />
+      {/* <ActivityIndicator size="large" color={primary} style={styles.loader} /> */}
 
       <TouchableOpacity onPress={() => router.back()}>
         <Text style={[styles.cancel, { color: secondaryText }]}>Cancelar</Text>

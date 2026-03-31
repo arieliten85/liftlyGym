@@ -1,4 +1,8 @@
-import { ExerciseProgress, RoutineExercise, SetLog } from "./exercise.type";
+import {
+  ExerciseProgress,
+  RoutineExercise,
+  SetLog,
+} from "@/features/build-routine/type/routine-builder.types";
 
 export interface RoutineSession {
   exercises: ExerciseProgress[];

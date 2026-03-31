@@ -1,5 +1,4 @@
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
-
 import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
@@ -17,9 +16,16 @@ export default function ExperienceScreen() {
 
   const selectedLevel = useBuildRoutineStore((s) => s.experience);
   const setExperience = useBuildRoutineStore((s) => s.setExperience);
+  const mode = useBuildRoutineStore((s) => s.mode);
 
   const handleNext = () => {
-    if (selectedLevel) router.push("/(onboarding)/(build-routine)/splitSelect");
+    if (!selectedLevel) return;
+
+    if (mode === "custom") {
+      router.push("/(onboarding)/(build-routine)/customModeSelect");
+    } else {
+      router.push("/(onboarding)/(build-routine)/splitSelect");
+    }
   };
 
   const TEAL = theme.primary;
@@ -155,18 +161,15 @@ export default function ExperienceScreen() {
 const createStyles = (isDark: boolean, theme: any) =>
   StyleSheet.create({
     container: { flex: 1 },
-
     particle: {
       position: "absolute",
       borderRadius: 2,
       backgroundColor: "#2ECFBE",
     },
-
     headerContainer: {
       marginBottom: token.spacing.xl,
       marginTop: token.spacing.xs,
     },
-
     sectionTitle: {
       fontSize: token.typography.h2,
       fontWeight: "bold",
@@ -178,10 +181,8 @@ const createStyles = (isDark: boolean, theme: any) =>
       textAlign: "left",
       lineHeight: 20,
     },
-
     optionsWrapper: { flex: 1, justifyContent: "flex-start" },
     optionsContainer: { gap: token.spacing.md },
-
     goalCard: {
       width: "100%",
       borderRadius: 16,
@@ -215,7 +216,6 @@ const createStyles = (isDark: boolean, theme: any) =>
       justifyContent: "center",
     },
     cardText: { flex: 1 },
-
     goalTitle: {
       fontSize: 18,
       fontWeight: "bold",
@@ -228,6 +228,5 @@ const createStyles = (isDark: boolean, theme: any) =>
       textAlign: "left",
       lineHeight: 18,
     },
-
     bottomSpacer: { height: token.spacing.sm },
   });

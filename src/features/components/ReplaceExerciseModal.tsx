@@ -3,14 +3,14 @@ import { ExerciseOption, ExerciseService } from "@/services/exerciseService";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    Modal,
-    Pressable,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const exerciseService = new ExerciseService();
@@ -24,10 +24,10 @@ interface Props {
 }
 
 const EQUIPMENT_LABEL: Record<string, string> = {
-  gym: "🏋️ Gym",
-  mancuernas: "🥊 Mancuernas",
-  peso_corporal: "💪 Peso corporal",
-  bandas: "🔴 Bandas",
+  gym: "Gym",
+  mancuernas: "Mancuernas",
+  peso_corporal: "Peso corporal",
+  bandas: "Bandas",
 };
 
 export function ReplaceExerciseModal({

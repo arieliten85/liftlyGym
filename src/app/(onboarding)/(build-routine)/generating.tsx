@@ -1,2 +1,2 @@
-import GeneratingRoutineScreen from "@/features/components/GeneratingRoutineScreen";
+import GeneratingRoutineScreen from "@/features/build-routine/screens/GeneratingRoutineScreen";
 export default GeneratingRoutineScreen;

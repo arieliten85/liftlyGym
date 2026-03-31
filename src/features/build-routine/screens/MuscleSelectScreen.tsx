@@ -9,7 +9,8 @@ import {
   RoutineQuickType,
 } from "@/features/build-routine/type/routine-builder.types";
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
-import { useBuildRoutineStore } from "@/store/build-rotine/mode/quick/buildRoutineStore";
+import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
+
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
 import { Ionicons } from "@expo/vector-icons";
@@ -34,7 +35,7 @@ const COMBOS_PROHIBIDOS: [RoutineCustomType, RoutineCustomType][] = [
   ["pecho", "espalda"],
   ["pecho", "piernas"],
   ["espalda", "piernas"],
-  ["hombro", "pecho"],
+  ["hombros", "pecho"],
   ["biceps", "triceps"],
 ];
 

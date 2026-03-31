@@ -1,8 +1,6 @@
 import { useUserStore } from "@/features/auth/store/userStore";
 import { AppNotification } from "@/services/notificationService";
-
 import { useNotificationStore } from "@/store/notification/usenotificationstore";
-
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {

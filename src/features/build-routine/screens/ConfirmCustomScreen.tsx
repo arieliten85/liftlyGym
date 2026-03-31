@@ -1,15 +1,22 @@
 // app/(onboarding)/(build-routine)/confirmCustom.tsx
+
 import { useUserStore } from "@/features/auth/store/userStore";
+import {
+  CustomPlanPayload,
+  CustomSinglePayload,
+} from "@/features/build-routine/type/routine-builder.types";
 import { Badge } from "@/shared/components/Badge";
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
 import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
-
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Constantes de UI
+// ─────────────────────────────────────────────────────────────────────────────
 const GOAL_META: Record<
   string,
   { description: string; icon: keyof typeof Ionicons.glyphMap }
@@ -55,10 +62,14 @@ const DAY_LABELS: Record<string, string> = {
   dom: "Domingo",
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Componente
+// ─────────────────────────────────────────────────────────────────────────────
 export default function ConfirmCustomScreen() {
   const { theme, isDark } = useAppTheme();
   const { from } = useLocalSearchParams<{ from?: string }>();
 
+  // ── Store ─────────────────────────────────────────────────────────────────
   const goal = useBuildRoutineStore((s) => s.goal);
   const equipment = useBuildRoutineStore((s) => s.equipment);
   const experience = useBuildRoutineStore((s) => s.experience);
@@ -66,6 +77,7 @@ export default function ConfirmCustomScreen() {
   const musculos = useBuildRoutineStore((s) => s.musculos);
   const weekPlan = useBuildRoutineStore((s) => s.weekPlan);
   const selectedDays = useBuildRoutineStore((s) => s.selectedDays);
+  const exercisePlan = useBuildRoutineStore((s) => s.exercisePlan);
 
   const getCustomSinglePayload = useBuildRoutineStore(
     (s) => s.getCustomSinglePayload,
@@ -78,6 +90,7 @@ export default function ConfirmCustomScreen() {
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
   const user = useUserStore((s) => s.user);
 
+  // ── Colores ───────────────────────────────────────────────────────────────
   const TEAL = theme.primary;
   const textColor = isDark ? "#DFF0EE" : theme.text;
   const subColor = isDark ? "#4A6A66" : theme.textSecondary;
@@ -88,81 +101,119 @@ export default function ConfirmCustomScreen() {
     ? "rgba(46,207,190,0.2)"
     : "rgba(46,207,190,0.25)";
 
+  // ── Derivados ─────────────────────────────────────────────────────────────
   const goalMeta = GOAL_META[goal ?? "hipertrofia"];
   const levelTip = LEVEL_TIPS[experience ?? "principiante"];
   const levelIcon = LEVEL_ICON[experience ?? "principiante"];
-  const isReady = !!(goal && equipment && experience && customSubMode);
+
   const isSingle = customSubMode === "single";
   const isPlan = customSubMode === "plan";
 
-  // Para single: mostrar músculos seleccionados
   const hasMuscles = musculos.length > 0;
   const muscleLabel = musculos.map((m) => m.toUpperCase()).join(" + ");
-
-  // Para plan: mostrar días con músculos
   const assignedDaysCount = weekPlan.filter((p) => p.muscles.length > 0).length;
   const totalDays = selectedDays.length;
 
-  const handleConfirm = () => {
-    if (!isReady) return;
+  // Cantidad total de ejercicios cargados
+  const totalExercises = exercisePlan.reduce(
+    (acc, dp) => acc + dp.exercises.length,
+    0,
+  );
 
-    const payload = isSingle
+  const isReady = !!(goal && equipment && experience && customSubMode);
+  const isNextDisabled =
+    !isReady || (isSingle ? !hasMuscles : assignedDaysCount === 0);
+
+  // ── Handler ───────────────────────────────────────────────────────────────
+  const handleConfirm = () => {
+    if (isNextDisabled) return;
+
+    const payload: CustomSinglePayload | CustomPlanPayload | null = isSingle
       ? getCustomSinglePayload()
       : getCustomPlanPayload();
 
-    if (!payload) return;
+    if (!payload) {
+      console.warn(
+        "[ConfirmCustom] ⚠️  payload null — faltan datos en el store",
+      );
+      return;
+    }
 
-    // Console.log del payload que iría al backend
-    console.log("[v0] ========================================");
-    console.log("[v0] PAYLOAD PARA EL BACKEND:");
-    console.log("[v0] Tipo:", isSingle ? "SESION SUELTA" : "PLAN SEMANAL");
-    console.log("[v0] ----------------------------------------");
-    console.log("[v0] Payload completo:", JSON.stringify(payload, null, 2));
-    console.log("[v0] ========================================");
+    // ── Log del objeto que se mandaría al backend ─────────────────────────
+    console.log("╔═══════════════════════════════════════════════════════╗");
+    console.log("║        🚀  CONFIRMAR Y GENERAR — OBJETO A ENVIAR      ║");
+    console.log("╚═══════════════════════════════════════════════════════╝");
+    console.log(
+      "📤  Tipo         :",
+      isSingle ? "SESIÓN SUELTA" : "PLAN SEMANAL",
+    );
+    console.log("🎯  Objetivo     :", payload.objetivo);
+    console.log("💪  Experiencia  :", payload.nivel);
+    console.log("🏋️   Equipamiento :", payload.equipamiento);
+
+    if (payload.customSubMode === "single") {
+      console.log("💪  Músculos     :", payload.musculos.join(", "));
+      console.log("─────────────────────────────────────────────────────────");
+      console.log("🏃  Ejercicios:");
+      const entries = Object.entries(payload.ejerciciosPorMusculo);
+      if (entries.length === 0) {
+        console.log("   (sin ejercicios)");
+      } else {
+        entries.forEach(([muscle, exs]) => {
+          console.log(`   ${muscle.toUpperCase()}`);
+          exs.forEach((ex, i) =>
+            console.log(
+              `      ${i + 1}. ${ex.name}  |  ${ex.sets}×${ex.reps}  |  descanso ${ex.restSeconds}s`,
+            ),
+          );
+        });
+      }
+    } else {
+      console.log("📅  Días         :", payload.dias.join(", "));
+      console.log("─────────────────────────────────────────────────────────");
+      console.log("📆  Plan semanal:");
+      payload.planSemanal.forEach((wp) =>
+        console.log(`   ${wp.day.toUpperCase()} → ${wp.muscles.join(", ")}`),
+      );
+      console.log("─────────────────────────────────────────────────────────");
+      console.log("🏃  Ejercicios por día:");
+      if (payload.ejercicios.length === 0) {
+        console.log("   (sin ejercicios)");
+      } else {
+        payload.ejercicios.forEach((dp) => {
+          console.log(`   📅 ${dp.day.toUpperCase()}`);
+          dp.exercises.forEach((ex, i) =>
+            console.log(
+              `      ${i + 1}. ${ex.name}  |  ${ex.sets}×${ex.reps}  |  descanso ${ex.restSeconds}s`,
+            ),
+          );
+        });
+      }
+    }
+
+    console.log("─────────────────────────────────────────────────────────");
+    console.log("📦  JSON completo →", JSON.stringify(payload, null, 2));
+    console.log("═════════════════════════════════════════════════════════");
 
     if (!isAuthenticated) {
-      console.log("[v0] Usuario no autenticado, redirigiendo a login...");
       router.push("/(onboarding)/(auth)/login");
       return;
     }
 
-    console.log("[v0] Usuario autenticado, procediendo a generar rutina...");
-    // Limpiar store y navegar a generando
     reset();
     router.push("/(onboarding)/(build-routine)/generating");
   };
 
-  const getModeBadge = () => {
-    if (isSingle) return { label: "SESIÓN SUELTA", icon: "flash-outline" };
-    return { label: "PLAN SEMANAL", icon: "calendar-outline" };
-  };
+  const modeBadge = isSingle
+    ? { label: "SESIÓN SUELTA", icon: "flash-outline" as const }
+    : { label: "PLAN SEMANAL", icon: "calendar-outline" as const };
 
-  const modeBadge = getModeBadge();
-
-  // Debug: ver estado actual del store
-  console.log("[v0] ConfirmCustomScreen - Estado del store:");
-  console.log("[v0] goal:", goal);
-  console.log("[v0] equipment:", equipment);
-  console.log("[v0] experience:", experience);
-  console.log("[v0] customSubMode:", customSubMode);
-  console.log("[v0] musculos:", musculos);
-  console.log("[v0] weekPlan:", weekPlan);
-  console.log("[v0] selectedDays:", selectedDays);
-  console.log("[v0] isReady:", isReady);
-  console.log("[v0] isSingle:", isSingle, "hasMuscles:", hasMuscles);
-  console.log("[v0] isPlan:", isPlan, "assignedDaysCount:", assignedDaysCount);
-  console.log(
-    "[v0] Boton deshabilitado:",
-    !isReady || (isSingle ? !hasMuscles : assignedDaysCount === 0),
-  );
-
+  // ─────────────────────────────────────────────────────────────────────────
   return (
     <OnboardingLayout
       title="Confirmá tu rutina"
       onNext={handleConfirm}
-      isNextDisabled={
-        !isReady || (isSingle ? !hasMuscles : assignedDaysCount === 0)
-      }
+      isNextDisabled={isNextDisabled}
       nextButtonText={
         isAuthenticated ? "Confirmar y generar" : "Iniciar sesión y generar"
       }
@@ -173,7 +224,7 @@ export default function ConfirmCustomScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* ── BLOQUE 1: RESUMEN DEL PLAN ── */}
+          {/* ── BLOQUE 1: HERO RESUMEN ─────────────────────────────────── */}
           <View
             style={[
               styles.heroCard,
@@ -210,6 +261,13 @@ export default function ConfirmCustomScreen() {
                   color="#A78BFA"
                   subtle
                 />
+                {totalExercises > 0 && (
+                  <Badge
+                    label={`${totalExercises} ejercicios`}
+                    color={TEAL}
+                    subtle
+                  />
+                )}
               </View>
 
               {user && (
@@ -220,7 +278,7 @@ export default function ConfirmCustomScreen() {
             </View>
           </View>
 
-          {/* ── BLOQUE 2: DETALLE DEL PLAN (solo si es single o plan) ── */}
+          {/* ── BLOQUE 2A: GRUPOS MUSCULARES (single) ─────────────────── */}
           {isSingle && hasMuscles && (
             <View
               style={[styles.card, { backgroundColor: cardBg, borderColor }]}
@@ -257,6 +315,7 @@ export default function ConfirmCustomScreen() {
             </View>
           )}
 
+          {/* ── BLOQUE 2B: DISTRIBUCIÓN SEMANAL (plan) ────────────────── */}
           {isPlan && weekPlan.length > 0 && (
             <View
               style={[styles.card, { backgroundColor: cardBg, borderColor }]}
@@ -273,6 +332,12 @@ export default function ConfirmCustomScreen() {
                   const muscleText = plan.muscles
                     .map((m) => m.toUpperCase())
                     .join(" + ");
+                  // Ejercicios del día
+                  const dayExercises =
+                    exercisePlan.find((ep) => ep.day === plan.day)?.exercises ??
+                    [];
+                  const exerciseCount = dayExercises.length;
+
                   return (
                     <View
                       key={plan.day}
@@ -285,14 +350,23 @@ export default function ConfirmCustomScreen() {
                         },
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.dayLabel,
-                          { color: hasMusclesInDay ? TEAL : subColor },
-                        ]}
-                      >
-                        {DAY_LABELS[plan.day]}
-                      </Text>
+                      <View style={styles.dayRowLeft}>
+                        <Text
+                          style={[
+                            styles.dayLabel,
+                            { color: hasMusclesInDay ? TEAL : subColor },
+                          ]}
+                        >
+                          {DAY_LABELS[plan.day]}
+                        </Text>
+                        {exerciseCount > 0 && (
+                          <Text
+                            style={[styles.exerciseCount, { color: subColor }]}
+                          >
+                            {exerciseCount} ejercicios
+                          </Text>
+                        )}
+                      </View>
                       <Text
                         style={[
                           styles.dayMuscles,
@@ -313,7 +387,44 @@ export default function ConfirmCustomScreen() {
             </View>
           )}
 
-          {/* ── BLOQUE 3: OBJETIVO ── */}
+          {/* ── BLOQUE 3: EJERCICIOS DETALLE (plan, si los hay) ───────── */}
+          {isPlan && exercisePlan.length > 0 && (
+            <View
+              style={[styles.card, { backgroundColor: cardBg, borderColor }]}
+            >
+              <View style={styles.cardHeader}>
+                <Ionicons name="barbell-outline" size={15} color={TEAL} />
+                <Text style={[styles.cardLabel, { color: TEAL }]}>
+                  EJERCICIOS SELECCIONADOS
+                </Text>
+              </View>
+              {exercisePlan.map((dp) => (
+                <View key={dp.day} style={styles.exerciseDayBlock}>
+                  <Text style={[styles.exerciseDayTitle, { color: TEAL }]}>
+                    {DAY_LABELS[dp.day] ?? dp.day.toUpperCase()}
+                  </Text>
+                  {dp.exercises.map((ex) => (
+                    <View
+                      key={ex.id}
+                      style={[styles.exerciseRow, { borderColor: `${TEAL}20` }]}
+                    >
+                      <Text
+                        style={[styles.exerciseName, { color: textColor }]}
+                        numberOfLines={1}
+                      >
+                        {ex.name}
+                      </Text>
+                      <Text style={[styles.exerciseMeta, { color: subColor }]}>
+                        {ex.sets}×{ex.reps} · {ex.restSeconds}s
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* ── BLOQUE 4: OBJETIVO ────────────────────────────────────── */}
           <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
             <View style={styles.cardHeader}>
               <Ionicons name={goalMeta.icon} size={15} color={TEAL} />
@@ -331,7 +442,7 @@ export default function ConfirmCustomScreen() {
             </Text>
           </View>
 
-          {/* ── BLOQUE 4: CONSEJO ── */}
+          {/* ── BLOQUE 5: CONSEJO ─────────────────────────────────────── */}
           <View
             style={[
               styles.tipCard,
@@ -361,7 +472,7 @@ export default function ConfirmCustomScreen() {
             </Text>
           </View>
 
-          {/* ── BLOQUE 5: EQUIPAMIENTO ── */}
+          {/* ── BLOQUE 6: EQUIPAMIENTO ───────────────────────────────── */}
           <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
             <View style={styles.cardHeader}>
               <Ionicons name="fitness-outline" size={15} color={TEAL} />
@@ -381,7 +492,7 @@ export default function ConfirmCustomScreen() {
             </Text>
           </View>
 
-          {/* ── BLOQUE 6: AUTH NOTICE (solo si no está logueado) ── */}
+          {/* ── BLOQUE 7: AUTH NOTICE ─────────────────────────────────── */}
           {!isAuthenticated && (
             <View
               style={[
@@ -396,7 +507,7 @@ export default function ConfirmCustomScreen() {
             </View>
           )}
 
-          {/* ── BLOQUE 7: EXPECTATIVA ── */}
+          {/* ── BLOQUE 8: EXPECTATIVA ────────────────────────────────── */}
           <View style={[styles.infoRow, { borderColor }]}>
             <Ionicons name="sparkles-outline" size={15} color={subColor} />
             <Text style={[styles.infoText, { color: subColor }]}>
@@ -409,6 +520,9 @@ export default function ConfirmCustomScreen() {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Estilos
+// ─────────────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { flex: 1 },
@@ -448,6 +562,7 @@ const styles = StyleSheet.create({
   heroMeta: {
     flexDirection: "row",
     alignItems: "center",
+    flexWrap: "wrap",
     gap: token.spacing.xs,
   },
   userTag: { fontSize: 12, fontWeight: "500", marginTop: 4 },
@@ -477,17 +592,36 @@ const styles = StyleSheet.create({
   },
   muscleTagText: { fontSize: 13, fontWeight: "700", letterSpacing: 0.5 },
 
-  weekPlanContainer: { gap: 12, marginVertical: 4 },
+  weekPlanContainer: { gap: 10, marginVertical: 4 },
   dayRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingVertical: 8,
-    paddingHorizontal: 4,
+    paddingHorizontal: 6,
     borderRadius: 8,
   },
-  dayLabel: { fontSize: 14, fontWeight: "700", width: 70 },
+  dayRowLeft: { gap: 2 },
+  dayLabel: { fontSize: 14, fontWeight: "700", width: 80 },
+  exerciseCount: { fontSize: 11, fontWeight: "500" },
   dayMuscles: { fontSize: 13, fontWeight: "500", flex: 1, textAlign: "right" },
+
+  exerciseDayBlock: { gap: 6, marginTop: 4 },
+  exerciseDayTitle: {
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+    marginBottom: 2,
+  },
+  exerciseRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+  },
+  exerciseName: { fontSize: 13, fontWeight: "600", flex: 1, marginRight: 8 },
+  exerciseMeta: { fontSize: 12, fontWeight: "500" },
 
   tipCard: {
     borderRadius: 16,

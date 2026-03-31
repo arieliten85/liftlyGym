@@ -54,7 +54,7 @@ export default function CustomModeSelectScreen() {
 
   const handleBack = () => {
     if (from === "tabs") {
-      router.replace("/(app)/(tabs)/rutinas");
+      router.replace("/(app)/(tabs)/routines");
     } else {
       router.back();
     }

@@ -1,5 +1,4 @@
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
-
 import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
@@ -21,11 +20,9 @@ export default function GoalsScreen() {
       router.push(`/(onboarding)/(build-routine)/equipment?from=${from}`);
   };
 
-  // Si viene desde tabs → vuelve a rutinas
-  // Si viene desde onboarding → back normal
   const handleBack = () => {
     if (from === "tabs") {
-      router.replace("/(app)/(tabs)/rutinas");
+      router.replace("/(app)/(tabs)/routines");
     } else {
       router.back();
     }

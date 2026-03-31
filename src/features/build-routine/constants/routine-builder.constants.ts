@@ -79,8 +79,8 @@ export const MUSCLE_OPTION_DATA: RoutineCustomOption[] = [
     image: require("../../../../assets/muscle-group/triceps.png"),
   },
   {
-    type: "hombro",
-    title: "HOMBRO",
+    type: "hombros",
+    title: "HOMBROS",
     image: require("../../../../assets/muscle-group/hombros.png"),
   },
   {

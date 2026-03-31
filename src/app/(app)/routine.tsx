@@ -1,2 +1,3 @@
-import { RoutineScreen } from "@/features/components/RoutineScreen";
-export default RoutineScreen;
+import WorkoutSessionScreen from "@/features/build-routine/screens/WorkoutSessionScreen";
+
+export default WorkoutSessionScreen;

@@ -94,8 +94,6 @@ export default function LoginScreen({ onSuccess }: Props) {
         email: decoded.email,
       };
 
-      // CAMBIO: se eliminó el AsyncStorage.setItem duplicado.
-      // setSession ya persiste el token internamente (ver userStore.ts).
       await setSession(user, token);
 
       Toast.show({
@@ -106,8 +104,6 @@ export default function LoginScreen({ onSuccess }: Props) {
         visibilityTime: 2000,
       });
 
-      // CAMBIO: antes era router.replace("/(tabs)/rutinas")
-      // Ahora delega la navegación a quien instancia esta pantalla.
       onSuccess();
     } catch (error) {
       console.log(error);

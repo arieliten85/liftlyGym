@@ -1,7 +1,5 @@
-import { ImageSection } from "@/features/build-routine/components/ImageSection";
-import { estimateDuration } from "@/features/build-routine/utils/estimateDuration";
 import { RoutineService } from "@/services/routineService";
-import { PrimaryButton } from "@/shared/components/PrimaryButton";
+import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
 import { useNotificationStore } from "@/store/notification/usenotificationstore";
 import { useRoutineStore } from "@/store/routine/useRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -20,133 +18,18 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { RoutineCard } from "../components/RoutineCard";
 
 const routineService = new RoutineService();
 
-interface RoutineCardProps {
-  routine: Routine;
-  accentColor: string;
-  cardBg: string;
-  borderColor: string;
-  textColor: string;
-  subColor: string;
-  index: number;
-  onDelete: (id: string) => void;
-  onStart: (routine: Routine) => void;
-}
-
-function RoutineCard({
-  routine,
-  accentColor,
-  cardBg,
-  borderColor,
-  textColor,
-  subColor,
-  index,
-  onDelete,
-  onStart,
-}: RoutineCardProps) {
-  const expColor = "#cfd0d1";
-  const coverColor = "#1A1A1A";
-  const duration = estimateDuration(routine.exercises);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(20)).current;
-
-  const ROUTINEMODE = {
-    quick: "Rápida",
-    custom: "Personalizada",
-  };
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 380,
-        delay: 120 + index * 80,
-        useNativeDriver: true,
-        easing: Easing.out(Easing.cubic),
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 360,
-        delay: 120 + index * 80,
-        useNativeDriver: true,
-        easing: Easing.out(Easing.cubic),
-      }),
-    ]).start();
-  }, []);
-
-  return (
-    <Animated.View
-      style={[
-        rc.card,
-        { backgroundColor: cardBg, borderColor },
-        { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-      ]}
-    >
-      {/* Botón eliminar */}
-      {routine.routineId && (
-        <TouchableOpacity
-          onPress={() => onDelete(routine.routineId!)}
-          style={rc.deleteButton}
-        >
-          <MaterialCommunityIcons
-            name="trash-can-outline"
-            size={18}
-            color="#EF4444"
-          />
-        </TouchableOpacity>
-      )}
-
-      {/* Cover con imagen */}
-      <View style={rc.cover}>
-        <ImageSection coverColor={coverColor} routineName={routine.name} />
-        <View style={rc.coverOverlay} />
-      </View>
-
-      <View style={rc.badgeRow}>
-        <View style={rc.modeBadge}>
-          <Text style={rc.modeText}>{ROUTINEMODE[routine.mode]}</Text>
-        </View>
-        <View style={rc.modeBadge}>
-          <Text style={rc.modeText}>{routine.goal}</Text>
-        </View>
-      </View>
-
-      {/* Body */}
-      <View style={rc.body}>
-        <View style={rc.bodyTop}>
-          <View style={{ flex: 1 }}>
-            <Text style={[rc.name, { color: textColor }]} numberOfLines={1}>
-              {routine.name} day
-            </Text>
-          </View>
-          <View style={rc.metaRow}>
-            <MaterialCommunityIcons
-              name="clock-outline"
-              size={12}
-              color={subColor}
-            />
-            <Text style={[rc.metaText, { color: subColor }]}>
-              {duration} min
-            </Text>
-          </View>
-        </View>
-
-        <PrimaryButton
-          iconRight={"play"}
-          label={"Iniciar"}
-          onPress={() => onStart(routine)}
-        />
-      </View>
-    </Animated.View>
-  );
-}
-
-export default function RutinasScreen() {
+export default function RoutineScreen() {
   const { theme, isDark } = useAppTheme();
   const c = theme;
   const { setRoutine } = useRoutineStore();
+  const setMode = useBuildRoutineStore((s) => s.setMode);
+  const [selectedMode, setSelectedMode] = React.useState<"quick" | "custom">(
+    "quick",
+  );
 
   const bg = isDark ? "#070B12" : c.background;
   const cardBg = isDark ? "#0E1219" : c.card;
@@ -260,18 +143,6 @@ export default function RutinasScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <Animated.View
-          style={[
-            styles.header,
-            { opacity: headerFade, transform: [{ translateY: headerSlide }] },
-          ]}
-        >
-          <Text style={[styles.screenTitle, { color: c.text }]}>
-            Mis Rutinas
-          </Text>
-        </Animated.View>
-
         {/* Crear nueva rutina */}
         <Animated.View
           style={[
@@ -287,14 +158,19 @@ export default function RutinasScreen() {
           </Text>
 
           <View style={styles.modesRow}>
+            {/* Modo Rápido */}
             <TouchableOpacity
               style={[
                 styles.modeCard,
-                styles.modeCardActive,
-                { borderColor: TEAL },
+                selectedMode === "quick" && styles.modeCardActive,
+                { borderColor: selectedMode === "quick" ? TEAL : borderCol },
               ]}
               activeOpacity={0.82}
-              onPress={() => router.push("/(onboarding)/(build-routine)/goals")}
+              onPress={() => {
+                setSelectedMode("quick");
+                setMode("quick");
+                router.push("/(onboarding)/(build-routine)/goals?from=tabs");
+              }}
             >
               <View style={[styles.modeIconWrap, { backgroundColor: TEAL }]}>
                 <MaterialCommunityIcons
@@ -311,13 +187,23 @@ export default function RutinasScreen() {
               </Text>
             </TouchableOpacity>
 
+            {/* Modo Custom */}
             <TouchableOpacity
               style={[
                 styles.modeCard,
-                { backgroundColor: cardBg, borderColor: borderCol },
+                selectedMode === "custom" && styles.modeCardActive,
+                {
+                  backgroundColor:
+                    selectedMode === "custom" ? "#0D2B2B" : cardBg,
+                  borderColor: selectedMode === "custom" ? TEAL : borderCol,
+                },
               ]}
               activeOpacity={0.82}
-              onPress={() => {}}
+              onPress={() => {
+                setSelectedMode("custom");
+                setMode("custom");
+                router.push("/(onboarding)/(build-routine)/goals?from=tabs");
+              }}
             >
               <View
                 style={[
@@ -387,7 +273,6 @@ export default function RutinasScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { padding: 22, gap: 24, paddingBottom: 48 },
-
   header: { paddingTop: 4 },
   screenTitle: {
     fontSize: 28,
@@ -395,7 +280,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.8,
     lineHeight: 32,
   },
-
   createSection: { gap: 10 },
   createTitle: { fontSize: 20, fontWeight: "900", letterSpacing: -0.5 },
   createSubtitle: { fontSize: 13, fontWeight: "500", marginTop: -4 },
@@ -417,7 +301,6 @@ const styles = StyleSheet.create({
   },
   modeTitle: { fontSize: 14, fontWeight: "800", letterSpacing: -0.3 },
   modeDesc: { fontSize: 11, fontWeight: "500", lineHeight: 15 },
-
   routinesSection: { gap: 14 },
   routinesHeader: {
     flexDirection: "row",
@@ -425,110 +308,4 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   sectionTitle: { fontSize: 20, fontWeight: "900", letterSpacing: -0.5 },
-});
-
-const rc = StyleSheet.create({
-  card: {
-    borderRadius: 20,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  cover: {
-    height: 130,
-    position: "relative",
-    overflow: "hidden",
-  },
-  coverOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.2)",
-    zIndex: 1,
-  },
-  expBadge: {
-    position: "absolute",
-    bottom: 12,
-    left: 0,
-    zIndex: 2,
-    alignSelf: "flex-start",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  expText: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#fff",
-    letterSpacing: 0.8,
-  },
-  body: {
-    padding: 16,
-    gap: 12,
-  },
-  bodyTop: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-  },
-  name: {
-    fontSize: 17,
-    fontWeight: "900",
-    letterSpacing: -0.4,
-    marginBottom: 3,
-    textTransform: "capitalize",
-  },
-  muscles: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: 2,
-  },
-  metaText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  cta: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 13,
-    borderRadius: 12,
-  },
-  ctaText: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#fff",
-    letterSpacing: -0.2,
-  },
-  deleteButton: {
-    position: "absolute",
-    top: 10,
-    right: 10,
-    zIndex: 10,
-  },
-
-  modeBadge: {
-    backgroundColor: "rgba(0,0,0,0.6)",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-
-  modeText: {
-    color: "#fff",
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-  },
-  badgeRow: {
-    position: "absolute",
-    top: 10,
-    left: 10,
-    flexDirection: "row",
-    gap: 6,
-    zIndex: 2,
-  },
 });

@@ -1,9 +1,6 @@
 import { ExerciseOption, ExerciseService } from "@/services/exerciseService";
 import { PrimaryButton } from "@/shared/components/PrimaryButton";
-import {
-  ExerciseProgress,
-  RoutineExercise,
-} from "@/types/routine/exercise.type";
+
 import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -22,6 +19,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CustomExerciseHeader } from "../build-routine/components/CustomExerciseHeader";
+import {
+  ExerciseProgress,
+  RoutineExercise,
+} from "../build-routine/type/routine-builder.types";
 import {
   formatRest,
   formatRestTime,

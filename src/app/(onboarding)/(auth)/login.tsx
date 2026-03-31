@@ -10,7 +10,7 @@ export default function LoginRoute() {
     if (payload) {
       router.replace("/(onboarding)/(build-routine)/generating");
     } else {
-      router.replace("/(app)/(tabs)/rutinas");
+      router.replace("/(app)/(tabs)/routines");
     }
   };
 

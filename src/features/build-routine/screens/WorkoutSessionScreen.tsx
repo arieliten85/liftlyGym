@@ -1,3 +1,12 @@
+import { AppNotification } from "@/services/notificationService";
+import { RoutineService } from "@/services/routineService";
+import { PrimaryButton } from "@/shared/components/PrimaryButton";
+import { useLoadingStore } from "@/store/loading/loadingStore";
+import { useNotificationStore } from "@/store/notification/usenotificationstore";
+import { useRoutineStore } from "@/store/routine/useRoutineStore";
+import { useAppTheme } from "@/theme/ThemeProvider";
+
+import { ExerciseProgress } from "@/types/routine/routine.type";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, {
@@ -8,55 +17,23 @@ import React, {
   useState,
 } from "react";
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
-
-import { useLoadingStore } from "@/store/loading/loadingStore";
-import { useRoutineStore } from "@/store/routine/useRoutineStore";
-import { useAppTheme } from "@/theme/ThemeProvider";
-import { ExerciseProgress } from "@/types/routine/exercise.type";
-
-import { PrimaryButton } from "@/shared/components/PrimaryButton";
-
-import { formatRestTime } from "../build-routine/utils/formatRestTime";
-import { formatTextTitle } from "../build-routine/utils/formatTextTitle";
-
-import { AppNotification } from "@/services/notificationService";
-import { RoutineService } from "@/services/routineService";
-import { useNotificationStore } from "@/store/notification/usenotificationstore";
-import { CustomHeaderRoutine } from "../build-routine/components/CustomHeaderRoutine";
-import { CompletedExerciseModal } from "./Completedexercisemodal";
-import { ExerciseCard } from "./ExerciseCard";
-import { PendingAdjustmentsModal } from "./PendingAdjustmentsModal";
-import { ReplaceExerciseModal } from "./ReplaceExerciseModal";
-import { RoutineHeader } from "./RoutineHeader";
-import { SeriesModal } from "./SeriesModal";
+import { CompletedExerciseModal } from "../../components/Completedexercisemodal";
+import { ExerciseCard } from "../../components/ExerciseCard";
+import { PendingAdjustmentsModal } from "../../components/PendingAdjustmentsModal";
+import { ReplaceExerciseModal } from "../../components/ReplaceExerciseModal";
+import { RoutineHeader } from "../../components/RoutineHeader";
+import { SeriesModal } from "../../components/SeriesModal";
 import {
   WorkoutSummaryModal,
   WorkoutSurveyPayload,
-} from "./WorkoutSummaryModal";
-
-const EXP_LABEL: Record<string, string> = {
-  beginner: "PRINCIPIANTE",
-  intermediate: "INTERMEDIO",
-  advanced: "AVANZADO",
-};
-
-const EXP_COLOR: Record<string, string> = {
-  beginner: "#22C55E",
-  intermediate: "#F59E0B",
-  advanced: "#3B82F6",
-};
-
-const COVER_BY_GOAL: Record<string, string> = {
-  strength: "#1B2E1B",
-  hypertrophy: "#1B1B30",
-  general_fitness: "#2A2010",
-  weight_loss: "#2A1010",
-  endurance: "#101828",
-};
+} from "../../components/WorkoutSummaryModal";
+import { CustomHeaderRoutine } from "../components/CustomHeaderRoutine";
+import { formatRestTime } from "../utils/formatRestTime";
+import { formatTextTitle } from "../utils/formatTextTitle";
 
 const routineService = new RoutineService();
 
-export function RoutineScreen() {
+export default function WorkoutSessionScreen() {
   const router = useRouter();
   const { theme, isDark } = useAppTheme();
   const {
@@ -178,7 +155,7 @@ export function RoutineScreen() {
     const goBack = () => {
       resetSession();
       if (from === "generating") {
-        router.replace("/(app)/(tabs)/rutinas");
+        router.replace("/(app)/(tabs)/routines");
       } else {
         router.back();
       }
@@ -347,7 +324,7 @@ export function RoutineScreen() {
         if (!getPendingAdjustmentNotification()) {
           isSubmittingRef.current = false;
           resetSession();
-          router.replace("/(app)/(tabs)/rutinas");
+          router.replace("/(app)/(tabs)/routines");
         }
       }
     },
@@ -407,7 +384,7 @@ export function RoutineScreen() {
       setAdjustmentNotif(null);
       isSubmittingRef.current = false;
       resetSession();
-      router.replace("/(app)/(tabs)/rutinas");
+      router.replace("/(app)/(tabs)/routines");
     }
   }, [
     adjustmentNotif,
@@ -422,7 +399,7 @@ export function RoutineScreen() {
     setAdjustmentNotif(null);
     isSubmittingRef.current = false;
     resetSession();
-    router.replace("/(app)/(tabs)/rutinas");
+    router.replace("/(app)/(tabs)/routines");
   }, [adjustmentNotif, clearPendingAdjustments, resetSession, router]);
 
   const handleReplaceExercise = useCallback(
@@ -551,7 +528,6 @@ export function RoutineScreen() {
         <View style={{ height: 20 }} />
       </ScrollView>
 
-      {/* Botón dinámico */}
       <View
         style={[
           styles.finishBar,
