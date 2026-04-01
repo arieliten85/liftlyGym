@@ -1,5 +1,3 @@
-// app/(onboarding)/(build-routine)/confirmCustom.tsx
-
 import { useUserStore } from "@/features/auth/store/userStore";
 import { Badge } from "@/shared/components/Badge";
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
@@ -14,10 +12,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { DAY_LABELS } from "../constants/dayLabels";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Constantes de UI
-// ─────────────────────────────────────────────────────────────────────────────
 const GOAL_META: Record<
   string,
   { description: string; icon: keyof typeof Ionicons.glyphMap }
@@ -51,16 +47,6 @@ const LEVEL_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
   principiante: "leaf-outline",
   intermedio: "flash-outline",
   avanzado: "flame-outline",
-};
-
-const DAY_LABELS: Record<string, string> = {
-  lun: "Lunes",
-  mar: "Martes",
-  mie: "Miércoles",
-  jue: "Jueves",
-  vie: "Viernes",
-  sab: "Sábado",
-  dom: "Domingo",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -141,67 +127,11 @@ export default function ConfirmCustomScreen() {
       : getCustomPlanPayload();
 
     if (!payload) {
-      console.warn(
-        "[ConfirmCustom] ⚠️  payload null — faltan datos en el store",
-      );
+      console.warn("payload null");
       return;
     }
 
-    // ── Log del objeto que se mandaría al backend ─────────────────────────
-    console.log("╔═══════════════════════════════════════════════════════╗");
-    console.log("║        🚀  CONFIRMAR Y GENERAR — OBJETO A ENVIAR      ║");
-    console.log("╚═══════════════════════════════════════════════════════╝");
-    console.log(
-      "📤  Tipo         :",
-      isSingle ? "SESIÓN SUELTA" : "PLAN SEMANAL",
-    );
-    console.log("🎯  Objetivo     :", payload.objetivo);
-    console.log("💪  Experiencia  :", payload.nivel);
-    console.log("🏋️   Equipamiento :", payload.equipamiento);
-
-    if (payload.customSubMode === "single") {
-      console.log("💪  Músculos     :", payload.musculos.join(", "));
-      console.log("─────────────────────────────────────────────────────────");
-      console.log("🏃  Ejercicios:");
-      const entries = Object.entries(payload.ejerciciosPorMusculo);
-      if (entries.length === 0) {
-        console.log("   (sin ejercicios)");
-      } else {
-        entries.forEach(([muscle, exs]) => {
-          console.log(`   ${muscle.toUpperCase()}`);
-          exs.forEach((ex, i) =>
-            console.log(
-              `      ${i + 1}. ${ex.name}  |  ${ex.sets}×${ex.reps}  |  descanso ${ex.restSeconds}s`,
-            ),
-          );
-        });
-      }
-    } else {
-      console.log("📅  Días         :", payload.dias.join(", "));
-      console.log("─────────────────────────────────────────────────────────");
-      console.log("📆  Plan semanal:");
-      payload.planSemanal.forEach((wp) =>
-        console.log(`   ${wp.day.toUpperCase()} → ${wp.muscles.join(", ")}`),
-      );
-      console.log("─────────────────────────────────────────────────────────");
-      console.log("🏃  Ejercicios por día:");
-      if (payload.ejercicios.length === 0) {
-        console.log("   (sin ejercicios)");
-      } else {
-        payload.ejercicios.forEach((dp) => {
-          console.log(`   📅 ${dp.day.toUpperCase()}`);
-          dp.exercises.forEach((ex, i) =>
-            console.log(
-              `      ${i + 1}. ${ex.name}  |  ${ex.sets}×${ex.reps}  |  descanso ${ex.restSeconds}s`,
-            ),
-          );
-        });
-      }
-    }
-
-    console.log("─────────────────────────────────────────────────────────");
-    console.log("📦  JSON completo →", JSON.stringify(payload, null, 2));
-    console.log("═════════════════════════════════════════════════════════");
+    console.log("JSON completo →", JSON.stringify(payload, null, 2));
 
     if (!isAuthenticated) {
       router.push("/(onboarding)/(auth)/login");
@@ -232,7 +162,6 @@ export default function ConfirmCustomScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* ── BLOQUE 1: HERO RESUMEN ─────────────────────────────────── */}
           <View
             style={[
               styles.heroCard,
