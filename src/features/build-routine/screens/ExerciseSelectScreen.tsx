@@ -1,13 +1,9 @@
-import {
-  Exercise,
-  RoutineExercise,
-  WeekDayKey,
-} from "@/types/routine";
 import { ExerciseService } from "@/services/exerciseService";
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
 import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
+import { Exercise, RoutineExercise, WeekDayKey } from "@/types/routine";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -347,6 +343,7 @@ export default function ExerciseSelectScreen() {
   const { day } = useLocalSearchParams<{ day: WeekDayKey }>();
 
   const weekPlan = useBuildRoutineStore((s) => s.weekPlan);
+  const equipment = useBuildRoutineStore((s) => s.equipment);
 
   const selectedExercises = useBuildRoutineStore(
     useShallow((s) =>
@@ -397,7 +394,10 @@ export default function ExerciseSelectScreen() {
       const all: Exercise[] = [];
       for (const muscle of uniqueMuscles) {
         try {
-          const result = await exerciseService.getExercisesByMuscle(muscle);
+          const result = await exerciseService.getExercisesByMuscle(
+            muscle,
+            equipment ?? "",
+          );
           all.push(...result);
         } catch {
           console.log(`Error loading: ${muscle}`);

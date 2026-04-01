@@ -16,11 +16,14 @@ export class ExerciseService {
     return res.data.data;
   }
 
-  async getExercisesByMuscle(muscle: string): Promise<Exercise[]> {
+  async getExercisesByMuscle(
+    muscle: string,
+    equipment: string,
+  ): Promise<Exercise[]> {
     const res = await axiosClient.get<{
       success: boolean;
       data: ExerciseOption[];
-    }>(`/exercises?muscle=${muscle}`);
+    }>(`/exercises?muscle=${muscle}&equipment=${equipment}`);
 
     const formatted: Exercise[] = res.data.data.map((ex) => ({
       id: ex.name,
