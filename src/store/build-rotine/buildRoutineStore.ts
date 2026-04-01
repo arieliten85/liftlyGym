@@ -5,11 +5,10 @@ import {
   EquipmentType,
   ExperienceType,
   GoalType,
-  RoutineCustomType,
   RoutinePayload,
   RoutineSelectionType,
   SingleSessionExercises,
-} from "@/features/build-routine/type/routine-builder.types";
+} from "@/types/routine";
 import { create } from "zustand";
 import { createCustomStore, CustomStore } from "./mode/custom/custom.store";
 import {
@@ -18,16 +17,12 @@ import {
 } from "./mode/custom/exercises.store";
 import { getQuickPayload } from "./mode/quick/quick.store";
 
-// Tipo del store completo
-
 type RoutineMode = "quick" | "custom";
 
 interface BuildRoutineStoreProps extends CustomStore, ExercisesStore {
-  // MODE
   mode: RoutineMode | null;
   setMode: (mode: RoutineMode) => void;
 
-  // SHARED
   goal: GoalType | null;
   equipment: EquipmentType | null;
   experience: ExperienceType | null;
@@ -35,26 +30,20 @@ interface BuildRoutineStoreProps extends CustomStore, ExercisesStore {
   setEquipment: (equipment: EquipmentType) => void;
   setExperience: (experience: ExperienceType) => void;
 
-  // QUICK
   routine: RoutineSelectionType | null;
   setRoutine: (routine: RoutineSelectionType) => void;
   getQuickPayload: () => RoutinePayload | null;
 
-  // CUSTOM — datos
-  musculos: RoutineCustomType[];
+  musculos: DaySessionType[];
   diasEntrenamiento: number | null;
-  setMusculos: (musculos: RoutineCustomType[]) => void;
+  setMusculos: (musculos: DaySessionType[]) => void;
   setDiasEntrenamiento: (dias: number) => void;
 
-  // CUSTOM — payloads separados por sub-modo
   getCustomSinglePayload: () => CustomSinglePayload | null;
   getCustomPlanPayload: () => CustomPlanPayload | null;
 
-  // RESET
   reset: () => void;
 }
-
-// Estado inicial
 
 const initialState = {
   mode: null as RoutineMode | null,
@@ -62,7 +51,7 @@ const initialState = {
   equipment: null as EquipmentType | null,
   experience: null as ExperienceType | null,
   routine: null as RoutineSelectionType | null,
-  musculos: [] as RoutineCustomType[],
+  musculos: [] as DaySessionType[], // ✅ Cambiado
   diasEntrenamiento: null as number | null,
 };
 
@@ -74,7 +63,6 @@ function logPayload(
   console.log(JSON.stringify(payload, null, 2));
 }
 
-// Store
 export const useBuildRoutineStore = create<BuildRoutineStoreProps>(
   (set, get) => ({
     ...initialState,
@@ -84,26 +72,21 @@ export const useBuildRoutineStore = create<BuildRoutineStoreProps>(
       get as Parameters<typeof createExercisesStore>[1],
     ),
 
-    // MODE
     setMode: (mode) => set({ mode }),
 
-    // ── SHARED
     setGoal: (goal) => set({ goal }),
     setEquipment: (equipment) => set({ equipment }),
     setExperience: (experience) => set({ experience }),
 
-    // ── QUICK
     setRoutine: (routine) =>
       set((state) => ({
         routine: state.routine === routine ? null : routine,
       })),
     getQuickPayload: () => getQuickPayload(get()),
 
-    // ── CUSTOM — datos
     setMusculos: (musculos) => set({ musculos }),
     setDiasEntrenamiento: (dias) => set({ diasEntrenamiento: dias }),
 
-    // ── CUSTOM — sesión única
     getCustomSinglePayload: (): CustomSinglePayload | null => {
       const { goal, equipment, experience, musculos, exercisePlan } = get();
 
@@ -115,6 +98,7 @@ export const useBuildRoutineStore = create<BuildRoutineStoreProps>(
       exercisePlan.forEach((dayPlan) => {
         dayPlan.exercises.forEach((ex) => {
           const key = ex.muscle;
+          if (!key) return; // ✅ Guard para evitar índice undefined
           if (!ejerciciosPorMusculo[key]) {
             ejerciciosPorMusculo[key] = [];
           }
@@ -128,7 +112,7 @@ export const useBuildRoutineStore = create<BuildRoutineStoreProps>(
         objetivo: goal,
         nivel: experience,
         equipamiento: equipment,
-        musculos: musculos as DaySessionType[],
+        musculos, // ✅ Sin cast, ya es DaySessionType[]
         ejerciciosPorMusculo,
       };
 
@@ -136,7 +120,6 @@ export const useBuildRoutineStore = create<BuildRoutineStoreProps>(
       return payload;
     },
 
-    // ── CUSTOM — plan semanal
     getCustomPlanPayload: (): CustomPlanPayload | null => {
       const {
         goal,
@@ -172,7 +155,6 @@ export const useBuildRoutineStore = create<BuildRoutineStoreProps>(
       return payload;
     },
 
-    // ── RESET
     reset: () =>
       set({
         ...initialState,

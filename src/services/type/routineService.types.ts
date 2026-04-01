@@ -1,5 +1,5 @@
-import { RoutineExercise } from "@/types/routine/exercise.type";
-import { RoutineSession } from "@/types/routine/session.type";
+import { RoutineExercise } from "@/types/routine";
+import { RoutineSession } from "@/types/routine";
 
 type Mode = "quick" | "custom";
 

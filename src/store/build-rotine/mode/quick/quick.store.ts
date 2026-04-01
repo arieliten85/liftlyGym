@@ -6,7 +6,7 @@ import {
     RoutinePayload,
     RoutineQuickType,
     RoutineSelectionType,
-} from "@/features/build-routine/type/routine-builder.types";
+} from "@/types/routine";
 
 export const isQuickType = (
   routine: string | null,

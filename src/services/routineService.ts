@@ -1,5 +1,5 @@
 import axiosClient from "@/api/axiosClient";
-import { RoutinePayload } from "@/features/build-routine/type/routine-builder.types";
+import { RoutinePayload } from "@/types/routine";
 import {
   CompletedRoutinePayload,
   Routine,

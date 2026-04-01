@@ -5,8 +5,8 @@ import { useLoadingStore } from "@/store/loading/loadingStore";
 import { useNotificationStore } from "@/store/notification/usenotificationstore";
 import { useRoutineStore } from "@/store/routine/useRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
+import { ExerciseProgress, RoutineExercise } from "@/types/routine";
 
-import { ExerciseProgress } from "@/types/routine/routine.type";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, {
@@ -107,7 +107,9 @@ export default function WorkoutSessionScreen() {
   }, []);
 
   const completedCount = useMemo(
-    () => session?.exercises.filter((e) => e.completed).length ?? 0,
+    () =>
+      session?.exercises.filter((e: ExerciseProgress) => e.completed).length ??
+      0,
     [session],
   );
 
@@ -116,30 +118,36 @@ export default function WorkoutSessionScreen() {
     [session, routine, completedCount],
   );
 
-  // Encontrar el primer ejercicio no completado
   const firstIncompleteExerciseIndex = useMemo(() => {
     if (!session || !routine) return null;
-    const incompleteIndex = session.exercises.findIndex((e) => !e.completed);
+    const incompleteIndex = session.exercises.findIndex(
+      (e: ExerciseProgress) => !e.completed,
+    );
     return incompleteIndex !== -1 ? incompleteIndex : null;
   }, [session, routine]);
 
   const seriesProgress = useMemo(
     () =>
-      session?.exercises.find((e) => e.exerciseIndex === seriesIndex) ?? null,
+      session?.exercises.find(
+        (e: ExerciseProgress) => e.exerciseIndex === seriesIndex,
+      ) ?? null,
     [seriesIndex, session],
   );
+
   const seriesExercise = useMemo(
     () =>
       seriesIndex !== null && routine ? routine.exercises[seriesIndex] : null,
     [seriesIndex, routine],
   );
+
   const summaryExerciseProgress = useMemo(
     () =>
       session?.exercises.find(
-        (e) => e.exerciseIndex === summaryExerciseIndex,
+        (e: ExerciseProgress) => e.exerciseIndex === summaryExerciseIndex,
       ) ?? null,
     [summaryExerciseIndex, session],
   );
+
   const summaryExerciseData = useMemo(
     () =>
       summaryExerciseIndex !== null && routine
@@ -150,7 +158,8 @@ export default function WorkoutSessionScreen() {
 
   const handleGoBack = useCallback(() => {
     const hasProgress =
-      session?.exercises.some((e) => e.setLogs.length > 0) ?? false;
+      session?.exercises.some((e: ExerciseProgress) => e.setLogs.length > 0) ??
+      false;
 
     const goBack = () => {
       resetSession();
@@ -178,9 +187,15 @@ export default function WorkoutSessionScreen() {
 
   const totalEstimatedMin = useMemo(() => {
     if (!routine) return 0;
-    const totalSets = routine.exercises.reduce((acc, e) => acc + e.sets, 0);
+    const totalSets = routine.exercises.reduce(
+      (acc: number, e: RoutineExercise) => acc + e.sets,
+      0,
+    );
     const avgRestMin =
-      routine.exercises.reduce((acc, e) => acc + e.restSeconds, 0) /
+      routine.exercises.reduce(
+        (acc: number, e: RoutineExercise) => acc + e.restSeconds,
+        0,
+      ) /
       routine.exercises.length /
       60;
     return Math.round(totalSets * (1.5 + avgRestMin));
@@ -189,7 +204,7 @@ export default function WorkoutSessionScreen() {
   const handleSelectExercise = useCallback(
     (index: number) => {
       const progress = session?.exercises.find(
-        (e) => e.exerciseIndex === index,
+        (e: ExerciseProgress) => e.exerciseIndex === index,
       );
       if (progress?.completed) return;
       setSelectedExerciseIndex((prev) => (prev === index ? null : index));
@@ -200,7 +215,7 @@ export default function WorkoutSessionScreen() {
   const handleStartExercise = useCallback(
     (index: number) => {
       const progress = session?.exercises.find(
-        (e) => e.exerciseIndex === index,
+        (e: ExerciseProgress) => e.exerciseIndex === index,
       );
       if (progress?.completed) return;
       setSelectedExerciseIndex(index);
@@ -256,7 +271,6 @@ export default function WorkoutSessionScreen() {
   );
 
   const handleFinishRoutine = useCallback(() => {
-    // Si todos los ejercicios están completados, finalizar directamente sin confirmación
     if (allCompleted) {
       setElapsedMin(Math.round((Date.now() - sessionStartRef.current) / 60000));
       setWasAbandoned(false);
@@ -264,7 +278,6 @@ export default function WorkoutSessionScreen() {
       return;
     }
 
-    // Si hay ejercicios incompletos, mostrar confirmación antes de finalizar
     Alert.alert(
       "Finalizar rutina",
       completedCount > 0
@@ -436,8 +449,6 @@ export default function WorkoutSessionScreen() {
       ? (completedCount / routine.exercises.length) * 100
       : 0;
 
-  // Determinar el texto y acción del botón
-
   return (
     <View style={[styles.root, { backgroundColor: colors.bg }]}>
       <RoutineHeader title={"Entrenamiento"} onBack={handleGoBack} />
@@ -500,9 +511,9 @@ export default function WorkoutSessionScreen() {
           </Text>
         </Text>
 
-        {routine.exercises.map((ex, idx) => {
+        {routine.exercises.map((ex: RoutineExercise, idx: number) => {
           const progress = session?.exercises.find(
-            (e) => e.exerciseIndex === idx,
+            (e: ExerciseProgress) => e.exerciseIndex === idx,
           );
           const isCompleted = progress?.completed ?? false;
           return (

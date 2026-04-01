@@ -1,7 +1,7 @@
 import { ImageSection } from "@/features/build-routine/components/ImageSection";
 import { estimateDuration } from "@/features/build-routine/utils/estimateDuration";
 import { PrimaryButton } from "@/shared/components/PrimaryButton";
-import { Routine } from "@/types/routine/session.type";
+import { Routine } from "@/types/routine";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useEffect, useRef } from "react";
 import {

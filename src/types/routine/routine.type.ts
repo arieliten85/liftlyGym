@@ -1,4 +1,4 @@
-import { ExerciseProgress } from "@/features/build-routine/type/routine-builder.types";
+import { ExerciseProgress } from "@/types/routine";
 
 export interface RoutineExercise {
   name: string;

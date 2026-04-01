@@ -33,7 +33,7 @@ function NavigationStack() {
           contentStyle: { backgroundColor: theme.background },
         }}
       >
-        <Stack.Screen name="index" options={{ headerShown: false }} />
+        {/* <Stack.Screen name="index" options={{ headerShown: false }} /> */}
         <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
         <Stack.Screen name="(app)" options={{ headerShown: false }} />
       </Stack>

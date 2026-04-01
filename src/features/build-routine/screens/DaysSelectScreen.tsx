@@ -1,4 +1,4 @@
-import { WeekDayKey } from "@/features/build-routine/type/routine-builder.types";
+import { WeekDayKey } from "@/types/routine";
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
 import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";

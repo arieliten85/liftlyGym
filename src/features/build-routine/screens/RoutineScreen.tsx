@@ -3,7 +3,7 @@ import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
 import { useNotificationStore } from "@/store/notification/usenotificationstore";
 import { useRoutineStore } from "@/store/routine/useRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { Routine } from "@/types/routine/session.type";
+import { Routine } from "@/types/routine";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useRef } from "react";

@@ -2,7 +2,7 @@ import {
   DayExercisePlan,
   RoutineExercise,
   WeekDayKey,
-} from "@/features/build-routine/type/routine-builder.types";
+} from "@/types/routine";
 import { StoreApi } from "zustand";
 
 export interface ExercisesStore {

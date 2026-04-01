@@ -2,7 +2,7 @@ import {
   Exercise,
   RoutineExercise,
   WeekDayKey,
-} from "@/features/build-routine/type/routine-builder.types";
+} from "@/types/routine";
 import { ExerciseService } from "@/services/exerciseService";
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
 import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";

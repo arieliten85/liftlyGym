@@ -1,6 +1,6 @@
 // shared/components/MuscleSelectionCard.tsx
 import { ROUTINE_IMAGES } from "@/features/build-routine/constants/routine-images.constants";
-import { DaySessionType } from "@/features/build-routine/type/routine-builder.types";
+import { DaySessionType } from "@/types/routine";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 

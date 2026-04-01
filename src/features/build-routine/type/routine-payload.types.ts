@@ -1,9 +1,9 @@
 import {
-    EquipmentType,
-    ExperienceType,
-    GoalType,
-    RoutineSelectionType,
-} from "./routine-builder.types";
+  EquipmentType,
+  ExperienceType,
+  GoalType,
+  RoutineSelectionType,
+} from "@/types";
 
 export interface RoutinePayload {
   modo: "quick" | "custom";

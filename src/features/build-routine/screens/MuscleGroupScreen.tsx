@@ -1,6 +1,6 @@
 import { QUICK_OPTION_DATA } from "@/features/build-routine/constants/routine-builder.constants";
 import { ROUTINE_IMAGES } from "@/features/build-routine/constants/routine-images.constants";
-import { RoutineSelectionOption } from "@/features/build-routine/type/routine-builder.types";
+import { RoutineSelectionOption } from "@/types/routine";
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
 import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
 

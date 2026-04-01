@@ -4,7 +4,7 @@ import { useUserStore } from "@/features/auth/store/userStore";
 import {
   CustomPlanPayload,
   CustomSinglePayload,
-} from "@/features/build-routine/type/routine-builder.types";
+} from "@/types/routine";
 import { Badge } from "@/shared/components/Badge";
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
 import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";

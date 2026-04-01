@@ -1,5 +1,5 @@
 import axiosClient from "@/api/axiosClient";
-import { Exercise } from "@/features/build-routine/type/routine-builder.types";
+import { Exercise } from "@/types/routine";
 
 export interface ExerciseOption {
   name: string;
