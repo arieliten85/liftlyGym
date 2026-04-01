@@ -5,16 +5,10 @@ import { useRoutineStore } from "@/store/routine/useRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { router } from "expo-router";
 import { useEffect, useRef } from "react";
-import {
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
-} from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ParticleBackground } from "../components/ParticleBackground";
 
-import ImageLoading from "../../../../assets/loading/logo_loading.png";
+const ImageLoading = require("../../../../assets/loading/logo_loading.png");
 
 const routineService = new RoutineService();
 
