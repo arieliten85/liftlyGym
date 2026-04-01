@@ -1,9 +1,10 @@
 import axiosClient from "@/api/axiosClient";
-import { RoutinePayload } from "@/types/routine";
+
 import {
   CompletedRoutinePayload,
   Routine,
   RoutineExercise,
+  RoutinePayload,
 } from "@/types/routine";
 import {
   CompleteSessionResponse,
