@@ -8,17 +8,17 @@ import {
 
 export const GOAL_OPTION_DATA: GoalOption[] = [
   {
-    type: "fuerza",
+    type: "strength",
     title: "FUERZA",
     description: "Aumenta tu fuerza máxima y rendimiento",
   },
   {
-    type: "hipertrofia",
+    type: "hypertrophy",
     title: "HIPERTROFIA",
     description: "Desarrollo muscular y definición",
   },
   {
-    type: "masa",
+    type: "mass",
     title: "MASA MUSCULAR",
     description: "Gana volumen muscular significativo",
   },
@@ -56,17 +56,17 @@ export const EQUIPAMENTE_OPTION_DATA: EquipmentOption[] = [
 
 export const EXPERIENCE_OPTION_DATA: ExperienceOption[] = [
   {
-    type: "principiante",
+    type: "beginner",
     title: "PRINCIPIANTE",
     description: "0 a 1 año - Fundamentos básicos",
   },
   {
-    type: "intermedio",
+    type: "intermediate",
     title: "INTERMEDIO",
     description: "1 a 3 años - Desarrollo independiente",
   },
   {
-    type: "avanzado",
+    type: "advanced",
     title: "AVANZADO",
     description: "3 años en adelante - Experto y líder técnico",
   },
@@ -74,12 +74,12 @@ export const EXPERIENCE_OPTION_DATA: ExperienceOption[] = [
 
 export const MUSCLE_OPTION_DATA: RoutineCustomOption[] = [
   {
-    type: "pecho",
+    type: "chest",
     title: "PECHO",
     image: require("../../../../assets/muscle-group/chess.png"),
   },
   {
-    type: "espalda",
+    type: "back",
     title: "ESPALDA",
     image: require("../../../../assets/muscle-group/back.png"),
   },
@@ -94,12 +94,12 @@ export const MUSCLE_OPTION_DATA: RoutineCustomOption[] = [
     image: require("../../../../assets/muscle-group/triceps.png"),
   },
   {
-    type: "hombros",
+    type: "shoulders",
     title: "HOMBROS",
     image: require("../../../../assets/muscle-group/hombros.png"),
   },
   {
-    type: "piernas",
+    type: "legs",
     title: "PIERNAS",
     image: require("../../../../assets/muscle-group/legs.png"),
   },
@@ -110,42 +110,51 @@ export const QUICK_OPTION_DATA: RoutineQuickOption[] = [
     type: "push",
     label: "Push",
     subtitle: "Pecho · Hombros · Tríceps",
-    muscles: ["pecho", "hombro", "triceps"],
+    muscles: ["chest", "shoulders", "triceps"],
     icon: "arrow-up-circle-outline",
   },
   {
     type: "pull",
     label: "Pull",
     subtitle: "Espalda · Bíceps",
-    muscles: ["espalda", "biceps"],
+    muscles: ["back", "biceps"],
     icon: "arrow-down-circle-outline",
   },
   {
     type: "legs",
     label: "Legs",
     subtitle: "Cuádriceps · Isquios · Glúteos",
-    muscles: ["piernas"],
+    muscles: ["legs", "glutes"],
     icon: "flash-outline",
   },
   {
     type: "upper",
     label: "Upper Body",
     subtitle: "Push + Pull — todo el tren superior",
-    muscles: ["pecho", "espalda", "hombro", "biceps", "triceps"],
+    muscles: ["chest", "back", "shoulders", "biceps", "triceps"],
     icon: "body-outline",
   },
   {
     type: "lower",
     label: "Lower Body",
     subtitle: "Piernas completo — quad, femoral, glúteo",
-    muscles: ["piernas"],
+    muscles: ["legs", "glutes"],
     icon: "walk-outline",
   },
   {
     type: "fullbody",
     label: "Full Body",
-    subtitle: "Todos los grupos — alta frecuencia, bajo volumen por músculo",
-    muscles: ["pecho", "espalda", "hombro", "biceps", "triceps", "piernas"],
+    subtitle: "Todos los grupos — alta frecuencia, bajo volumen",
+    muscles: [
+      "chest",
+      "back",
+      "shoulders",
+      "biceps",
+      "triceps",
+      "legs",
+      "glutes",
+      "core",
+    ],
     icon: "infinite-outline",
   },
 ];

@@ -1,10 +1,8 @@
 import { ImageSourcePropType } from "react-native";
 
-export type GoalType = "fuerza" | "hipertrofia" | "masa";
-export type ExperienceType = "principiante" | "intermedio" | "avanzado";
+export type GoalType = "strength" | "hypertrophy" | "mass";
+export type ExperienceType = "beginner" | "intermediate" | "advanced";
 export type EquipmentType = "gym" | "dumbbells" | "basic" | "bodyweight";
-
-// Tipos de rutina
 
 export type RoutineQuickType =
   | "push"
@@ -15,21 +13,21 @@ export type RoutineQuickType =
   | "fullbody";
 
 export type RoutineCustomType =
-  | "pecho"
-  | "espalda"
+  | "chest"
+  | "back"
   | "biceps"
   | "triceps"
-  | "hombros"
-  | "piernas"
-  | "gluteos"
+  | "shoulders"
+  | "legs"
+  | "glutes"
   | "core"
-  | "pecho_triceps"
-  | "espalda_biceps"
-  | "pecho_hombros"
-  | "hombros_triceps"
-  | "espalda_hombros"
+  | "chest_triceps"
+  | "back_biceps"
+  | "chest_shoulders"
+  | "shoulders_triceps"
+  | "back_shoulders"
   | "biceps_triceps"
-  | "piernas_hombros";
+  | "legs_shoulders";
 
 export type RoutineSelectionType = RoutineQuickType | RoutineCustomType;
 

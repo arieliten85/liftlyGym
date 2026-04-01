@@ -35,24 +35,22 @@ const DAY_LABELS: Record<WeekDayKey, string> = {
 };
 
 const ROUTINE_TYPE_TO_MUSCLES: Record<string, string[]> = {
-  push: ["pecho", "hombros", "triceps"],
-  pull: ["espalda", "biceps"],
-  legs: ["piernas", "gluteos", "core"],
-  upper: ["pecho", "espalda", "hombros", "biceps", "triceps"],
-  lower: ["piernas", "gluteos", "core"],
+  push: ["chest", "shoulders", "triceps"],
+  pull: ["back", "biceps"],
+  legs: ["legs", "glutes", "core"],
+  upper: ["chest", "back", "shoulders", "biceps", "triceps"],
+  lower: ["legs", "glutes", "core"],
   fullbody: [
-    "pecho",
-    "espalda",
-    "hombros",
+    "chest",
+    "back",
+    "shoulders",
     "biceps",
     "triceps",
-    "piernas",
-    "gluteos",
+    "legs",
+    "glutes",
     "core",
   ],
 };
-
-// ─── Colors hook ──────────────────────────────────────────────────────────────
 
 function useColors() {
   const { theme, isDark } = useAppTheme();
@@ -69,8 +67,6 @@ function useColors() {
 }
 
 type Colors = ReturnType<typeof useColors>;
-
-// ─── Config Modal (flotante, maneja su propio teclado) ────────────────────────
 
 type ConfigModalProps = {
   visible: boolean;
@@ -99,7 +95,6 @@ function ConfigModal({
   const repsRef = useRef<TextInput>(null);
   const restRef = useRef<TextInput>(null);
 
-  // sincronizar valores cuando se abre con datos distintos
   useEffect(() => {
     if (visible) {
       setSets(initialSets);
@@ -241,8 +236,6 @@ function ConfigModal({
   );
 }
 
-// ─── Exercise Card ────────────────────────────────────────────────────────────
-
 type ExerciseCardProps = {
   exercise: Exercise;
   selectedData: RoutineExercise | undefined;
@@ -281,7 +274,6 @@ function ExerciseCard({
         },
       ]}
     >
-      {/* area principal */}
       <TouchableOpacity
         onPress={onPress}
         activeOpacity={0.8}
@@ -319,7 +311,6 @@ function ExerciseCard({
         </View>
       </TouchableOpacity>
 
-      {/* boton derecho — completamente separado del area principal */}
       <TouchableOpacity
         onPress={selected ? onRemove : onPress}
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
@@ -334,8 +325,6 @@ function ExerciseCard({
     </View>
   );
 }
-
-// ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function ExerciseSelectScreen() {
   const colors = useColors();
@@ -386,9 +375,9 @@ export default function ExerciseSelectScreen() {
     try {
       // Expandir tipos quick a músculos reales
       const resolvedMuscles = muscles.flatMap(
-        (m) => ROUTINE_TYPE_TO_MUSCLES[m] ?? [m], // si ya es un músculo real, lo deja igual
+        (m) => ROUTINE_TYPE_TO_MUSCLES[m] ?? [m],
       );
-      // Deduplicar por si acaso
+
       const uniqueMuscles = [...new Set(resolvedMuscles)];
 
       const all: Exercise[] = [];
@@ -418,13 +407,13 @@ export default function ExerciseSelectScreen() {
     }
   };
 
-  // abre el modal para agregar (valores por defecto)
+  // abre el modal para agregar
   const openAdd = (exercise: Exercise) => {
     setModalInitial({ sets: "3", reps: "10", rest: "60" });
     setModalExercise(exercise);
   };
 
-  // abre el modal para editar (valores guardados)
+  // abre el modal para editar
   const openEdit = (exercise: Exercise, saved: RoutineExercise) => {
     setModalInitial({
       sets: saved.sets.toString(),
@@ -590,7 +579,6 @@ export default function ExerciseSelectScreen() {
         </View>
       </OnboardingLayout>
 
-      {/* modal fuera del layout para que no compita con nada */}
       <ConfigModal
         visible={modalVisible}
         exercise={modalExercise}
@@ -605,8 +593,6 @@ export default function ExerciseSelectScreen() {
   );
 }
 
-//--------Helper
-// ─── Fuera del componente: helper para agrupar ─────────────────────────────
 function groupByMuscle(exercises: Exercise[]): Record<string, Exercise[]> {
   return exercises.reduce(
     (acc, ex) => {
@@ -619,17 +605,15 @@ function groupByMuscle(exercises: Exercise[]): Record<string, Exercise[]> {
 }
 
 const MUSCLE_LABELS: Record<string, string> = {
-  pecho: "Pecho",
-  espalda: "Espalda",
-  hombros: "Hombros",
+  chest: "Pecho",
+  back: "Espalda",
+  shoulders: "Hombros",
   biceps: "Bíceps",
   triceps: "Tríceps",
-  piernas: "Piernas",
-  gluteos: "Glúteos",
+  legs: "Piernas",
+  glutes: "Glúteos",
   core: "Core",
 };
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -641,7 +625,6 @@ const styles = StyleSheet.create({
 
   scrollContent: { paddingBottom: token.spacing.xl },
 
-  // card
   card: {
     flexDirection: "row",
     alignItems: "center",
@@ -669,7 +652,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  // modal flotante
   modalOverlay: {
     flex: 1,
     justifyContent: "flex-end",
@@ -727,7 +709,6 @@ const styles = StyleSheet.create({
   },
   modalBtnText: { fontSize: 14 },
 
-  // misc
   errorBox: {
     padding: token.spacing.md,
     borderRadius: token.radius.md,

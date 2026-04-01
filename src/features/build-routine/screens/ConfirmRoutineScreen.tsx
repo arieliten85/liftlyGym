@@ -13,16 +13,16 @@ const GOAL_META: Record<
   string,
   { description: string; icon: keyof typeof Ionicons.glyphMap }
 > = {
-  fuerza: {
+  strength: {
     description: "Cargas altas, pocas reps. Cada serie cuenta.",
     icon: "barbell-outline",
   },
-  hipertrofia: {
+  hypertrophy: {
     description:
       "Volumen moderado, tensión sostenida. El músculo crece en la constancia.",
     icon: "trending-up-outline",
   },
-  masa: {
+  mass: {
     description:
       "Progresión de carga semana a semana. El volumen es tu mejor aliado.",
     icon: "albums-outline",
@@ -30,18 +30,17 @@ const GOAL_META: Record<
 };
 
 const LEVEL_TIPS: Record<string, string> = {
-  principiante:
-    "Enfocate en aprender la técnica correcta. El peso viene después.",
-  intermedio:
+  beginner: "Enfocate en aprender la técnica correcta. El peso viene después.",
+  intermediate:
     "Ya tenés la base. Es momento de aumentar el volumen progresivamente.",
-  avanzado:
+  advanced:
     "Priorizá la recuperación y la periodización para seguir progresando.",
 };
 
 const LEVEL_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
-  principiante: "leaf-outline",
-  intermedio: "flash-outline",
-  avanzado: "flame-outline",
+  beginner: "leaf-outline",
+  intermediate: "flash-outline",
+  advanced: "flame-outline",
 };
 
 export default function ConfirmRoutineScreen() {
@@ -65,9 +64,9 @@ export default function ConfirmRoutineScreen() {
     ? "rgba(46,207,190,0.2)"
     : "rgba(46,207,190,0.25)";
 
-  const goalMeta = GOAL_META[goal ?? "hipertrofia"];
-  const levelTip = LEVEL_TIPS[experience ?? "principiante"];
-  const levelIcon = LEVEL_ICON[experience ?? "principiante"];
+  const goalMeta = GOAL_META[goal ?? "hypertrophy"];
+  const levelTip = LEVEL_TIPS[experience ?? "beginner"];
+  const levelIcon = LEVEL_ICON[experience ?? "beginner"];
   const isReady = !!(goal && equipment && experience && routine);
 
   const handleConfirm = () => {
