@@ -1,9 +1,8 @@
-import { Ionicons } from "@expo/vector-icons";
 import { ImageSourcePropType } from "react-native";
 
 export type GoalType = "fuerza" | "hipertrofia" | "masa";
 export type ExperienceType = "principiante" | "intermedio" | "avanzado";
-export type EquipmentType = "gym" | "home";
+export type EquipmentType = "gym" | "dumbbells" | "basic" | "bodyweight";
 
 // Tipos de rutina
 
@@ -192,7 +191,7 @@ export interface EquipmentOption {
   type: EquipmentType;
   title: string;
   description: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  image: any;
 }
 
 export interface ExperienceOption {

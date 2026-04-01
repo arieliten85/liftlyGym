@@ -4,7 +4,7 @@ import {
   GoalOption,
   RoutineCustomOption,
   RoutineQuickOption,
-} from "../type/routine-builder.types";
+} from "@/types";
 
 export const GOAL_OPTION_DATA: GoalOption[] = [
   {
@@ -27,15 +27,30 @@ export const GOAL_OPTION_DATA: GoalOption[] = [
 export const EQUIPAMENTE_OPTION_DATA: EquipmentOption[] = [
   {
     type: "gym",
-    title: "GYM",
-    description: "Acceso a máquinas, pesas y equipamiento completo",
-    icon: "barbell-outline",
+    title: "GIMNASIO COMPLETO",
+    description:
+      "Máquinas, barras y mancuernas para un entrenamiento sin límites",
+    image: require("../../../../assets/images/equipament/gym.png"),
+  },
+
+  {
+    type: "basic",
+    title: "EQUIPAMIENTO BÁSICO",
+    description: "Bandas elásticas y peso corporal para una rutina completa",
+    image: require("../../../../assets/images/equipament/basic.png"),
+  },
+
+  {
+    type: "dumbbells",
+    title: "MANCUERNAS EN CASA",
+    description: "Entrená con mancuernas y cubrí todos los grupos musculares",
+    image: require("../../../../assets/images/equipament/dumbbells.png"),
   },
   {
-    type: "home",
-    title: "EN CASA",
-    description: "Entrena con peso corporal o equipamiento básico",
-    icon: "home-outline",
+    type: "bodyweight",
+    title: "SOLO PESO CORPORAL",
+    description: "Entrená en cualquier lugar usando solo tu cuerpo",
+    image: require("../../../../assets/images/equipament/bodyweight.png"),
   },
 ];
 

@@ -1,12 +1,28 @@
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
-
 import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
+import { EquipmentType } from "@/types/routine";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { EQUIPAMENTE_OPTION_DATA } from "../constants/routine-builder.constants";
+
+const EQUIPMENT_META: Record<EquipmentType, { tag: string; pills: string[] }> =
+  {
+    gym: { tag: "Acceso completo", pills: ["Pesas", "Máquinas", "Cables"] },
+    dumbbells: { tag: "Equipamiento básico", pills: ["Mancuernas", "Banco"] },
+    basic: { tag: "Mínimo equipo", pills: ["Barra", "Mancuernas", "Bandas"] },
+    bodyweight: { tag: "Sin equipo", pills: ["Cuerpo", "Bandas"] },
+  };
 
 export default function EquipmentScreen() {
   const { theme, isDark } = useAppTheme();
@@ -22,16 +38,8 @@ export default function EquipmentScreen() {
   };
 
   const TEAL = theme.primary;
-  const cardBg = isDark ? "#0C1119" : theme.card;
-  const cardBgSel = isDark ? "#091714" : "#EBF9F7";
-  const borderDef = isDark ? "rgba(46,207,190,0.15)" : theme.border;
-  const borderSel = isDark ? "rgba(46,207,190,0.5)" : theme.primary;
   const textColor = isDark ? "#DFF0EE" : theme.text;
   const subColor = isDark ? "#4A6A66" : theme.textSecondary;
-  const titleSel = TEAL;
-  const descSel = isDark ? "#B8D4D0" : theme.text;
-
-  const styles = createStyles();
 
   return (
     <OnboardingLayout
@@ -42,179 +50,255 @@ export default function EquipmentScreen() {
       <View style={styles.container}>
         <View style={styles.headerContainer}>
           <Text style={[styles.sectionTitle, { color: textColor }]}>
-            ¿Dónde vas a entrenar?
+            ¿Dónde entrenás?
           </Text>
           <Text style={[styles.sectionSubtitle, { color: subColor }]}>
-            Selecciona el equipamiento disponible para personalizar tu plan
+            Seleccioná el equipamiento disponible para personalizar tu plan
           </Text>
         </View>
 
-        {/* Cards */}
-        <View style={styles.optionsWrapper}>
-          <View style={styles.optionsContainer}>
-            {EQUIPAMENTE_OPTION_DATA.map((option) => {
-              const isSelected = selected === option.type;
-              return (
-                <TouchableOpacity
-                  key={option.type}
-                  style={[
-                    styles.goalCard,
-                    { backgroundColor: cardBg, borderColor: borderDef },
-                    isSelected && {
-                      backgroundColor: cardBgSel,
-                      borderColor: borderSel,
-                      shadowColor: TEAL,
-                    },
-                  ]}
-                  onPress={() => setEquipment(option.type)}
-                  activeOpacity={0.8}
-                >
-                  {/* Selected top accent line */}
-                  {isSelected && (
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={styles.cardList}
+          showsVerticalScrollIndicator={false}
+        >
+          {EQUIPAMENTE_OPTION_DATA.map((option) => {
+            const isSelected = selected === option.type;
+            const meta = EQUIPMENT_META[option.type];
+
+            const cardBg = isSelected
+              ? isDark
+                ? "#0D2420"
+                : "#EBF9F7"
+              : isDark
+                ? "#0C1614"
+                : theme.card;
+
+            const borderColor = isSelected
+              ? isDark
+                ? "rgba(46,207,190,0.55)"
+                : TEAL
+              : isDark
+                ? "#1C3330"
+                : theme.border;
+
+            const fadeColors: [string, string, string] = isSelected
+              ? isDark
+                ? ["#0D2420", "rgba(13,36,32,0.82)", "rgba(13,36,32,0.0)"]
+                : ["#EBF9F7", "rgba(235,249,247,0.82)", "rgba(235,249,247,0.0)"]
+              : isDark
+                ? ["#0C1614", "rgba(12,22,20,0.82)", "rgba(12,22,20,0.0)"]
+                : [theme.card, `${theme.card}D0`, `${theme.card}00`];
+
+            const tagColor = isSelected ? TEAL : subColor;
+            const titleColor = isSelected ? TEAL : textColor;
+            const descColor = isSelected
+              ? isDark
+                ? "#8ECFC8"
+                : "#2A8C80"
+              : subColor;
+            const pillBorder = isSelected
+              ? isDark
+                ? "rgba(46,207,190,0.28)"
+                : "rgba(46,207,190,0.45)"
+              : isDark
+                ? "#1C3330"
+                : theme.border;
+            const pillText = isSelected
+              ? isDark
+                ? "#5DCAA5"
+                : "#0F6E56"
+              : subColor;
+            const imgOpacity = isSelected ? 0.65 : 0.35;
+
+            return (
+              <TouchableOpacity
+                key={option.type}
+                onPress={() => setEquipment(option.type)}
+                activeOpacity={0.82}
+                style={[
+                  styles.card,
+                  {
+                    backgroundColor: cardBg,
+                    borderColor,
+                    shadowColor: isSelected ? TEAL : "transparent",
+                  },
+                ]}
+              >
+                {isSelected && (
+                  <View style={[styles.topLine, { backgroundColor: TEAL }]} />
+                )}
+
+                <Image
+                  source={option.image}
+                  style={[styles.bgImage, { opacity: imgOpacity }]}
+                  resizeMode="cover"
+                />
+
+                <LinearGradient
+                  colors={fadeColors}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={StyleSheet.absoluteFillObject}
+                />
+
+                <View style={styles.content}>
+                  <View style={styles.tagRow}>
                     <View
-                      style={[styles.cardTopLine, { backgroundColor: TEAL }]}
+                      style={[styles.tagDot, { backgroundColor: tagColor }]}
                     />
-                  )}
-
-                  <View style={styles.cardContent}>
-                    {/* Icon badge */}
-                    <View
-                      style={[
-                        styles.cardIconWrap,
-                        {
-                          backgroundColor: isSelected
-                            ? isDark
-                              ? "rgba(46,207,190,0.12)"
-                              : "rgba(46,207,190,0.12)"
-                            : isDark
-                              ? "rgba(255,255,255,0.04)"
-                              : "rgba(0,0,0,0.04)",
-                          borderColor: isSelected
-                            ? isDark
-                              ? "rgba(46,207,190,0.35)"
-                              : "rgba(46,207,190,0.4)"
-                            : isDark
-                              ? "rgba(255,255,255,0.06)"
-                              : theme.border,
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name={option.icon}
-                        size={20}
-                        color={isSelected ? TEAL : subColor}
-                      />
-                    </View>
-
-                    <View style={styles.cardText}>
-                      <Text
-                        numberOfLines={1}
-                        style={[
-                          styles.goalTitle,
-                          { color: isSelected ? titleSel : textColor },
-                        ]}
-                      >
-                        {option.title}
-                      </Text>
-                      <Text
-                        numberOfLines={2}
-                        style={[
-                          styles.goalDescription,
-                          { color: isSelected ? descSel : subColor },
-                        ]}
-                      >
-                        {option.description}
-                      </Text>
-                    </View>
+                    <Text style={[styles.tagLabel, { color: tagColor }]}>
+                      {meta.tag}
+                    </Text>
                   </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
 
-        <View style={styles.bottomSpacer} />
+                  <Text style={[styles.cardTitle, { color: titleColor }]}>
+                    {option.title}
+                  </Text>
+
+                  {/* ← descripción eliminada */}
+
+                  <View style={styles.pillsRow}>
+                    {meta.pills.map((p) => (
+                      <View
+                        key={p}
+                        style={[styles.pill, { borderColor: pillBorder }]}
+                      >
+                        <Text style={[styles.pillText, { color: pillText }]}>
+                          {p}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+
+                {isSelected && (
+                  <View style={[styles.checkBadge, { backgroundColor: TEAL }]}>
+                    <Ionicons name="checkmark" size={12} color="#fff" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
     </OnboardingLayout>
   );
 }
 
-const createStyles = () =>
-  StyleSheet.create({
-    container: { flex: 1 },
+const styles = StyleSheet.create({
+  container: { flex: 1 },
 
-    particle: {
-      position: "absolute",
-      borderRadius: 2,
-      backgroundColor: "#2ECFBE",
-    },
+  headerContainer: {
+    marginBottom: token.spacing.sm,
+  },
+  sectionTitle: {
+    fontSize: token.typography.h2,
+    fontWeight: "bold",
+    marginBottom: token.spacing.xs / 2,
+  },
+  sectionSubtitle: {
+    fontSize: token.typography.bodySmall,
+    lineHeight: 20,
+  },
 
-    headerContainer: {
-      marginBottom: token.spacing.xl,
-      marginTop: token.spacing.xs,
-    },
+  cardList: {
+    gap: token.spacing.md,
+    paddingBottom: token.spacing.xl,
+  },
 
-    sectionTitle: {
-      fontSize: token.typography.h2,
-      fontWeight: "bold",
-      textAlign: "left",
-      marginBottom: token.spacing.xs / 2,
-    },
-    sectionSubtitle: {
-      fontSize: token.typography.bodySmall,
-      textAlign: "left",
-      lineHeight: 20,
-    },
+  card: {
+    height: 110, // era 130
+    borderRadius: 20,
+    borderWidth: 1.5,
+    overflow: "hidden",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.28,
+    shadowRadius: 16,
+    elevation: 6,
+  },
 
-    optionsWrapper: { flex: 1, justifyContent: "flex-start" },
-    optionsContainer: { gap: token.spacing.md },
+  topLine: {
+    position: "absolute",
+    top: 0,
+    left: "15%",
+    right: "35%",
+    height: 2,
+    borderRadius: 1,
+    opacity: 0.85,
+    zIndex: 10,
+  },
 
-    goalCard: {
-      width: "100%",
-      borderRadius: 16,
-      borderWidth: 1,
-      overflow: "hidden",
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.3,
-      shadowRadius: 12,
-      elevation: 6,
-    },
-    cardTopLine: {
-      height: 1.5,
-      width: "70%",
-      alignSelf: "center",
-      opacity: 0.6,
-      borderRadius: 1,
-    },
-    cardContent: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: token.spacing.lg,
-      paddingVertical: token.spacing.md,
-      gap: token.spacing.md,
-    },
-    cardIconWrap: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-      borderWidth: 1.5,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    cardText: { flex: 1 },
+  bgImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: "100%",
+    height: "100%",
+  },
 
-    goalTitle: {
-      fontSize: 18,
-      fontWeight: "bold",
-      letterSpacing: 0.5,
-      textAlign: "left",
-      marginBottom: 3,
-    },
-    goalDescription: {
-      fontSize: token.typography.bodySmall,
-      textAlign: "left",
-      lineHeight: 18,
-    },
+  content: {
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    gap: 6, // más espacio entre los 3 elementos
+    zIndex: 2,
+  },
 
-    bottomSpacer: { height: token.spacing.sm },
-  });
+  tagRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginBottom: 0, // gap del content ya lo maneja
+  },
+  tagDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+  },
+  tagLabel: {
+    fontSize: 9, // era 10
+    fontWeight: "800",
+    letterSpacing: 1.3,
+    textTransform: "uppercase",
+  },
+
+  cardTitle: {
+    fontSize: 20, // un poco más grande ahora que hay espacio
+    fontWeight: "800",
+    letterSpacing: 0.2,
+  },
+  cardDesc: {
+    fontSize: 11, // era 12
+    lineHeight: 15, // era 17
+    maxWidth: "60%",
+  },
+
+  pillsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 5,
+    marginTop: 0, // gap del content ya lo maneja
+  },
+  pill: {
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 7, // era 9
+    paddingVertical: 2, // era 3
+  },
+  pillText: {
+    fontSize: 9, // era 10
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
+  checkBadge: {
+    position: "absolute",
+    top: 12,
+    right: 14,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
+});
