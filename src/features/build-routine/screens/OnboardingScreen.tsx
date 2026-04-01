@@ -17,6 +17,7 @@ import {
   View,
 } from "react-native";
 
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ParticleBackground } from "../components/ParticleBackground";
 import { ImageSlider } from "../components/slider/ImageSlider";
 
@@ -42,6 +43,7 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const { theme, isDark } = useAppTheme();
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
+  const insets = useSafeAreaInsets();
 
   const bg = isDark ? "#070B12" : theme.background;
   const glowAlpha = isDark ? "rgba(46,207,190,0.055)" : "rgba(46,207,190,0.08)";
@@ -52,7 +54,13 @@ export default function OnboardingScreen() {
   return (
     <View style={[styles.container, { backgroundColor: bg }]}>
       <ParticleBackground isDark={isDark} glowAlpha={glowAlpha} />
-      <Animated.View style={[styles.header, isTablet && styles.headerTablet]}>
+      <Animated.View
+        style={[
+          styles.header,
+          { paddingTop: insets.top },
+          isTablet && styles.headerTablet,
+        ]}
+      >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 0 }}>
           <LiftlyIcon size={32} />
           <Text style={[styles.brandText, { color: brandColor }]}>Liftly</Text>

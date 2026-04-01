@@ -1,15 +1,16 @@
 // app/(onboarding)/(build-routine)/confirmCustom.tsx
 
 import { useUserStore } from "@/features/auth/store/userStore";
-import {
-  CustomPlanPayload,
-  CustomSinglePayload,
-} from "@/types/routine";
 import { Badge } from "@/shared/components/Badge";
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
 import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
+import {
+  CustomPlanPayload,
+  CustomSinglePayload,
+  EquipmentType,
+} from "@/types/routine";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
@@ -119,6 +120,13 @@ export default function ConfirmCustomScreen() {
     (acc, dp) => acc + dp.exercises.length,
     0,
   );
+
+  const textEquipament: Record<EquipmentType, string> = {
+    gym: "Gimnasio completo",
+    dumbbells: "Mancuernas",
+    basic: "Equipamiento básico",
+    bodyweight: "Peso corporal",
+  };
 
   const isReady = !!(goal && equipment && experience && customSubMode);
   const isNextDisabled =
@@ -257,7 +265,9 @@ export default function ConfirmCustomScreen() {
               <View style={styles.heroMeta}>
                 <Badge label={goal?.toUpperCase() ?? "—"} color="#FF7A59" />
                 <Badge
-                  label={equipment?.toUpperCase() ?? "—"}
+                  label={
+                    equipment ? textEquipament[equipment].toUpperCase() : "—"
+                  }
                   color="#A78BFA"
                   subtle
                 />
