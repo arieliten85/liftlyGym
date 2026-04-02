@@ -6,6 +6,7 @@ export interface RoutineExercise {
   reps: string;
   restSeconds: number;
   weight?: number;
+  muscle?: string;
 }
 
 export interface SetLog {

@@ -19,15 +19,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CustomExerciseHeader } from "../build-routine/components/CustomExerciseHeader";
-import {
-  ExerciseProgress,
-  RoutineExercise,
-} from "../build-routine/type/routine-builder.types";
+
+import { ExerciseProgress, RoutineExercise } from "@/types";
 import {
   formatRest,
   formatRestTime,
 } from "../build-routine/utils/formatRestTime";
-import { getMuscleFromName } from "../build-routine/utils/getMuscleFromName";
 
 interface ThemeColors {
   surface: string;
@@ -280,7 +277,6 @@ function SetHistoryRow({
   onEditRest?: () => void;
 }) {
   const isActive = status === "active";
-  const restAccent = isDark ? "#34D399" : "#059669";
 
   // 🎨 Fondo SIEMPRE neutro
   const bg = "transparent";
@@ -758,7 +754,7 @@ export function SeriesModal({
   useEffect(() => {
     if (!configVisible || !exercise) return;
 
-    const muscle = getMuscleFromName(exercise.name);
+    const muscle = exercise.muscle;
     if (!muscle) return;
 
     setLoadingExercises(true);
@@ -770,7 +766,6 @@ export function SeriesModal({
       .catch(console.error)
       .finally(() => setLoadingExercises(false));
   }, [configVisible, exercise]);
-
   useEffect(() => {
     if (visible && progress && exercise) {
       const dv = progress.displayValues;
@@ -1187,7 +1182,11 @@ export function SeriesModal({
               </Text>
             </View>
             <TouchableOpacity
-              onPress={() => setConfigVisible(false)}
+              onPress={() => {
+                setConfigVisible(false);
+                setSelectedExercise(null);
+                setShowExerciseSelector(false);
+              }}
               style={[
                 sty.headerBtn,
                 { backgroundColor: "#eeeaea55", borderColor: "#eeeaea75" },
@@ -1326,35 +1325,6 @@ export function SeriesModal({
               </View>
             )}
 
-            {!loadingExercises && exerciseOptions.length === 0 && (
-              <Text style={{ padding: 12, textAlign: "center" }}>
-                No hay ejercicios disponibles
-              </Text>
-            )}
-
-            {showExerciseSelector && (
-              <ScrollView style={{ maxHeight: 200 }}>
-                {loadingExercises ? (
-                  <ActivityIndicator style={{ marginVertical: 12 }} />
-                ) : (
-                  exerciseOptions.map((item) => (
-                    <TouchableOpacity
-                      key={item.name}
-                      onPress={() => {
-                        onReplaceExercise?.(item.name);
-                        setShowExerciseSelector(false);
-                      }}
-                      style={sty.exerciseItem}
-                    >
-                      <Text style={sty.exerciseItemText}>
-                        {item.name.replace(/_/g, " ")}
-                      </Text>
-                    </TouchableOpacity>
-                  ))
-                )}
-              </ScrollView>
-            )}
-
             {/* ─── SERIES ─── */}
             <SmallStepper
               label="Total de series"
@@ -1399,11 +1369,9 @@ export function SeriesModal({
             <PrimaryButton
               label="Listo"
               onPress={() => {
-                if (selectedExercise && selectedExercise !== exercise.name) {
-                  onReplaceExercise?.(selectedExercise);
-                }
-
                 setConfigVisible(false);
+                setSelectedExercise(null);
+                setShowExerciseSelector(false);
               }}
             />
           </View>

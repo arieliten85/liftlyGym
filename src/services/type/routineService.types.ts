@@ -1,5 +1,4 @@
-import { RoutineExercise } from "@/types/routine";
-import { RoutineSession } from "@/types/routine";
+import { RoutineExercise, RoutineSession } from "@/types";
 
 type Mode = "quick" | "custom";
 
