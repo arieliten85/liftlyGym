@@ -121,7 +121,7 @@ export const QUICK_OPTION_DATA: RoutineQuickOption[] = [
     icon: "arrow-down-circle-outline",
   },
   {
-    type: "legs",
+    type: "legs_quick",
     label: "Legs",
     subtitle: "Cuádriceps · Isquios · Glúteos",
     muscles: ["legs", "glutes"],

@@ -23,6 +23,8 @@ import { ROUTINE_TYPE_TO_MUSCLES } from "../constants/routineTypeToMuscles";
 
 const exerciseService = new ExerciseService();
 
+const SINGLE_DAY: WeekDayKey = "single";
+
 function useColors() {
   const { theme, isDark } = useAppTheme();
   return {
@@ -38,14 +40,21 @@ function useColors() {
 export default function ExerciseSelectScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { day } = useLocalSearchParams<{ day: WeekDayKey }>();
+
+  const { day, from } = useLocalSearchParams<{ day?: string; from?: string }>();
+
+  const isSingleMode = !day || day === "single";
+  const resolvedDay: WeekDayKey = isSingleMode
+    ? SINGLE_DAY
+    : (day as WeekDayKey);
 
   const weekPlan = useBuildRoutineStore((s) => s.weekPlan);
   const equipment = useBuildRoutineStore((s) => s.equipment);
+  const musculosStore = useBuildRoutineStore((s) => s.musculos);
 
   const selectedExercises = useBuildRoutineStore(
-    useShallow((s) =>
-      day ? (s.exercisePlan.find((p) => p.day === day)?.exercises ?? []) : [],
+    useShallow(
+      (s) => s.exercisePlan.find((p) => p.day === resolvedDay)?.exercises ?? [],
     ),
   );
 
@@ -58,7 +67,6 @@ export default function ExerciseSelectScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // modal
   const [modalExercise, setModalExercise] = useState<Exercise | null>(null);
   const [modalInitial, setModalInitial] = useState({
     sets: "3",
@@ -68,8 +76,13 @@ export default function ExerciseSelectScreen() {
 
   const modalVisible = modalExercise !== null;
 
-  const dayPlan = weekPlan.find((p) => p.day === day);
-  const muscles = dayPlan?.muscles ?? [];
+  const muscles = isSingleMode
+    ? musculosStore
+    : (weekPlan.find((p) => p.day === resolvedDay)?.muscles ?? []);
+
+  const screenTitle = isSingleMode
+    ? "Ejercicios · Sesión"
+    : `Ejercicios · ${DAY_LABELS[resolvedDay] ?? resolvedDay}`;
 
   useEffect(() => {
     if (muscles.length > 0) loadExercises();
@@ -85,13 +98,12 @@ export default function ExerciseSelectScreen() {
       const resolved = muscles.flatMap(
         (m) => ROUTINE_TYPE_TO_MUSCLES[m] ?? [m],
       );
-
       const unique = [...new Set(resolved)];
       let all: Exercise[] = [];
 
       for (const m of unique) {
-        const res = await exerciseService.getExercisesByMuscle(
-          m,
+        const res = await exerciseService.getExercisesByMuscles(
+          [m],
           equipment ?? "",
         );
         all.push(...res);
@@ -122,11 +134,10 @@ export default function ExerciseSelectScreen() {
   };
 
   const handleConfirm = (sets: string, reps: string, rest: string) => {
-    if (!day || !modalExercise) return;
+    if (!modalExercise) return;
 
-    removeExerciseFromDay(day, modalExercise.id);
-
-    addExerciseToDay(day, {
+    removeExerciseFromDay(resolvedDay, modalExercise.id);
+    addExerciseToDay(resolvedDay, {
       id: modalExercise.id,
       name: modalExercise.name,
       muscle: modalExercise.muscle,
@@ -139,8 +150,7 @@ export default function ExerciseSelectScreen() {
   };
 
   const handleRemove = (id: string) => {
-    if (!day) return;
-    removeExerciseFromDay(day, id);
+    removeExerciseFromDay(resolvedDay, id);
   };
 
   const handlePress = (exercise: Exercise) => {
@@ -148,17 +158,25 @@ export default function ExerciseSelectScreen() {
     if (!exists) openAdd(exercise);
   };
 
-  if (!day) return null;
+  const handleNext = () => {
+    if (isSingleMode) {
+      router.push(
+        `/(onboarding)/(build-routine)/confirmCustom?from=${from ?? "tabs"}`,
+      );
+    } else {
+      router.back();
+    }
+  };
 
   return (
     <>
       <OnboardingLayout
-        title={`Ejercicios · ${DAY_LABELS[day]}`}
-        onNext={() => router.back()}
+        title={screenTitle}
+        onNext={handleNext}
         isNextDisabled={!selectedExercises.length || modalVisible}
+        nextButtonText={isSingleMode ? "Confirmar sesión" : "Listo"}
       >
         <View style={styles.container}>
-          {/* HEADER */}
           <View style={styles.headerRow}>
             <Text
               style={{
@@ -170,20 +188,17 @@ export default function ExerciseSelectScreen() {
             >
               {muscles.join(" · ").toUpperCase()}
             </Text>
-
             <Text style={{ color: colors.teal }}>
               {selectedExercises.length} seleccionados
             </Text>
           </View>
 
-          {/* ERROR */}
           {error && (
             <View style={styles.errorBox}>
               <Text style={{ color: "red" }}>{error}</Text>
             </View>
           )}
 
-          {/* CONTENT */}
           {loading ? (
             <ActivityIndicator color={colors.teal} />
           ) : (
@@ -191,12 +206,7 @@ export default function ExerciseSelectScreen() {
               {Object.entries(groupByMuscle(availableExercises)).map(
                 ([muscle, exercises]) => (
                   <View key={muscle} style={styles.section}>
-                    <Text
-                      style={{
-                        color: colors.teal,
-                        paddingVertical: 6,
-                      }}
-                    >
+                    <Text style={{ color: colors.teal, paddingVertical: 6 }}>
                       {MUSCLE_LABELS[muscle] ?? muscle}
                     </Text>
 
@@ -204,7 +214,6 @@ export default function ExerciseSelectScreen() {
                       const saved = selectedExercises.find(
                         (s) => s.id === ex.id,
                       );
-
                       return (
                         <ExerciseCard
                           key={ex.id}
@@ -256,14 +265,12 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: token.spacing.lg,
   },
-
   errorBox: {
     padding: token.spacing.md,
     borderRadius: token.radius.md,
     marginVertical: token.spacing.md,
     backgroundColor: "#fee",
   },
-
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",

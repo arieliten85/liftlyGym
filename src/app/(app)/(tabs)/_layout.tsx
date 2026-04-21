@@ -23,7 +23,7 @@ export default function TabsLayout() {
             title: "Rutinas",
             tabBarIcon: ({ color, size }) => (
               <MaterialCommunityIcons
-                name="account-tie-outline"
+                name="dumbbell"
                 color={color}
                 size={size}
               />

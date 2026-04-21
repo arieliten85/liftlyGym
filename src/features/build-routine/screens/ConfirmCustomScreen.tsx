@@ -4,13 +4,9 @@ import OnboardingLayout from "@/shared/components/OnboardingLayout";
 import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
-import {
-  CustomPlanPayload,
-  CustomSinglePayload,
-  EquipmentType,
-} from "@/types/routine";
+import { EquipmentType } from "@/types/routine";
 import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
+import { router } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { DAY_LABELS } from "../constants/dayLabels";
 
@@ -49,14 +45,9 @@ const LEVEL_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
   avanzado: "flame-outline",
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Componente
-// ─────────────────────────────────────────────────────────────────────────────
 export default function ConfirmCustomScreen() {
   const { theme, isDark } = useAppTheme();
-  const { from } = useLocalSearchParams<{ from?: string }>();
 
-  // ── Store ─────────────────────────────────────────────────────────────────
   const goal = useBuildRoutineStore((s) => s.goal);
   const equipment = useBuildRoutineStore((s) => s.equipment);
   const experience = useBuildRoutineStore((s) => s.experience);
@@ -66,18 +57,9 @@ export default function ConfirmCustomScreen() {
   const selectedDays = useBuildRoutineStore((s) => s.selectedDays);
   const exercisePlan = useBuildRoutineStore((s) => s.exercisePlan);
 
-  const getCustomSinglePayload = useBuildRoutineStore(
-    (s) => s.getCustomSinglePayload,
-  );
-  const getCustomPlanPayload = useBuildRoutineStore(
-    (s) => s.getCustomPlanPayload,
-  );
-  const reset = useBuildRoutineStore((s) => s.reset);
-
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
   const user = useUserStore((s) => s.user);
 
-  // ── Colores ───────────────────────────────────────────────────────────────
   const TEAL = theme.primary;
   const textColor = isDark ? "#DFF0EE" : theme.text;
   const subColor = isDark ? "#4A6A66" : theme.textSecondary;
@@ -88,8 +70,7 @@ export default function ConfirmCustomScreen() {
     ? "rgba(46,207,190,0.2)"
     : "rgba(46,207,190,0.25)";
 
-  // ── Derivados ─────────────────────────────────────────────────────────────
-  const goalMeta = GOAL_META[goal ?? "hipertrofia"];
+  const goalMeta = GOAL_META[goal ?? "hipertrofia"] || GOAL_META["hipertrofia"];
   const levelTip = LEVEL_TIPS[experience ?? "principiante"];
   const levelIcon = LEVEL_ICON[experience ?? "principiante"];
 
@@ -101,11 +82,14 @@ export default function ConfirmCustomScreen() {
   const assignedDaysCount = weekPlan.filter((p) => p.muscles.length > 0).length;
   const totalDays = selectedDays.length;
 
-  // Cantidad total de ejercicios cargados
   const totalExercises = exercisePlan.reduce(
     (acc, dp) => acc + dp.exercises.length,
     0,
   );
+
+  const singleExercises =
+    exercisePlan.find((dp) => dp.day === "single")?.exercises ?? [];
+  const singleExerciseCount = singleExercises.length;
 
   const textEquipament: Record<EquipmentType, string> = {
     gym: "Gimnasio completo",
@@ -115,38 +99,30 @@ export default function ConfirmCustomScreen() {
   };
 
   const isReady = !!(goal && equipment && experience && customSubMode);
-  const isNextDisabled =
-    !isReady || (isSingle ? !hasMuscles : assignedDaysCount === 0);
 
-  // ── Handler ───────────────────────────────────────────────────────────────
+  const isNextDisabled =
+    !isReady ||
+    (isSingle
+      ? !hasMuscles || singleExerciseCount === 0
+      : assignedDaysCount === 0);
+
+  // ── CAMBIO: lógica simplificada, igual que ConfirmRoutineScreen ──
+  // El payload se construye en GeneratingRoutineScreen via getPayload()
   const handleConfirm = () => {
     if (isNextDisabled) return;
-
-    const payload: CustomSinglePayload | CustomPlanPayload | null = isSingle
-      ? getCustomSinglePayload()
-      : getCustomPlanPayload();
-
-    if (!payload) {
-      console.warn("payload null");
-      return;
-    }
-
-    console.log("JSON completo →", JSON.stringify(payload, null, 2));
 
     if (!isAuthenticated) {
       router.push("/(onboarding)/(auth)/login");
       return;
     }
 
-    reset();
     router.push("/(onboarding)/(build-routine)/generating");
   };
 
   const modeBadge = isSingle
-    ? { label: "SESIÓN SUELTA", icon: "flash-outline" as const }
+    ? { label: "SESIÓN ÚNICA", icon: "flash-outline" as const }
     : { label: "PLAN SEMANAL", icon: "calendar-outline" as const };
 
-  // ─────────────────────────────────────────────────────────────────────────
   return (
     <OnboardingLayout
       title="Confirmá tu rutina"
@@ -162,6 +138,7 @@ export default function ConfirmCustomScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          {/* ── HERO CARD ── */}
           <View
             style={[
               styles.heroCard,
@@ -217,7 +194,7 @@ export default function ConfirmCustomScreen() {
             </View>
           </View>
 
-          {/* ── BLOQUE 2A: GRUPOS MUSCULARES (single) ─────────────────── */}
+          {/* ── SINGLE: músculos ── */}
           {isSingle && hasMuscles && (
             <View
               style={[styles.card, { backgroundColor: cardBg, borderColor }]}
@@ -254,7 +231,42 @@ export default function ConfirmCustomScreen() {
             </View>
           )}
 
-          {/* ── BLOQUE 2B: DISTRIBUCIÓN SEMANAL (plan) ────────────────── */}
+          {/* ── SINGLE: ejercicios seleccionados ── */}
+          {isSingle && singleExerciseCount > 0 && (
+            <View
+              style={[styles.card, { backgroundColor: cardBg, borderColor }]}
+            >
+              <View style={styles.cardHeader}>
+                <Ionicons name="barbell-outline" size={15} color={TEAL} />
+                <Text style={[styles.cardLabel, { color: TEAL }]}>
+                  EJERCICIOS SELECCIONADOS
+                </Text>
+              </View>
+              {singleExercises.map((ex) => (
+                <View
+                  key={ex.id}
+                  style={[styles.exerciseRow, { borderColor: `${TEAL}20` }]}
+                >
+                  <Text
+                    style={[styles.exerciseName, { color: textColor }]}
+                    numberOfLines={1}
+                  >
+                    {ex.name}
+                  </Text>
+                  <Text style={[styles.exerciseMeta, { color: subColor }]}>
+                    {ex.sets}×{ex.reps} · {ex.restSeconds}s
+                  </Text>
+                </View>
+              ))}
+              <Text style={[styles.cardHint, { color: subColor }]}>
+                {singleExerciseCount}{" "}
+                {singleExerciseCount === 1 ? "ejercicio" : "ejercicios"} en esta
+                sesión
+              </Text>
+            </View>
+          )}
+
+          {/* ── PLAN: distribución semanal ── */}
           {isPlan && weekPlan.length > 0 && (
             <View
               style={[styles.card, { backgroundColor: cardBg, borderColor }]}
@@ -271,7 +283,6 @@ export default function ConfirmCustomScreen() {
                   const muscleText = plan.muscles
                     .map((m) => m.toUpperCase())
                     .join(" + ");
-                  // Ejercicios del día
                   const dayExercises =
                     exercisePlan.find((ep) => ep.day === plan.day)?.exercises ??
                     [];
@@ -326,7 +337,7 @@ export default function ConfirmCustomScreen() {
             </View>
           )}
 
-          {/* ── BLOQUE 3: EJERCICIOS DETALLE (plan, si los hay) ───────── */}
+          {/* ── PLAN: ejercicios por día ── */}
           {isPlan && exercisePlan.length > 0 && (
             <View
               style={[styles.card, { backgroundColor: cardBg, borderColor }]}
@@ -363,7 +374,7 @@ export default function ConfirmCustomScreen() {
             </View>
           )}
 
-          {/* ── BLOQUE 4: OBJETIVO ────────────────────────────────────── */}
+          {/* ── OBJETIVO ── */}
           <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
             <View style={styles.cardHeader}>
               <Ionicons name={goalMeta.icon} size={15} color={TEAL} />
@@ -381,7 +392,7 @@ export default function ConfirmCustomScreen() {
             </Text>
           </View>
 
-          {/* ── BLOQUE 5: CONSEJO ─────────────────────────────────────── */}
+          {/* ── CONSEJO ── */}
           <View
             style={[
               styles.tipCard,
@@ -411,7 +422,7 @@ export default function ConfirmCustomScreen() {
             </Text>
           </View>
 
-          {/* ── BLOQUE 6: EQUIPAMIENTO ───────────────────────────────── */}
+          {/* ── EQUIPAMIENTO ── */}
           <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
             <View style={styles.cardHeader}>
               <Ionicons name="fitness-outline" size={15} color={TEAL} />
@@ -431,7 +442,7 @@ export default function ConfirmCustomScreen() {
             </Text>
           </View>
 
-          {/* ── BLOQUE 7: AUTH NOTICE ─────────────────────────────────── */}
+          {/* ── AUTH NOTICE ── */}
           {!isAuthenticated && (
             <View
               style={[
@@ -446,7 +457,6 @@ export default function ConfirmCustomScreen() {
             </View>
           )}
 
-          {/* ── BLOQUE 8: EXPECTATIVA ────────────────────────────────── */}
           <View style={[styles.infoRow, { borderColor }]}>
             <Ionicons name="sparkles-outline" size={15} color={subColor} />
             <Text style={[styles.infoText, { color: subColor }]}>
@@ -459,9 +469,6 @@ export default function ConfirmCustomScreen() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Estilos
-// ─────────────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { flex: 1 },

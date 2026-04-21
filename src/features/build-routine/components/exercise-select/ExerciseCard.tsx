@@ -1,6 +1,7 @@
 import { token } from "@/theme/token";
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { formatRestTime } from "../../utils/formatRestTime";
 
 export function ExerciseCard({
   exercise,
@@ -37,6 +38,16 @@ export function ExerciseCard({
               <Text style={[styles.summaryText, { color: colors.teal }]}>
                 {selectedData.sets}x{selectedData.reps}
               </Text>
+
+              {/* ── DESCANSO ── */}
+              <View style={styles.restBadge}>
+                <View style={styles.restBadge}>
+                  <Ionicons name="time-outline" size={11} color={colors.sub} />
+                  <Text style={[styles.restText, { color: colors.sub }]}>
+                    {formatRestTime(selectedData.restSeconds)}
+                  </Text>
+                </View>
+              </View>
 
               <TouchableOpacity onPress={onEdit}>
                 <Text style={[styles.editText, { color: colors.sub }]}>
@@ -96,5 +107,15 @@ const styles = StyleSheet.create({
   icon: {
     paddingHorizontal: token.spacing.md,
     paddingVertical: token.spacing.md,
+  },
+
+  restBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+  },
+  restText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
 });

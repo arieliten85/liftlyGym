@@ -5,12 +5,12 @@ import { Routine } from "@/types/routine";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useEffect, useRef } from "react";
 import {
-    Animated,
-    Easing,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Animated,
+  Easing,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 interface RoutineCardProps {
@@ -27,7 +27,6 @@ interface RoutineCardProps {
 
 export function RoutineCard({
   routine,
-  accentColor,
   cardBg,
   borderColor,
   textColor,
@@ -41,7 +40,7 @@ export function RoutineCard({
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
 
-  const ROUTINEMODE = {
+  const ROUTINEMODE: Record<string, string> = {
     quick: "Rápida",
     custom: "Personalizada",
   };
@@ -93,7 +92,9 @@ export function RoutineCard({
 
       <View style={styles.badgeRow}>
         <View style={styles.modeBadge}>
-          <Text style={styles.modeText}>{ROUTINEMODE[routine.mode]}</Text>
+          <Text style={styles.modeText}>
+            {ROUTINEMODE[routine.mode] ?? routine.mode}
+          </Text>
         </View>
         <View style={styles.modeBadge}>
           <Text style={styles.modeText}>{routine.goal}</Text>
@@ -103,8 +104,9 @@ export function RoutineCard({
       <View style={styles.body}>
         <View style={styles.bodyTop}>
           <View style={{ flex: 1 }}>
+            {/* ── Nombre sin sufijo hardcodeado ── */}
             <Text style={[styles.name, { color: textColor }]} numberOfLines={1}>
-              {routine.name} day
+              {routine.name}
             </Text>
           </View>
           <View style={styles.metaRow}>

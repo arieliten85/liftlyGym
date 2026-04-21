@@ -53,7 +53,10 @@ interface RoutineStore {
     comment: string;
   }) => CompletedRoutinePayload | null;
 
-  replaceExerciseName: (exerciseIndex: number, newName: string) => void;
+  replaceExercise: (
+    exerciseIndex: number,
+    updatedExercise: RoutineExercise,
+  ) => void;
 }
 
 export const useRoutineStore = create<RoutineStore>((set, get) => ({
@@ -205,19 +208,51 @@ export const useRoutineStore = create<RoutineStore>((set, get) => ({
     };
   },
 
-  replaceExerciseName: (exerciseIndex, newName) => {
-    const { routine } = get();
+  replaceExercise: (exerciseIndex, updatedExercise) => {
+    const { routine, session } = get();
     if (!routine) return;
 
+    if (!updatedExercise) {
+      console.error("replaceExercise: updatedExercise is null or undefined");
+      return;
+    }
+
+    // Actualizar la rutina
     const updatedExercises = routine.exercises.map((ex, idx) =>
-      idx === exerciseIndex ? { ...ex, name: newName } : ex,
+      idx === exerciseIndex ? updatedExercise : ex,
     );
+
+    // Actualizar la sesión si existe
+    let updatedSession = session;
+    if (session) {
+      const updatedSessionExercises = session.exercises.map((ex, idx) => {
+        if (idx === exerciseIndex) {
+          return {
+            ...ex,
+            displayValues: {
+              reps: updatedExercise.reps,
+              weight: updatedExercise.weight ?? 0,
+              restSeconds: updatedExercise.restSeconds,
+              sets: updatedExercise.sets,
+            },
+            totalSets: updatedExercise.sets,
+            setLogs: [], // Resetear logs cuando se cambia el ejercicio
+            currentSet: 1,
+            completed: false,
+          };
+        }
+        return ex;
+      });
+      updatedSession = { ...session, exercises: updatedSessionExercises };
+    }
 
     set({
       routine: {
         ...routine,
         exercises: updatedExercises,
+        totalSets: updatedExercises.reduce((acc, ex) => acc + ex.sets, 0),
       },
+      session: updatedSession,
     });
   },
 }));

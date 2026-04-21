@@ -8,4 +8,5 @@ export const DAY_LABELS: Record<WeekDayKey, string> = {
   vie: "Viernes",
   sab: "Sabado",
   dom: "Domingo",
+  single: "Sesión",
 };

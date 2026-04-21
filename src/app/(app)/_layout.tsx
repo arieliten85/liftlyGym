@@ -35,6 +35,11 @@ export default function AppLayout() {
           name="routine"
           options={{ headerShown: false, gestureEnabled: false }}
         />
+
+        <Stack.Screen
+          name="(plan)"
+          options={{ headerShown: false, gestureEnabled: true }}
+        />
       </Stack>
     </View>
   );

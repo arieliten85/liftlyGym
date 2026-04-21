@@ -1,5 +1,4 @@
 import axiosClient from "@/api/axiosClient";
-
 import {
   CompletedRoutinePayload,
   Routine,
@@ -12,28 +11,40 @@ import {
   RoutineListResponse,
 } from "./type/routineService.types";
 
+function mapRoutine(data: RoutineApiResponse["data"]): Routine {
+  return {
+    routineId: data.id,
+    name: data.name,
+    goal: data.goal,
+    experience: data.experience,
+    mode: data.mode,
+    exercises: data.exercises ?? [],
+    createdAt: data.createdAt,
+    totalExercises: (data.exercises ?? []).length,
+    totalSets: (data.exercises ?? []).reduce(
+      (acc: number, ex: RoutineExercise) => acc + ex.sets,
+      0,
+    ),
+  };
+}
+
 export class RoutineService {
-  async generateRoutineOnboarding(payload: RoutinePayload): Promise<Routine> {
+  async generateRoutineOnboarding(
+    payload: RoutinePayload,
+  ): Promise<Routine | Routine[]> {
     try {
-      const response = await axiosClient.post<RoutineApiResponse>(
-        "/routines/generate",
-        payload,
-      );
-      const data = response.data.data;
-      return {
-        routineId: data.id,
-        name: data.name,
-        goal: data.goal,
-        experience: data.experience,
-        mode: data.mode,
-        exercises: data.exercises,
-        createdAt: data.createdAt,
-        totalExercises: data.exercises.length,
-        totalSets: data.exercises.reduce(
-          (acc: number, ex: RoutineExercise) => acc + ex.sets,
-          0,
-        ),
-      };
+      const response = await axiosClient.post<{
+        success: boolean;
+        data: RoutineApiResponse["data"] | RoutineApiResponse["data"][];
+      }>("/routines/generate", payload);
+
+      const raw = response.data.data;
+
+      if (Array.isArray(raw)) {
+        return raw.map(mapRoutine);
+      }
+
+      return mapRoutine(raw);
     } catch (error) {
       console.error("Error generating routine:", error);
       throw error;
@@ -50,10 +61,10 @@ export class RoutineService {
         goal: r.goal,
         experience: r.experience,
         mode: r.mode,
-        exercises: r.exercises,
+        exercises: r.exercises ?? [],
         createdAt: r.createdAt,
-        totalExercises: r.exercises.length,
-        totalSets: r.exercises.reduce(
+        totalExercises: (r.exercises ?? []).length,
+        totalSets: (r.exercises ?? []).reduce(
           (acc: number, ex: RoutineExercise) => acc + ex.sets,
           0,
         ),
@@ -103,10 +114,20 @@ export class RoutineService {
     routineId: string,
     exerciseName: string,
     newName: string,
-  ): Promise<void> {
-    await axiosClient.patch(`/routines/${routineId}/replace-exercise`, {
-      exerciseName,
-      newName,
-    });
+  ): Promise<RoutineExercise> {
+    const response = await axiosClient.patch<{
+      success: boolean;
+      data: {
+        replaced: string;
+        with: string;
+        exercise: RoutineExercise;
+      };
+    }>(`/routines/${routineId}/replace-exercise`, { exerciseName, newName });
+
+    const exercise = response.data.data.exercise;
+    if (!exercise) {
+      throw new Error("El back no devolvió el ejercicio actualizado");
+    }
+    return exercise;
   }
 }

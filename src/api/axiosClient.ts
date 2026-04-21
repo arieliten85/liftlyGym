@@ -2,27 +2,20 @@ import { useUserStore } from "@/features/auth/store/userStore";
 import { useLoadingStore } from "@/store/loading/loadingStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import { API_BASE_URL, API_TIMEOUT } from "./config";
+import { API_TIMEOUT, API_URL } from "./config";
 
 const axiosClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_URL,
   timeout: API_TIMEOUT,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-/*
-========================
-REQUEST INTERCEPTOR
-========================
-*/
-
 axiosClient.interceptors.request.use(
   async (config) => {
     useLoadingStore.getState().setLoading(true);
 
-    // leer desde AsyncStorage
     const token = await AsyncStorage.getItem("token");
 
     if (token) {
@@ -36,12 +29,6 @@ axiosClient.interceptors.request.use(
     return Promise.reject(error);
   },
 );
-
-/*
-========================
-RESPONSE INTERCEPTOR
-========================
-*/
 
 axiosClient.interceptors.response.use(
   (response) => {

@@ -45,7 +45,6 @@ export default function WorkoutSessionScreen() {
     updateDisplayValues,
     getCompletedRoutinePayload,
     resetSession,
-    replaceExerciseName,
   } = useRoutineStore();
   const {
     fetchNotifications,
@@ -91,6 +90,17 @@ export default function WorkoutSessionScreen() {
     }),
     [theme, isDark],
   );
+
+  const routineMuscles = useMemo(() => {
+    if (!routine) return [];
+    const muscles = routine.exercises
+      .map((ex) => ex.muscle)
+      .filter(
+        (muscle): muscle is string => muscle !== undefined && muscle !== null,
+      );
+
+    return [...new Set(muscles)];
+  }, [routine]);
 
   useEffect(() => {
     if (routine && !session) {
@@ -163,6 +173,8 @@ export default function WorkoutSessionScreen() {
 
     const goBack = () => {
       resetSession();
+      // Limpiar también la rutina del store para que se recargue fresco desde la BD
+      useRoutineStore.getState().clearRoutine();
       if (from === "generating") {
         router.replace("/(app)/(tabs)/routines");
       } else {
@@ -184,7 +196,6 @@ export default function WorkoutSessionScreen() {
       ],
     );
   }, [session, resetSession, router, from]);
-
   const totalEstimatedMin = useMemo(() => {
     if (!routine) return 0;
     const totalSets = routine.exercises.reduce(
@@ -415,25 +426,75 @@ export default function WorkoutSessionScreen() {
     router.replace("/(app)/(tabs)/routines");
   }, [adjustmentNotif, clearPendingAdjustments, resetSession, router]);
 
+  // Agregar estas refs al componente, junto a las otras refs existentes:
+  const currentSeriesIndexRef = useRef<number | null>(null);
+  const currentExerciseNameRef = useRef<string | null>(null);
+
+  // Actualizar la ref cada vez que cambia seriesIndex:
+  useEffect(() => {
+    currentSeriesIndexRef.current = seriesIndex;
+    if (seriesIndex !== null) {
+      const state = useRoutineStore.getState();
+      currentExerciseNameRef.current =
+        state.routine?.exercises[seriesIndex]?.name ?? null;
+    } else {
+      currentExerciseNameRef.current = null;
+    }
+  }, [seriesIndex]);
+
+  // handleReplaceExercise usando las refs:
   const handleReplaceExercise = useCallback(
     async (newName: string) => {
-      if (seriesIndex === null || !routine?.routineId) return;
-      const currentExercise = routine.exercises[seriesIndex];
+      const idx = currentSeriesIndexRef.current;
+      if (idx === null) return;
+
+      // Leer siempre fresco del store
+      const state = useRoutineStore.getState();
+      const currentRoutine = state.routine;
+      if (!currentRoutine?.routineId) return;
+
+      const currentExercise = currentRoutine.exercises[idx];
+      if (!currentExercise) return;
+
+      // Evitar reemplazar por el mismo nombre
+      if (currentExercise.name === newName) return;
+
+      console.log(
+        "[handleReplaceExercise] idx:",
+        idx,
+        "from:",
+        currentExercise.name,
+        "to:",
+        newName,
+      );
+
       try {
         setLoading(true);
-        await routineService.replaceExercise(
-          routine.routineId,
+
+        const exerciseFromBack = await routineService.replaceExercise(
+          currentRoutine.routineId,
           currentExercise.name,
           newName,
         );
-        replaceExerciseName(seriesIndex, newName);
-      } catch (e) {
-        console.error("[RoutineScreen] Error al reemplazar ejercicio:", e);
+
+        currentExerciseNameRef.current = newName;
+
+        const updatedExercise: RoutineExercise = {
+          ...currentExercise,
+          name: exerciseFromBack.name,
+          imageUrl: exerciseFromBack.imageUrl ?? null,
+          gifUrl: exerciseFromBack.gifUrl ?? null,
+        };
+
+        useRoutineStore.getState().replaceExercise(idx, updatedExercise);
+      } catch (error) {
+        console.error("Error al reemplazar ejercicio:", error);
+        Alert.alert("Error", "No se pudo reemplazar el ejercicio");
       } finally {
         setLoading(false);
       }
     },
-    [seriesIndex, routine, setLoading, replaceExerciseName],
+    [setLoading],
   );
 
   if (!routine) {
@@ -565,6 +626,7 @@ export default function WorkoutSessionScreen() {
           onUpdateDisplayValues={handleUpdateDisplayValues}
           formatTextTitle={formatTextTitle}
           onReplaceExercise={handleReplaceExercise}
+          routineMuscles={routineMuscles}
         />
       )}
 

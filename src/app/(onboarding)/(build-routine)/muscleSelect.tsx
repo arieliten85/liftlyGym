@@ -1,2 +1,2 @@
-import CustomModeSelectScreen from "@/features/build-routine/screens/CustomModeSelectScreen";
-export default CustomModeSelectScreen;
+import MuscleSelectScreen from "@/features/build-routine/screens/MuscleSelectScreen";
+export default MuscleSelectScreen;

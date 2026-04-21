@@ -8,6 +8,7 @@ import {
   Alert,
   Animated,
   Easing,
+  Image,
   Modal,
   Platform,
   ScrollView,
@@ -53,7 +54,7 @@ interface SeriesModalProps {
     values: Partial<ExerciseProgress["displayValues"]>,
   ) => void;
   formatTextTitle: (text: string) => string;
-
+  routineMuscles?: string[];
   onReplaceExercise?: (newName: string) => void;
 }
 
@@ -707,6 +708,7 @@ export function SeriesModal({
   onUpdateDisplayValues,
   formatTextTitle,
   onReplaceExercise,
+  routineMuscles,
 }: SeriesModalProps) {
   const [phase, setPhase] = useState<Phase>("active");
   const [localCurrentSet, setLocalCurrentSet] = useState(1);
@@ -751,21 +753,28 @@ export function SeriesModal({
     ]).start();
   };
 
+  // En el SeriesModal, dentro del componente
   useEffect(() => {
     if (!configVisible || !exercise) return;
 
-    const muscle = exercise.muscle;
-    if (!muscle) return;
+    // Usar los músculos de la rutina si se proporcionan, si no, solo el músculo del ejercicio actual
+    const musclesToFetch =
+      routineMuscles && routineMuscles.length > 0
+        ? routineMuscles
+        : [exercise.muscle];
 
+    console.log("Cargando ejercicios para músculos:", musclesToFetch);
     setLoadingExercises(true);
+
     exerciseService
-      .getByMuscle(muscle)
+      .getByMuscles(musclesToFetch) // Usar el nuevo método
       .then((data) =>
         setExerciseOptions(data.filter((e) => e.name !== exercise.name)),
       )
       .catch(console.error)
       .finally(() => setLoadingExercises(false));
-  }, [configVisible, exercise]);
+  }, [configVisible, exercise, routineMuscles]);
+
   useEffect(() => {
     if (visible && progress && exercise) {
       const dv = progress.displayValues;
@@ -1260,43 +1269,157 @@ export function SeriesModal({
                       </Text>
                     ) : (
                       <ScrollView
-                        style={{ maxHeight: 220 }}
+                        style={{ maxHeight: 400 }}
                         nestedScrollEnabled
                       >
-                        {exerciseOptions.map((item) => {
-                          const isSelected = item.name === selectedExercise;
-
-                          return (
-                            <TouchableOpacity
-                              key={item.name}
-                              onPress={() => {
-                                setSelectedExercise(item.name);
-                                onReplaceExercise?.(item.name);
-                                setShowExerciseSelector(false);
-                              }}
-                              style={[
-                                sty.exerciseItem,
-                                {
-                                  backgroundColor: isSelected
-                                    ? colors.primary + "20"
-                                    : "transparent",
-                                },
-                              ]}
-                            >
-                              <Text style={{ color: colors.textPrimary }}>
-                                {formatTextTitle(item.name)}
-                              </Text>
-
-                              {isSelected && (
-                                <Ionicons
-                                  name="checkmark"
-                                  size={16}
-                                  color={colors.primary}
-                                />
-                              )}
-                            </TouchableOpacity>
+                        {/* Agrupar ejercicios por músculo */}
+                        {(() => {
+                          // Agrupar por músculo
+                          const grouped = exerciseOptions.reduce(
+                            (acc, item) => {
+                              const muscle = item.muscle;
+                              if (!acc[muscle]) acc[muscle] = [];
+                              acc[muscle].push(item);
+                              return acc;
+                            },
+                            {} as Record<string, ExerciseOption[]>,
                           );
-                        })}
+
+                          return Object.entries(grouped).map(
+                            ([muscle, items]) => (
+                              <View key={muscle} style={sty.muscleSection}>
+                                {/* Título del músculo */}
+                                <View style={sty.muscleHeader}>
+                                  <Text
+                                    style={[
+                                      sty.muscleTitle,
+                                      { color: colors.primary },
+                                    ]}
+                                  >
+                                    {formatTextTitle(muscle)}
+                                  </Text>
+                                  <Text
+                                    style={[
+                                      sty.muscleCount,
+                                      { color: colors.textSecondary },
+                                    ]}
+                                  >
+                                    {items.length} ejercicios
+                                  </Text>
+                                </View>
+
+                                {/* Lista de ejercicios de este músculo */}
+                                <View style={sty.muscleExercises}>
+                                  {items.map((item) => {
+                                    const isSelected =
+                                      item.name === selectedExercise;
+
+                                    return (
+                                      <TouchableOpacity
+                                        key={item.name}
+                                        onPress={() => {
+                                          setSelectedExercise(item.name);
+                                          onReplaceExercise?.(item.name);
+                                          setShowExerciseSelector(false);
+                                        }}
+                                        style={[
+                                          sty.exerciseItem,
+                                          {
+                                            backgroundColor: isSelected
+                                              ? colors.primary + "20"
+                                              : "transparent",
+                                            borderColor: isDark
+                                              ? "#252525"
+                                              : "#E5E5E5",
+                                          },
+                                        ]}
+                                      >
+                                        {/* Imagen del ejercicio */}
+                                        {item.imageUrl || item.gifUrl ? (
+                                          <Image
+                                            source={{
+                                              uri:
+                                                (item.imageUrl ||
+                                                  item.gifUrl) ??
+                                                "",
+                                            }}
+                                            style={sty.exerciseImage}
+                                            resizeMode="cover"
+                                            onError={(e) =>
+                                              console.log(
+                                                "Error cargando imagen:",
+                                                e.nativeEvent.error,
+                                              )
+                                            }
+                                          />
+                                        ) : (
+                                          <View
+                                            style={[
+                                              sty.exerciseImagePlaceholder,
+                                              {
+                                                backgroundColor:
+                                                  colors.primary + "15",
+                                              },
+                                            ]}
+                                          >
+                                            <Ionicons
+                                              name="barbell-outline"
+                                              size={24}
+                                              color={colors.primary}
+                                            />
+                                          </View>
+                                        )}
+
+                                        {/* Nombre del ejercicio */}
+                                        <View style={sty.exerciseInfo}>
+                                          <Text
+                                            style={[
+                                              sty.exerciseName,
+                                              { color: colors.textPrimary },
+                                            ]}
+                                          >
+                                            {formatTextTitle(item.name)}
+                                          </Text>
+                                          {item.equipment &&
+                                            item.equipment.length > 0 && (
+                                              <Text
+                                                style={[
+                                                  sty.exerciseEquipment,
+                                                  {
+                                                    color: colors.textSecondary,
+                                                  },
+                                                ]}
+                                              >
+                                                {item.equipment.join(", ")}
+                                              </Text>
+                                            )}
+                                        </View>
+
+                                        {/* Check de selección */}
+                                        {isSelected && (
+                                          <View
+                                            style={[
+                                              sty.checkBadge,
+                                              {
+                                                backgroundColor: colors.primary,
+                                              },
+                                            ]}
+                                          >
+                                            <Ionicons
+                                              name="checkmark"
+                                              size={14}
+                                              color="#fff"
+                                            />
+                                          </View>
+                                        )}
+                                      </TouchableOpacity>
+                                    );
+                                  })}
+                                </View>
+                              </View>
+                            ),
+                          );
+                        })()}
                       </ScrollView>
                     )}
                   </View>
@@ -1586,8 +1709,12 @@ const sty = StyleSheet.create({
     overflow: "hidden",
   },
   exerciseItem: {
-    padding: 14,
-    borderBottomWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
   },
 
   exerciseItemText: {
@@ -1601,4 +1728,66 @@ const sty = StyleSheet.create({
     fontWeight: "500",
   },
   modNoteText: { fontSize: 13, fontWeight: "600", flex: 1 },
+
+  // Agrega esto al final del StyleSheet existente
+  muscleSection: {
+    marginBottom: 20,
+  },
+  muscleHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "transparent",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5E5",
+    marginBottom: 8,
+  },
+  muscleTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  muscleCount: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginLeft: "auto",
+  },
+  muscleExercises: {
+    gap: 8,
+  },
+  exerciseImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 10,
+    backgroundColor: "#F0F0F0",
+  },
+  exerciseImagePlaceholder: {
+    width: 50,
+    height: 50,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  exerciseInfo: {
+    flex: 1,
+    gap: 4,
+  },
+  exerciseName: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  exerciseEquipment: {
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  checkBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

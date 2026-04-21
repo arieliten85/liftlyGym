@@ -2,6 +2,10 @@ import {
   MUSCLE_OPTION_DATA,
   QUICK_OPTION_DATA,
 } from "@/features/build-routine/constants/routine-builder.constants";
+import OnboardingLayout from "@/shared/components/OnboardingLayout";
+import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
+import { useAppTheme } from "@/theme/ThemeProvider";
+import { token } from "@/theme/token";
 import {
   DaySessionType,
   RoutineCustomType,
@@ -9,10 +13,6 @@ import {
   WeekDayKey,
   WeekDayPlan,
 } from "@/types/routine";
-import OnboardingLayout from "@/shared/components/OnboardingLayout";
-import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
-import { useAppTheme } from "@/theme/ThemeProvider";
-import { token } from "@/theme/token";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -27,26 +27,17 @@ import {
   View,
 } from "react-native";
 import { MuscleSelectionCard } from "../components/MuscleSelectionCard";
+import { DAY_LABELS } from "../constants/dayLabels";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const H_PADDING = token.spacing.lg * 2;
 const COLUMN_GAP = token.spacing.md;
 const CARD_WIDTH = (SCREEN_WIDTH - H_PADDING - COLUMN_GAP) / 2;
 
-const DAY_LABELS: Record<WeekDayKey, string> = {
-  lun: "Lunes",
-  mar: "Martes",
-  mie: "Miercoles",
-  jue: "Jueves",
-  vie: "Viernes",
-  sab: "Sabado",
-  dom: "Domingo",
-};
-
 const QUICK_SET = new Set<string>([
   "push",
   "pull",
-  "legs",
+  "legs_quick",
   "upper",
   "lower",
   "fullbody",
@@ -56,11 +47,11 @@ function isQuickType(t: DaySessionType): t is RoutineQuickType {
   return QUICK_SET.has(t);
 }
 
-const COMBOS_PROHIBIDOS: [RoutineCustomType, RoutineCustomType][] = [
-  ["pecho", "espalda"],
-  ["pecho", "piernas"],
-  ["espalda", "piernas"],
-  ["hombros", "pecho"],
+export const COMBOS_PROHIBIDOS: [RoutineCustomType, RoutineCustomType][] = [
+  ["chest", "back"],
+  ["chest", "legs"],
+  ["back", "legs"],
+  ["shoulders", "chest"],
   ["biceps", "triceps"],
 ];
 
@@ -81,8 +72,6 @@ function getWeekMode(
   return "none";
 }
 
-// ─── Colors hook ──────────────────────────────────────────────────────────────
-
 function useColors() {
   const { theme, isDark } = useAppTheme();
   return {
@@ -96,7 +85,24 @@ function useColors() {
   };
 }
 
-// ─── Day Muscle Modal ─────────────────────────────────────────────────────────
+const MUSCLE_NAMES: Record<string, string> = {
+  push: "Push",
+  pull: "Pull",
+  legs_quick: "Legs",
+  legs: "Pierna",
+  upper: "Tren sup.",
+  lower: "Tren inf.",
+  fullbody: "Cuerpo completo",
+  chest: "Pecho",
+  back: "Espalda",
+  shoulders: "Hombros",
+  biceps: "Bíceps",
+  triceps: "Tríceps",
+  abs: "Abdominales",
+  glutes: "Glúteos",
+  hamstrings: "Isquiotibiales",
+  quads: "Cuádriceps",
+};
 
 function DayMuscleModal({
   visible,
@@ -117,7 +123,6 @@ function DayMuscleModal({
 }) {
   const { isDark, teal, sub, modalBg } = useColors();
   const { theme } = useAppTheme();
-
   const [selected, setSelected] = useState<DaySessionType[]>([]);
 
   useEffect(() => {
@@ -206,7 +211,6 @@ function DayMuscleModal({
   const quickRows = chunk(QUICK_OPTION_DATA, 2);
   const muscleRows = chunk(MUSCLE_OPTION_DATA, 2);
 
-  // ── Orden dinámico: sección habilitada siempre primero ──────────────────
   const sections = [
     {
       label: "TIPOS DE RUTINA",
@@ -350,8 +354,6 @@ function DayMuscleModal({
   );
 }
 
-// ─── Section Divider ──────────────────────────────────────────────────────────
-
 function SectionDivider({
   label,
   locked,
@@ -380,8 +382,6 @@ function SectionDivider({
     </View>
   );
 }
-
-// ─── Week Reset Button ────────────────────────────────────────────────────────
 
 function WeekResetButton({
   onReset,
@@ -424,8 +424,6 @@ function WeekResetButton({
   );
 }
 
-// ─── Day Row ──────────────────────────────────────────────────────────────────
-
 function DayRow({
   day,
   muscles,
@@ -444,6 +442,19 @@ function DayRow({
   const { isDark, teal, text, sub, card, border } = colors;
   const hasAssignment = muscles.length > 0;
   const hasExercises = exerciseCount > 0;
+
+  const getExercisesBtnText = () => {
+    if (hasExercises) {
+      return exerciseCount === 1
+        ? "1 ejercicio seleccionado"
+        : `${exerciseCount} ejercicios seleccionados`;
+    }
+    const muscleLabel =
+      muscles.length === 1
+        ? (MUSCLE_NAMES[muscles[0]] ?? muscles[0])
+        : muscles.map((m) => MUSCLE_NAMES[m] ?? m).join(" · ");
+    return `Seleccionar ejercicios · ${muscleLabel}`;
+  };
 
   return (
     <View
@@ -557,18 +568,15 @@ function DayRow({
               styles.exercisesBtnText,
               { color: hasExercises ? teal : "#fff" },
             ]}
+            numberOfLines={1}
           >
-            {hasExercises
-              ? `${exerciseCount} ejercicios`
-              : "Seleccionar ejercicios"}
+            {getExercisesBtnText()}
           </Text>
         </TouchableOpacity>
       )}
     </View>
   );
 }
-
-// ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function WeekPlanBuilderScreen() {
   const colors = useColors();
@@ -581,7 +589,8 @@ export default function WeekPlanBuilderScreen() {
   ) as WeekDayKey[];
   const weekPlan = useBuildRoutineStore((s) => s.weekPlan);
   const setWeekPlan = useBuildRoutineStore((s) => s.setWeekPlan);
-  const getExercisesForDay = useBuildRoutineStore((s) => s.getExercisesForDay);
+
+  const exercisePlan = useBuildRoutineStore((s) => s.exercisePlan);
   const removeExerciseFromDay = useBuildRoutineStore(
     (s) => s.removeExerciseFromDay,
   );
@@ -592,6 +601,9 @@ export default function WeekPlanBuilderScreen() {
   const getMusclesForDay = (day: WeekDayKey): DaySessionType[] =>
     weekPlan.find((p) => p.day === day)?.muscles ?? [];
 
+  const getExerciseCount = (day: WeekDayKey): number =>
+    exercisePlan.find((p) => p.day === day)?.exercises.length ?? 0;
+
   const handleSaveDay = (day: WeekDayKey, muscles: DaySessionType[]) => {
     const existing = weekPlan.filter((p) => p.day !== day);
     const updated: WeekDayPlan[] =
@@ -600,7 +612,7 @@ export default function WeekPlanBuilderScreen() {
   };
 
   const handleClearExercises = (day: WeekDayKey) => {
-    const exercises = getExercisesForDay(day);
+    const exercises = exercisePlan.find((p) => p.day === day)?.exercises ?? [];
     exercises.forEach((e) => removeExerciseFromDay(day, e.id));
   };
 
@@ -609,9 +621,12 @@ export default function WeekPlanBuilderScreen() {
     setWeekPlan([]);
   };
 
-  const allAssigned = selectedDays.every(
-    (day) => getMusclesForDay(day).length > 0,
-  );
+  const allComplete = selectedDays.every((day) => {
+    const muscles = getMusclesForDay(day);
+    const count = getExerciseCount(day);
+    return muscles.length > 0 && count > 0;
+  });
+
   const assignedCount = selectedDays.filter(
     (d) => getMusclesForDay(d).length > 0,
   ).length;
@@ -621,12 +636,12 @@ export default function WeekPlanBuilderScreen() {
     <OnboardingLayout
       title="Plan semanal"
       onNext={() => {
-        if (!allAssigned) return;
+        if (!allComplete) return;
         router.push(
           `/(onboarding)/(build-routine)/confirmCustom?from=${from ?? "tabs"}`,
         );
       }}
-      isNextDisabled={!allAssigned}
+      isNextDisabled={!allComplete}
       nextButtonText="Confirmar plan"
     >
       <View style={styles.container}>
@@ -693,7 +708,7 @@ export default function WeekPlanBuilderScreen() {
               key={day}
               day={day}
               muscles={getMusclesForDay(day)}
-              exerciseCount={getExercisesForDay(day).length}
+              exerciseCount={getExerciseCount(day)}
               onOpenModal={() => {
                 setModalDay(day);
                 setModalVisible(true);
@@ -732,16 +747,12 @@ export default function WeekPlanBuilderScreen() {
   );
 }
 
-// ─── Utils ────────────────────────────────────────────────────────────────────
-
 function chunk<T>(arr: T[], size: number): T[][] {
   const result: T[][] = [];
   for (let i = 0; i < arr.length; i += size)
     result.push(arr.slice(i, i + size));
   return result;
 }
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: { flex: 1 },

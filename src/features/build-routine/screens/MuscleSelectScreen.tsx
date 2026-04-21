@@ -3,13 +3,12 @@ import {
   QUICK_OPTION_DATA,
 } from "@/features/build-routine/constants/routine-builder.constants";
 import { ROUTINE_IMAGES } from "@/features/build-routine/constants/routine-images.constants";
-import {
-  DaySessionType,
-  RoutineCustomType,
-  RoutineQuickType,
-} from "@/types/routine";
 import OnboardingLayout from "@/shared/components/OnboardingLayout";
 import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
+import {
+  DaySessionType,
+  RoutineQuickType
+} from "@/types/routine";
 
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { token } from "@/theme/token";
@@ -24,20 +23,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { COMBOS_PROHIBIDOS } from "./Weekplanbuilderscreen";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const H_PADDING = token.spacing.lg * 2;
 const COLUMN_GAP = token.spacing.md;
 const CARD_WIDTH = (SCREEN_WIDTH - H_PADDING - COLUMN_GAP) / 2;
 const MAX_SELECTION = 2;
-
-const COMBOS_PROHIBIDOS: [RoutineCustomType, RoutineCustomType][] = [
-  ["pecho", "espalda"],
-  ["pecho", "piernas"],
-  ["espalda", "piernas"],
-  ["hombros", "pecho"],
-  ["biceps", "triceps"],
-];
 
 const QUICK_SET = new Set<string>([
   "push",
@@ -258,12 +250,16 @@ export default function MuscleSelectScreen() {
     setMusculos([...musculos, type]);
   };
 
+  // ── ÚNICO CAMBIO vs original ──────────────────────────────────────────────
+  // Antes navegaba directo a confirmCustom.
+  // Ahora va a exerciseSelect con day=single para elegir ejercicios primero.
   const handleNext = () => {
     if (!musculos.length) return;
     router.push(
-      `/(onboarding)/(build-routine)/confirmCustom?from=${from ?? "tabs"}`,
+      `/(onboarding)/(build-routine)/exerciseSelect?day=single&from=${from ?? "tabs"}`,
     );
   };
+  // ──────────────────────────────────────────────────────────────────────────
 
   const quickRows: (typeof QUICK_OPTION_DATA)[] = [];
   for (let i = 0; i < QUICK_OPTION_DATA.length; i += 2)

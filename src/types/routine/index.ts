@@ -7,7 +7,7 @@ export type EquipmentType = "gym" | "dumbbells" | "basic" | "bodyweight";
 export type RoutineQuickType =
   | "push"
   | "pull"
-  | "legs"
+  | "legs_quick"
   | "upper"
   | "lower"
   | "fullbody";
@@ -37,7 +37,15 @@ export type CustomSubMode = "plan" | "single";
 
 // Plan semanal
 
-export type WeekDayKey = "lun" | "mar" | "mie" | "jue" | "vie" | "sab" | "dom";
+export type WeekDayKey =
+  | "lun"
+  | "mar"
+  | "mie"
+  | "jue"
+  | "vie"
+  | "sab"
+  | "dom"
+  | "single";
 
 /** Músculo o tipo de rutina quick asignado a un día */
 export type DaySessionType = RoutineQuickType | RoutineCustomType;
@@ -65,9 +73,11 @@ export interface RoutineExercise {
   name: string;
   sets: number;
   reps: string;
-  muscle?: string;
+  muscle: string;
   restSeconds: number;
   weight?: number;
+  imageUrl?: string | null;
+  gifUrl?: string | null;
 }
 
 export interface SetLog {

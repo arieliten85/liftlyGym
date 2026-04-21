@@ -2,7 +2,6 @@ import { ExerciseProgress, RoutineExercise } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { EXECISE_IMAGES } from "../build-routine/constants/routine-images.constants";
 
 interface ThemeColors {
   surface: string;
@@ -32,7 +31,6 @@ interface ExerciseCardProps {
 
 export function ExerciseCard({
   exercise,
-
   colors,
   isDark,
   isCompleted,
@@ -41,12 +39,10 @@ export function ExerciseCard({
   onSelect,
   onStart,
   onViewSummary,
-
   formatTextTitle,
 }: ExerciseCardProps) {
   const dv = progress?.displayValues;
   const displayReps = dv?.reps ?? exercise.reps;
-
   const displaySets = dv?.sets ?? exercise.sets;
 
   const setsCompleted = progress?.setLogs.filter((l) => !l.skipped).length ?? 0;
@@ -66,7 +62,7 @@ export function ExerciseCard({
 
   const handlePress = isCompleted ? onViewSummary : onSelect;
 
-  const exerciseImage = EXECISE_IMAGES[exercise.name];
+  const imageUrl = exercise.imageUrl ?? null;
 
   return (
     <TouchableOpacity
@@ -83,8 +79,8 @@ export function ExerciseCard({
       ]}
     >
       <View style={sty.mainContainer}>
-        {/* ── Imagen lateral — solo si existe ── */}
-        {exerciseImage && (
+        {/* Imagen lateral — solo si existe imageUrl */}
+        {imageUrl ? (
           <View
             style={[
               sty.imageContainer,
@@ -92,11 +88,10 @@ export function ExerciseCard({
             ]}
           >
             <Image
-              source={exerciseImage}
+              source={{ uri: imageUrl }}
               style={sty.exerciseImage}
               resizeMode="cover"
             />
-            {/* Overlay sutil en la parte inferior */}
             <View
               style={[
                 sty.imageOverlay,
@@ -110,19 +105,27 @@ export function ExerciseCard({
               ]}
             />
           </View>
+        ) : (
+          // Placeholder cuando no hay imagen
+          <View
+            style={[
+              sty.imageContainer,
+              sty.imagePlaceholder,
+              { backgroundColor: isDark ? "#1A1A1A" : "#F0F0F0" },
+            ]}
+          >
+            <Ionicons
+              name="barbell-outline"
+              size={24}
+              color={isDark ? "#333" : "#CCC"}
+            />
+          </View>
         )}
 
-        {/* ── Contenido principal ── */}
-        <View
-          style={[
-            sty.contentContainer,
-            // Sin imagen: ocupa todo el ancho
-            !exerciseImage && { flex: 1 },
-          ]}
-        >
-          {/* Fila superior: badge + nombre + botón */}
+        {/* Contenido principal */}
+        <View style={sty.contentContainer}>
+          {/* Fila superior: nombre + botón */}
           <View style={sty.topRow}>
-            {/* Nombre: flex:1 + minWidth:0 para que no desborde */}
             <Text
               style={[sty.exName, { color: colors.textPrimary }]}
               numberOfLines={2}
@@ -132,7 +135,6 @@ export function ExerciseCard({
               {formatTextTitle(exercise.name)}
             </Text>
 
-            {/* Botón play — solo si no está completado */}
             {!isCompleted && (
               <TouchableOpacity
                 onPress={onStart}
@@ -154,7 +156,6 @@ export function ExerciseCard({
               </TouchableOpacity>
             )}
 
-            {/* Badge "Ver" — solo si está completado */}
             {isCompleted && (
               <View style={sty.completedBadge}>
                 <Ionicons name="eye-outline" size={11} color="#22C55E" />
@@ -212,18 +213,6 @@ export function ExerciseCard({
               color={colors.primary}
               textColor={colors.textSecondary}
             />
-            {/* <StatChip
-              icon="barbell-outline"
-              value={displayWeight === 0 ? "Sin peso" : `${displayWeight} kg`}
-              color={weightAccent}
-              textColor={colors.textSecondary}
-            /> */}
-            {/* <StatChip
-              icon="time-outline"
-              value={formatRestTime(displayRest)}
-              color={restAccent}
-              textColor={colors.textSecondary}
-            /> */}
           </View>
         </View>
       </View>
@@ -265,21 +254,21 @@ const sty = StyleSheet.create({
     padding: 12,
     overflow: "hidden",
   },
-
-  /* Layout interno: imagen + contenido */
   mainContainer: {
     flexDirection: "row",
     alignItems: "stretch",
     gap: 12,
   },
-
-  /* Imagen: tamaño fijo, ocupa toda la altura del contenido */
   imageContainer: {
     width: 72,
     borderRadius: 10,
     overflow: "hidden",
-    alignSelf: "stretch", // ← se estira a la altura del contenido real
+    alignSelf: "stretch",
     minHeight: 72,
+  },
+  imagePlaceholder: {
+    justifyContent: "center",
+    alignItems: "center",
   },
   exerciseImage: {
     width: "100%",
@@ -293,31 +282,15 @@ const sty = StyleSheet.create({
   imageOverlay: {
     ...StyleSheet.absoluteFillObject,
   },
-
-  /* Contenido: flex:1 + minWidth:0 evita overflow del texto */
   contentContainer: {
     flex: 1,
     minWidth: 0,
     gap: 8,
   },
-
-  /* Fila superior */
   topRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-  },
-  indexBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 7,
-    justifyContent: "center",
-    alignItems: "center",
-    flexShrink: 0,
-  },
-  indexNum: {
-    fontSize: 11,
-    fontWeight: "800",
   },
   exName: {
     flex: 1,
@@ -353,8 +326,6 @@ const sty = StyleSheet.create({
     fontWeight: "700",
     color: "#22C55E",
   },
-
-  /* Barra de progreso */
   progressRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -375,8 +346,6 @@ const sty = StyleSheet.create({
     fontWeight: "600",
     flexShrink: 0,
   },
-
-  /* Chips */
   statsRow: {
     flexDirection: "row",
     flexWrap: "wrap",

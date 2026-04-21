@@ -42,6 +42,13 @@ interface BuildRoutineStoreProps extends CustomStore, ExercisesStore {
   getCustomSinglePayload: () => CustomSinglePayload | null;
   getCustomPlanPayload: () => CustomPlanPayload | null;
 
+  // ── NUEVO: método unificado para GeneratingRoutineScreen ──
+  getPayload: () =>
+    | RoutinePayload
+    | CustomSinglePayload
+    | CustomPlanPayload
+    | null;
+
   reset: () => void;
 }
 
@@ -51,12 +58,12 @@ const initialState = {
   equipment: null as EquipmentType | null,
   experience: null as ExperienceType | null,
   routine: null as RoutineSelectionType | null,
-  musculos: [] as DaySessionType[], // ✅ Cambiado
+  musculos: [] as DaySessionType[],
   diasEntrenamiento: null as number | null,
 };
 
 function logPayload(
-  tipo: "SESIÓN SUELTA" | "PLAN SEMANAL",
+  tipo: "SESIÓN ÚNICA" | "PLAN SEMANAL",
   payload: CustomSinglePayload | CustomPlanPayload,
 ) {
   console.log(`Payload — ${tipo}`);
@@ -94,16 +101,22 @@ export const useBuildRoutineStore = create<BuildRoutineStoreProps>(
         return null;
       }
 
+      const singleDayPlan = exercisePlan.find((dp) => dp.day === "single");
+      const ejercicios = singleDayPlan?.exercises ?? [];
+
+      if (ejercicios.length === 0) {
+        console.warn("getCustomSinglePayload: no hay ejercicios en day=single");
+        return null;
+      }
+
       const ejerciciosPorMusculo: SingleSessionExercises = {};
-      exercisePlan.forEach((dayPlan) => {
-        dayPlan.exercises.forEach((ex) => {
-          const key = ex.muscle;
-          if (!key) return; // ✅ Guard para evitar índice undefined
-          if (!ejerciciosPorMusculo[key]) {
-            ejerciciosPorMusculo[key] = [];
-          }
-          ejerciciosPorMusculo[key].push(ex);
-        });
+      ejercicios.forEach((ex) => {
+        const key = ex.muscle;
+        if (!key) return;
+        if (!ejerciciosPorMusculo[key]) {
+          ejerciciosPorMusculo[key] = [];
+        }
+        ejerciciosPorMusculo[key].push(ex);
       });
 
       const payload: CustomSinglePayload = {
@@ -112,11 +125,11 @@ export const useBuildRoutineStore = create<BuildRoutineStoreProps>(
         objetivo: goal,
         nivel: experience,
         equipamiento: equipment,
-        musculos, // ✅ Sin cast, ya es DaySessionType[]
+        musculos,
         ejerciciosPorMusculo,
       };
 
-      logPayload("SESIÓN SUELTA", payload);
+      logPayload("SESIÓN ÚNICA", payload);
       return payload;
     },
 
@@ -153,6 +166,26 @@ export const useBuildRoutineStore = create<BuildRoutineStoreProps>(
 
       logPayload("PLAN SEMANAL", payload);
       return payload;
+    },
+
+    // ── NUEVO: delega al método correcto según mode y customSubMode ──
+    getPayload: ():
+      | RoutinePayload
+      | CustomSinglePayload
+      | CustomPlanPayload
+      | null => {
+      const { mode, customSubMode } = get();
+
+      if (mode === "quick") {
+        return get().getQuickPayload();
+      }
+
+      if (mode === "custom") {
+        if (customSubMode === "single") return get().getCustomSinglePayload();
+        if (customSubMode === "plan") return get().getCustomPlanPayload();
+      }
+
+      return null;
     },
 
     reset: () =>

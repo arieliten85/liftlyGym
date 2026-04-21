@@ -1,5 +1,4 @@
 import { RoutineService } from "@/services/routineService";
-
 import { useBuildRoutineStore } from "@/store/build-rotine/buildRoutineStore";
 import { useRoutineStore } from "@/store/routine/useRoutineStore";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -16,7 +15,7 @@ export default function GeneratingRoutineScreen() {
   const { theme, isDark } = useAppTheme();
   const hasStarted = useRef(false);
 
-  const getQuickPayload = useBuildRoutineStore((s) => s.getQuickPayload);
+  const getPayload = useBuildRoutineStore((s) => s.getPayload);
   const reset = useBuildRoutineStore((s) => s.reset);
 
   const setLoading = useRoutineStore((s) => s.setLoading);
@@ -31,15 +30,13 @@ export default function GeneratingRoutineScreen() {
   const glowAlpha = isDark ? "rgba(46,207,190,0.15)" : "rgba(46,207,190,0.08)";
 
   useEffect(() => {
-    // useRef evita que se llame dos veces en StrictMode
     if (hasStarted.current) return;
     hasStarted.current = true;
 
     const generate = async () => {
-      const payload = getQuickPayload();
+      const payload = getPayload();
 
       if (!payload) {
-        // No hay payload — el usuario llegó acá sin pasar por el flujo
         router.replace("/(app)/(tabs)/routines");
         return;
       }
@@ -49,16 +46,31 @@ export default function GeneratingRoutineScreen() {
       try {
         const saved = await routineService.generateRoutineOnboarding(payload);
 
-        setRoutine({
-          routineId: saved.routineId,
-          exercises: saved.exercises,
-          goal: saved.goal,
-          experience: saved.experience,
-          routineName: saved.name,
-        });
+        if (Array.isArray(saved)) {
+          // Plan semanal: el backend guardó todas las rutinas.
+          // Cargamos la primera en el store solo para que no quede vacío.
+          const first = saved[0];
+          if (first) {
+            setRoutine({
+              routineId: first.routineId,
+              exercises: first.exercises,
+              goal: first.goal,
+              experience: first.experience,
+              routineName: first.name,
+            });
+          }
+        } else {
+          // Quick o custom single: objeto único
+          setRoutine({
+            routineId: saved.routineId,
+            exercises: saved.exercises,
+            goal: saved.goal,
+            experience: saved.experience,
+            routineName: saved.name,
+          });
+        }
 
         reset();
-
         router.replace("/(app)/(tabs)/routines");
       } catch (e: any) {
         setError(e?.message ?? "Error generando la rutina");
@@ -106,8 +118,6 @@ export default function GeneratingRoutineScreen() {
         Analizando tus datos para el plan perfecto
       </Text>
 
-      {/* <ActivityIndicator size="large" color={primary} style={styles.loader} /> */}
-
       <TouchableOpacity onPress={() => router.back()}>
         <Text style={[styles.cancel, { color: secondaryText }]}>Cancelar</Text>
       </TouchableOpacity>
@@ -138,9 +148,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 40,
     lineHeight: 20,
-  },
-  loader: {
-    marginBottom: 40,
   },
   cancel: {
     fontSize: 16,
